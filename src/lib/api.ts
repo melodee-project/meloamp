@@ -74,17 +74,27 @@ class ApiService {
     return `${this.baseUrl}${endpoint}`;
   }
 
+  // Get current base URL for debugging
+  getCurrentBaseUrl(): string {
+    return this.baseUrl;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // Check if baseUrl is properly set
+    if (!this.baseUrl || this.baseUrl.includes('localhost:1420')) {
+      console.error('API baseUrl is not properly configured:', this.baseUrl);
+      throw new Error('API configuration error: Base URL not set or invalid. Please login again.');
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
     console.log('Making API request to:', url);
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Accept-Encoding': 'gzip, deflate, br',
       ...(options.headers as Record<string, string>),
     };
 

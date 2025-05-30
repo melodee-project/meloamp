@@ -14,6 +14,8 @@
 	let error = '';
 
 	onMount(async () => {
+		console.log('Dashboard onMount - Current API base URL:', api.getCurrentBaseUrl());
+		console.log('Dashboard onMount - Auth state:', $auth);
 		await loadDashboardData();
 	});
 
@@ -21,6 +23,9 @@
 		try {
 			isLoading = true;
 			error = '';
+
+			console.log('loadDashboardData - Current API base URL:', api.getCurrentBaseUrl());
+			console.log('loadDashboardData - Auth state:', $auth);
 
 			// Use the new API methods
 			const [albumsData, songsData, artistsData, playlistsData] = await Promise.all([

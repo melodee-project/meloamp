@@ -55,19 +55,35 @@ function createAuthStore() {
 			set(initialState);
 		},
 		init() {
+			console.log('🏁 Auth store init called');
 			const stored = localStorage.getItem('auth');
 			if (stored) {
 				try {
 					const authState: AuthState = JSON.parse(stored);
+					console.log('🔍 Stored auth state found:', authState);
+					
 					if (authState.isAuthenticated && authState.token && authState.apiUrl) {
+						console.log('✅ Valid auth state found, configuring API...');
+						console.log('📡 Setting API base URL to:', authState.apiUrl);
+						console.log('🔑 Setting API token length:', authState.token.length);
+						
 						api.setBaseUrl(authState.apiUrl);
 						api.setToken(authState.token);
+						
+						// Verify the configuration was applied
+						console.log('🔍 API base URL after configuration:', api.getCurrentBaseUrl());
+						
 						set(authState);
+						console.log('✅ Auth state restored successfully');
+					} else {
+						console.log('❌ Invalid auth state, missing required fields');
 					}
 				} catch (error) {
-					console.error('Failed to parse stored auth state:', error);
+					console.error('❌ Failed to parse stored auth state:', error);
 					localStorage.removeItem('auth');
 				}
+			} else {
+				console.log('ℹ️ No stored auth state found');
 			}
 		}
 	};
