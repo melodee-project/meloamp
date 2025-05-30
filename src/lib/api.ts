@@ -153,7 +153,7 @@ class ApiService {
   }
 
   async getArtist(id: string): Promise<Artist> {
-    return this.request<Artist>(`/artists/${id}`);
+    return this.request<Artist>(`/artist/${id}`);
   }
 
   async getRecentArtists(limit: number = 10): Promise<Artist[]> {
@@ -167,7 +167,7 @@ class ApiService {
   }
 
   async getAlbum(id: string): Promise<Album> {
-    return this.request<Album>(`/albums/${id}`);
+    return this.request<Album>(`/album/${id}`);
   }
 
   async getRecentAlbums(limit: number = 10): Promise<Album[]> {
@@ -185,7 +185,7 @@ class ApiService {
   }
 
   async getSong(id: string): Promise<Song> {
-    return this.request<Song>(`/songs/${id}`);
+    return this.request<Song>(`/song/${id}`);
   }
 
   async getRecentSongs(limit: number = 10): Promise<Song[]> {
@@ -208,11 +208,11 @@ class ApiService {
   }
 
   async getPlaylist(id: string): Promise<Playlist> {
-    return this.request<Playlist>(`/playlists/${id}`);
+    return this.request<Playlist>(`/playlist/${id}`);
   }
 
   async getPlaylistSongs(playlistId: string): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/playlists/${playlistId}/songs`);
+    const response = await this.request<PaginatedResponse<Song>>(`/playlist/${playlistId}/songs`);
     return response.data;
   }
 
