@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { auth } from '$lib/stores/auth';
-	import { apiClient } from '$lib/api/client';
 	import { _ } from '$lib/i18n';
-	import { Eye, EyeOff, AlertCircle } from 'lucide-svelte';
+	import { Eye, EyeOff, Server, Mail, Lock } from 'lucide-svelte';
 
 	let serverUrl = '';
 	let email = '';
@@ -18,12 +17,11 @@
 			return;
 		}
 
-		isLoading = true;
-		error = '';
-
 		try {
-			const response = await apiClient.login(serverUrl, { email, password });
-			auth.login(response.user, response.token, serverUrl);
+			isLoading = true;
+			error = '';
+			
+			await auth.login(serverUrl, email, password);
 			goto('/');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Login failed';
@@ -41,107 +39,112 @@
 	<title>Login - MeloAmp</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center p-4">
-	<div class="w-full max-w-md">
-		<!-- Logo and Title -->
-		<div class="text-center mb-8">
-			<img src="/logo.png" alt="MeloAmp" class="w-16 h-16 mx-auto mb-4" />
-			<h1 class="text-3xl font-bold text-white mb-2">{$_('auth.welcome')}</h1>
-			<p class="text-white/80">{$_('auth.subtitle')}</p>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+	<div class="max-w-md w-full space-y-8">
+		<div class="text-center">
+			<img src="/logo.png" alt="MeloAmp" class="mx-auto h-16 w-auto" />
+			<h2 class="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+				{$_('login.title')}
+			</h2>
+			<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+				{$_('login.subtitle')}
+			</p>
 		</div>
 
-		<!-- Login Form -->
-		<div class="bg-surface-100-800-token rounded-xl shadow-2xl p-8">
-			<form on:submit|preventDefault={handleLogin} class="space-y-6">
-				<!-- Server URL -->
+		<form class="mt-8 space-y-6" on:submit|preventDefault={handleLogin}>
+			{#if error}
+				<div class="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4">
+					<p class="text-red-700 dark:text-red-300 text-sm">{error}</p>
+				</div>
+			{/if}
+
+			<div class="space-y-4">
 				<div>
-					<label for="serverUrl" class="block text-sm font-medium mb-2">
-						{$_('auth.serverUrl')}
+					<label for="serverUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+						{$_('login.serverUrl')}
 					</label>
-					<input
-						id="serverUrl"
-						type="url"
-						bind:value={serverUrl}
-						placeholder={$_('auth.serverUrlPlaceholder')}
-						required
-						class="w-full px-4 py-3 bg-surface-200-700-token border border-surface-300-600-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-					/>
+					<div class="mt-1 relative">
+						<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+							<Server size={20} class="text-gray-400" />
+						</div>
+						<input
+							id="serverUrl"
+							name="serverUrl"
+							type="url"
+							required
+							bind:value={serverUrl}
+							class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+							placeholder="https://your-server.com"
+						/>
+					</div>
 				</div>
 
-				<!-- Email -->
 				<div>
-					<label for="email" class="block text-sm font-medium mb-2">
-						{$_('auth.email')}
+					<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+						{$_('login.email')}
 					</label>
-					<input
-						id="email"
-						type="email"
-						bind:value={email}
-						placeholder={$_('auth.emailPlaceholder')}
-						required
-						class="w-full px-4 py-3 bg-surface-200-700-token border border-surface-300-600-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-					/>
+					<div class="mt-1 relative">
+						<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+							<Mail size={20} class="text-gray-400" />
+						</div>
+						<input
+							id="email"
+							name="email"
+							type="email"
+							autocomplete="email"
+							required
+							bind:value={email}
+							class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+							placeholder={$_('login.emailPlaceholder')}
+						/>
+					</div>
 				</div>
 
-				<!-- Password -->
 				<div>
-					<label for="password" class="block text-sm font-medium mb-2">
-						{$_('auth.password')}
+					<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+						{$_('login.password')}
 					</label>
-					<div class="relative">
+					<div class="mt-1 relative">
+						<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+							<Lock size={20} class="text-gray-400" />
+						</div>
 						<input
 							id="password"
+							name="password"
 							type={showPassword ? 'text' : 'password'}
-							bind:value={password}
-							placeholder={$_('auth.passwordPlaceholder')}
+							autocomplete="current-password"
 							required
-							class="w-full px-4 py-3 pr-12 bg-surface-200-700-token border border-surface-300-600-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+							bind:value={password}
+							class="appearance-none relative block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+							placeholder={$_('login.passwordPlaceholder')}
 						/>
 						<button
 							type="button"
+							class="absolute inset-y-0 right-0 pr-3 flex items-center"
 							on:click={togglePasswordVisibility}
-							class="absolute right-3 top-1/2 transform -translate-y-1/2 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
 						>
 							{#if showPassword}
-								<EyeOff size={20} />
+								<EyeOff size={20} class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
 							{:else}
-								<Eye size={20} />
+								<Eye size={20} class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
 							{/if}
 						</button>
 					</div>
 				</div>
+			</div>
 
-				<!-- Error Message -->
-				{#if error}
-					<div class="flex items-center space-x-2 p-3 bg-error-100 dark:bg-error-900 border border-error-300 dark:border-error-700 rounded-lg">
-						<AlertCircle size={20} class="text-error-600 dark:text-error-400" />
-						<span class="text-error-700 dark:text-error-300 text-sm">{error}</span>
-					</div>
-				{/if}
-
-				<!-- Login Button -->
+			<div>
 				<button
 					type="submit"
 					disabled={isLoading}
-					class="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed"
+					class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				>
 					{#if isLoading}
-						<div class="flex items-center justify-center space-x-2">
-							<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-							<span>Signing in...</span>
-						</div>
-					{:else}
-						{$_('auth.loginButton')}
+						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
 					{/if}
+					{$_('login.signIn')}
 				</button>
-			</form>
-		</div>
-
-		<!-- Footer -->
-		<div class="text-center mt-8">
-			<p class="text-white/60 text-sm">
-				{$_('app.name')} - {$_('app.tagline')}
-			</p>
-		</div>
+			</div>
+		</form>
 	</div>
 </div> 

@@ -1,37 +1,44 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { apiClient } from '$lib/api/client';
+	import { api } from '$lib/api';
 	import { _ } from '$lib/i18n';
-	import { Search, Users, Disc3, Music, ListMusic, Play } from 'lucide-svelte';
-	import type { SearchResults } from '$lib/types/music';
+	import { Search, Music, Users, Disc3, ListMusic, Star } from 'lucide-svelte';
+	import type { Artist, Album, Song, Playlist } from '$lib/types/music';
 
-	let searchQuery = '';
-	let searchResults: SearchResults | null = null;
+	let query = '';
+	let searchResults: {
+		artists: Artist[];
+		albums: Album[];
+		songs: Song[];
+		playlists: Playlist[];
+	} = {
+		artists: [],
+		albums: [],
+		songs: [],
+		playlists: []
+	};
 	let isLoading = false;
 	let error = '';
+	let hasSearched = false;
 
 	onMount(() => {
-		// Get search query from URL
 		const urlQuery = $page.url.searchParams.get('q');
 		if (urlQuery) {
-			searchQuery = urlQuery;
+			query = urlQuery;
 			performSearch();
 		}
 	});
 
 	async function performSearch() {
-		if (!searchQuery.trim()) {
-			searchResults = null;
-			return;
-		}
-
-		isLoading = true;
-		error = '';
+		if (!query.trim()) return;
 
 		try {
-			const response = await apiClient.get<SearchResults>(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-			searchResults = response.data;
+			isLoading = true;
+			error = '';
+			hasSearched = true;
+
+			searchResults = await api.search(query.trim());
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Search failed';
 			console.error('Search error:', err);
@@ -40,22 +47,19 @@
 		}
 	}
 
-	function handleSearchSubmit() {
+	function handleSubmit() {
 		performSearch();
-		// Update URL without navigation
-		const url = new URL(window.location.href);
-		url.searchParams.set('q', searchQuery);
-		window.history.replaceState({}, '', url);
 	}
 
-	function formatDuration(seconds: number): string {
-		const minutes = Math.floor(seconds / 60);
-		const remainingSeconds = seconds % 60;
-		return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+	function getImageUrl(thumbnailUrl?: string, imageUrl?: string): string {
+		return thumbnailUrl || imageUrl || '/placeholder-music.png';
 	}
 
-	function getImageUrl(image?: string): string {
-		return image || '/placeholder-music.png';
+	function getTotalResults(): number {
+		return searchResults.artists.length + 
+			   searchResults.albums.length + 
+			   searchResults.songs.length + 
+			   searchResults.playlists.length;
 	}
 </script>
 
@@ -65,201 +69,205 @@
 
 <div class="space-y-6">
 	<!-- Search Header -->
-	<div class="flex items-center space-x-3">
-		<Search size={32} class="text-primary-500" />
-		<h1 class="text-3xl font-bold">{$_('search.results')}</h1>
+	<div class="flex items-center space-x-4">
+		<Search size={32} class="text-blue-500" />
+		<h1 class="text-3xl font-bold">{$_('search.title')}</h1>
 	</div>
 
-	<!-- Search Input -->
-	<div class="max-w-2xl">
-		<form on:submit|preventDefault={handleSearchSubmit} class="relative">
-			<Search class="absolute left-4 top-1/2 transform -translate-y-1/2 text-surface-500" size={20} />
+	<!-- Search Form -->
+	<form on:submit|preventDefault={handleSubmit} class="max-w-2xl">
+		<div class="relative">
+			<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+				<Search size={20} class="text-gray-400" />
+			</div>
 			<input
 				type="text"
-				bind:value={searchQuery}
+				bind:value={query}
 				placeholder={$_('search.placeholder')}
-				class="w-full pl-12 pr-4 py-4 text-lg bg-surface-100-800-token border border-surface-300-600-token rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+				class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 			/>
-		</form>
-	</div>
-
-	{#if isLoading}
-		<div class="flex items-center justify-center py-12">
-			<div class="text-center">
-				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-				<p class="text-surface-600-300-token">Searching...</p>
-			</div>
 		</div>
-	{:else if error}
-		<div class="bg-error-100 dark:bg-error-900 border border-error-300 dark:border-error-700 rounded-lg p-4">
-			<p class="text-error-700 dark:text-error-300">{error}</p>
+		<button
+			type="submit"
+			disabled={isLoading || !query.trim()}
+			class="mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed"
+		>
+			{#if isLoading}
+				<div class="flex items-center space-x-2">
+					<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+					<span>Searching...</span>
+				</div>
+			{:else}
+				{$_('search.button')}
+			{/if}
+		</button>
+	</form>
+
+	{#if error}
+		<div class="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4">
+			<p class="text-red-700 dark:text-red-300">{error}</p>
 			<button 
 				on:click={performSearch}
-				class="mt-2 text-sm text-error-600 dark:text-error-400 hover:underline"
+				class="mt-2 text-sm text-red-600 dark:text-red-400 hover:underline"
 			>
 				Try again
 			</button>
 		</div>
-	{:else if searchResults}
-		{#if searchResults.total === 0}
-			<div class="text-center py-12">
-				<Search size={64} class="mx-auto text-surface-400-500-token mb-4" />
-				<h2 class="text-xl font-semibold mb-2">{$_('search.noResults')}</h2>
-				<p class="text-surface-600-300-token">Try searching with different keywords</p>
+	{:else if hasSearched && !isLoading}
+		{#if getTotalResults() > 0}
+			<div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+				Found {getTotalResults()} results for "{query}"
 			</div>
-		{:else}
-			<div class="space-y-8">
-				<!-- Artists -->
-				{#if searchResults.artists.length > 0}
-					<section>
-						<div class="flex items-center space-x-3 mb-4">
-							<Users size={24} class="text-primary-500" />
-							<h2 class="text-xl font-semibold">{$_('search.artists')} ({searchResults.artists.length})</h2>
-						</div>
-						<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-							{#each searchResults.artists as artist}
-								<div class="music-card group text-center">
-									<div class="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-surface-300-600-token relative">
-										{#if artist.image}
-											<img 
-												src={artist.image} 
-												alt={artist.name}
-												class="w-full h-full object-cover"
-											/>
-										{:else}
-											<div class="w-full h-full flex items-center justify-center">
-												<Users size={24} class="text-surface-500" />
-											</div>
-										{/if}
-										<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-											<Play size={16} class="text-white" />
-										</button>
-									</div>
-									<h3 class="font-medium text-sm truncate" title={artist.name}>{artist.name}</h3>
-									{#if artist.albumCount}
-										<p class="text-xs text-surface-600-300-token">{artist.albumCount} albums</p>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</section>
-				{/if}
 
-				<!-- Albums -->
-				{#if searchResults.albums.length > 0}
-					<section>
-						<div class="flex items-center space-x-3 mb-4">
-							<Disc3 size={24} class="text-primary-500" />
-							<h2 class="text-xl font-semibold">{$_('search.albums')} ({searchResults.albums.length})</h2>
-						</div>
-						<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-							{#each searchResults.albums as album}
-								<div class="music-card group">
-									<div class="music-card-image relative mb-3">
+			<!-- Artists Results -->
+			{#if searchResults.artists.length > 0}
+				<section>
+					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
+						<Users size={24} class="text-blue-500" />
+						<span>Artists ({searchResults.artists.length})</span>
+					</h2>
+					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+						{#each searchResults.artists as artist}
+							<div class="music-card group text-center">
+								<div class="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
+									{#if artist.thumbnailUrl || artist.imageUrl}
 										<img 
-											src={getImageUrl(album.image)} 
-											alt={album.title}
+											src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
+											alt={artist.name}
 											class="w-full h-full object-cover"
 										/>
-										<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-											<Play size={20} class="text-white" />
-										</button>
-									</div>
-									<h3 class="font-medium text-sm truncate" title={album.title}>{album.title}</h3>
-									<p class="text-xs text-surface-600-300-token truncate" title={album.artist}>{album.artist}</p>
-									{#if album.year}
-										<p class="text-xs text-surface-500-400-token">{album.year}</p>
+									{:else}
+										<div class="w-full h-full flex items-center justify-center">
+											<Users size={24} class="text-gray-500" />
+										</div>
+									{/if}
+									{#if artist.userStarred}
+										<div class="absolute top-1 right-1">
+											<Star size={12} class="text-yellow-400 fill-current" />
+										</div>
 									{/if}
 								</div>
-							{/each}
-						</div>
-					</section>
-				{/if}
+								<h3 class="font-medium text-sm truncate" title={artist.name}>{artist.name}</h3>
+								{#if artist.albumCount > 0}
+									<p class="text-xs text-gray-600 dark:text-gray-300">{artist.albumCount} albums</p>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
 
-				<!-- Songs -->
-				{#if searchResults.songs.length > 0}
-					<section>
-						<div class="flex items-center space-x-3 mb-4">
-							<Music size={24} class="text-primary-500" />
-							<h2 class="text-xl font-semibold">{$_('search.songs')} ({searchResults.songs.length})</h2>
-						</div>
-						<div class="space-y-2">
-							{#each searchResults.songs as song}
-								<div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-surface-200-700-token transition-colors group">
-									<div class="w-12 h-12 bg-surface-300-600-token rounded-lg flex items-center justify-center relative overflow-hidden">
-										{#if song.image}
-											<img src={song.image} alt={song.title} class="w-full h-full object-cover" />
-										{:else}
-											<Music size={20} class="text-surface-500" />
-										{/if}
-										<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-											<Play size={16} class="text-white" />
-										</button>
-									</div>
-									<div class="flex-1 min-w-0">
+			<!-- Albums Results -->
+			{#if searchResults.albums.length > 0}
+				<section>
+					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
+						<Disc3 size={24} class="text-blue-500" />
+						<span>Albums ({searchResults.albums.length})</span>
+					</h2>
+					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+						{#each searchResults.albums as album}
+							<div class="music-card group">
+								<div class="music-card-image relative mb-3">
+									<img 
+										src={getImageUrl(album.thumbnailUrl, album.imageUrl)} 
+										alt={album.name}
+										class="w-full h-full object-cover"
+									/>
+									{#if album.userStarred}
+										<div class="absolute top-2 right-2">
+											<Star size={16} class="text-yellow-400 fill-current" />
+										</div>
+									{/if}
+								</div>
+								<h3 class="font-medium text-sm truncate" title={album.name}>{album.name}</h3>
+								<p class="text-xs text-gray-600 dark:text-gray-300 truncate" title={album.artist}>{album.artist}</p>
+								{#if album.releaseYear}
+									<p class="text-xs text-gray-500 dark:text-gray-400">{album.releaseYear}</p>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			<!-- Songs Results -->
+			{#if searchResults.songs.length > 0}
+				<section>
+					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
+						<Music size={24} class="text-blue-500" />
+						<span>Songs ({searchResults.songs.length})</span>
+					</h2>
+					<div class="space-y-2">
+						{#each searchResults.songs as song}
+							<div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group">
+								<div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center relative overflow-hidden">
+									{#if song.thumbnailUrl || song.imageUrl}
+										<img src={getImageUrl(song.thumbnailUrl, song.imageUrl)} alt={song.title} class="w-full h-full object-cover" />
+									{:else}
+										<Music size={20} class="text-gray-500" />
+									{/if}
+								</div>
+								<div class="flex-1 min-w-0">
+									<div class="flex items-center space-x-2">
 										<h3 class="font-medium truncate">{song.title}</h3>
-										<p class="text-sm text-surface-600-300-token truncate">{song.artist} • {song.album}</p>
-									</div>
-									<div class="text-sm text-surface-500-400-token">
-										{formatDuration(song.duration)}
-									</div>
-								</div>
-							{/each}
-						</div>
-					</section>
-				{/if}
-
-				<!-- Playlists -->
-				{#if searchResults.playlists.length > 0}
-					<section>
-						<div class="flex items-center space-x-3 mb-4">
-							<ListMusic size={24} class="text-primary-500" />
-							<h2 class="text-xl font-semibold">{$_('search.playlists')} ({searchResults.playlists.length})</h2>
-						</div>
-						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-							{#each searchResults.playlists as playlist}
-								<div class="music-card group">
-									<div class="music-card-image relative mb-3">
-										{#if playlist.image}
-											<img 
-												src={playlist.image} 
-												alt={playlist.name}
-												class="w-full h-full object-cover"
-											/>
-										{:else}
-											<div class="w-full h-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
-												<ListMusic size={32} class="text-white" />
-											</div>
+										{#if song.userStarred}
+											<Star size={14} class="text-yellow-400 fill-current" />
 										{/if}
-										<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-											<Play size={20} class="text-white" />
-										</button>
 									</div>
-									<h3 class="font-medium text-sm truncate" title={playlist.name}>{playlist.name}</h3>
-									<p class="text-xs text-surface-600-300-token">{playlist.songCount} songs</p>
-									{#if playlist.description}
-										<p class="text-xs text-surface-500-400-token truncate" title={playlist.description}>
-											{playlist.description}
-										</p>
+									<p class="text-sm text-gray-600 dark:text-gray-300 truncate">{song.artist.name} • {song.album.name}</p>
+								</div>
+								<div class="text-sm text-gray-500 dark:text-gray-400">
+									{song.durationFormatted}
+								</div>
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			<!-- Playlists Results -->
+			{#if searchResults.playlists.length > 0}
+				<section>
+					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
+						<ListMusic size={24} class="text-blue-500" />
+						<span>Playlists ({searchResults.playlists.length})</span>
+					</h2>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						{#each searchResults.playlists as playlist}
+							<div class="music-card group">
+								<div class="music-card-image relative mb-3">
+									{#if playlist.thumbnailUrl || playlist.imageUrl}
+										<img 
+											src={getImageUrl(playlist.thumbnailUrl, playlist.imageUrl)} 
+											alt={playlist.name}
+											class="w-full h-full object-cover"
+										/>
+									{:else}
+										<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+											<ListMusic size={32} class="text-white" />
+										</div>
 									{/if}
 								</div>
-							{/each}
-						</div>
-					</section>
-				{/if}
+								<h3 class="font-medium text-sm truncate" title={playlist.name}>{playlist.name}</h3>
+								<p class="text-xs text-gray-600 dark:text-gray-300">{playlist.songCount} songs</p>
+								<p class="text-xs text-gray-500 dark:text-gray-400">by {playlist.owner.username}</p>
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
+		{:else}
+			<div class="text-center py-12">
+				<Search size={64} class="text-gray-400 mx-auto mb-4" />
+				<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No results found</h3>
+				<p class="text-gray-600 dark:text-gray-400">Try searching with different keywords</p>
 			</div>
 		{/if}
-	{:else if searchQuery}
+	{:else if !hasSearched}
 		<div class="text-center py-12">
-			<Search size={64} class="mx-auto text-surface-400-500-token mb-4" />
-			<h2 class="text-xl font-semibold mb-2">Start searching</h2>
-			<p class="text-surface-600-300-token">Enter your search query and press Enter</p>
-		</div>
-	{:else}
-		<div class="text-center py-12">
-			<Search size={64} class="mx-auto text-surface-400-500-token mb-4" />
-			<h2 class="text-xl font-semibold mb-2">Search your music</h2>
-			<p class="text-surface-600-300-token">Find artists, albums, songs, and playlists</p>
+			<Search size={64} class="text-gray-400 mx-auto mb-4" />
+			<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Search your music library</h3>
+			<p class="text-gray-600 dark:text-gray-400">Find artists, albums, songs, and playlists</p>
 		</div>
 	{/if}
 </div> 

@@ -1,4 +1,4 @@
-import { register, init, getLocaleFromNavigator, _, locale } from 'svelte-i18n';
+import { register, init, getLocaleFromNavigator, locale } from 'svelte-i18n';
 
 register('en', () => import('./locales/en.json'));
 register('es', () => import('./locales/es.json'));
@@ -11,7 +11,7 @@ register('zh', () => import('./locales/zh.json'));
 export async function initI18n() {
 	await init({
 		fallbackLocale: 'en',
-		initialLocale: getLocaleFromNavigator()
+		initialLocale: getLocaleFromNavigator(),
 	});
 }
 
@@ -29,4 +29,4 @@ export function setLocale(newLocale: string) {
 	locale.set(newLocale);
 }
 
-export { _, locale }; 
+export { _, locale } from 'svelte-i18n'; 

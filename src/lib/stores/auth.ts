@@ -1,12 +1,6 @@
 import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
-
-export interface User {
-	id: string;
-	email: string;
-	username: string;
-	avatar?: string;
-}
+import type { User } from '../types/user';
+import { api } from '../api';
 
 export interface AuthState {
 	isAuthenticated: boolean;
@@ -15,7 +9,7 @@ export interface AuthState {
 	apiUrl: string | null;
 }
 
-const defaultAuthState: AuthState = {
+const initialState: AuthState = {
 	isAuthenticated: false,
 	user: null,
 	token: null,
@@ -23,38 +17,47 @@ const defaultAuthState: AuthState = {
 };
 
 function createAuthStore() {
-	const { subscribe, set, update } = writable<AuthState>(defaultAuthState);
+	const { subscribe, set, update } = writable<AuthState>(initialState);
 
 	return {
 		subscribe,
-		login: (user: User, token: string, apiUrl: string) => {
-			const authState = {
-				isAuthenticated: true,
-				user,
-				token,
-				apiUrl
-			};
-			set(authState);
-			if (browser) {
-				localStorage.setItem('meloamp_auth', JSON.stringify(authState));
+		async login(apiUrl: string, email: string, password: string) {
+			try {
+				const response = await api.login({ serverUrl: apiUrl, email, password });
+				
+				const newState: AuthState = {
+					isAuthenticated: true,
+					user: response.user,
+					token: response.token,
+					apiUrl
+				};
+
+				// Store in localStorage
+				localStorage.setItem('auth', JSON.stringify(newState));
+				
+				set(newState);
+				return response;
+			} catch (error) {
+				throw error;
 			}
 		},
-		logout: () => {
-			set(defaultAuthState);
-			if (browser) {
-				localStorage.removeItem('meloamp_auth');
-			}
+		logout() {
+			localStorage.removeItem('auth');
+			set(initialState);
 		},
-		init: () => {
-			if (browser) {
-				const stored = localStorage.getItem('meloamp_auth');
-				if (stored) {
-					try {
-						const authState = JSON.parse(stored);
+		init() {
+			const stored = localStorage.getItem('auth');
+			if (stored) {
+				try {
+					const authState: AuthState = JSON.parse(stored);
+					if (authState.isAuthenticated && authState.token && authState.apiUrl) {
+						api.setBaseUrl(authState.apiUrl);
+						api.setToken(authState.token);
 						set(authState);
-					} catch (e) {
-						console.error('Failed to parse stored auth state:', e);
 					}
+				} catch (error) {
+					console.error('Failed to parse stored auth state:', error);
+					localStorage.removeItem('auth');
 				}
 			}
 		}

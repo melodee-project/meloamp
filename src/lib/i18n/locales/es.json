@@ -28,8 +28,10 @@
 		"settings": "Configuración"
 	},
 	"dashboard": {
+		"welcome": "Bienvenido",
+		"loading": "Cargando tu música...",
 		"recentAlbums": "Álbumes Recientes",
-		"recentSongs": "Reproducidas Recientemente",
+		"recentSongs": "Canciones Recientes",
 		"recentArtists": "Artistas Recientes",
 		"yourPlaylists": "Tus Listas de Reproducción",
 		"viewAll": "Ver Todo",
@@ -47,7 +49,9 @@
 		"unmute": "Activar Sonido"
 	},
 	"search": {
+		"title": "Buscar",
 		"placeholder": "Buscar artistas, álbumes, canciones...",
+		"button": "Buscar",
 		"results": "Resultados de Búsqueda",
 		"noResults": "No se encontraron resultados",
 		"artists": "Artistas",
@@ -74,7 +78,7 @@
 	"common": {
 		"loading": "Cargando...",
 		"error": "Error",
-		"retry": "Reintentar",
+		"retry": "Intentar de nuevo",
 		"cancel": "Cancelar",
 		"save": "Guardar",
 		"delete": "Eliminar",
@@ -87,5 +91,29 @@
 		"page": "Página",
 		"of": "de",
 		"items": "elementos"
+	},
+	"nav": {
+		"dashboard": "Panel",
+		"search": "Buscar",
+		"artists": "Artistas",
+		"albums": "Álbumes",
+		"welcome": "Bienvenido",
+		"logout": "Cerrar Sesión"
+	},
+	"login": {
+		"title": "Iniciar sesión en MeloAmp",
+		"subtitle": "Accede a tu biblioteca musical",
+		"serverUrl": "URL del Servidor",
+		"email": "Correo Electrónico",
+		"password": "Contraseña",
+		"emailPlaceholder": "Ingresa tu correo",
+		"passwordPlaceholder": "Ingresa tu contraseña",
+		"signIn": "Iniciar Sesión"
+	},
+	"albums": {
+		"title": "Álbumes"
+	},
+	"artists": {
+		"title": "Artistas"
 	}
 } 

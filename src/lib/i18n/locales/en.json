@@ -28,8 +28,10 @@
 		"settings": "Settings"
 	},
 	"dashboard": {
+		"welcome": "Welcome",
+		"loading": "Loading your music...",
 		"recentAlbums": "Recent Albums",
-		"recentSongs": "Recently Played",
+		"recentSongs": "Recent Songs",
 		"recentArtists": "Recent Artists",
 		"yourPlaylists": "Your Playlists",
 		"viewAll": "View All",
@@ -47,7 +49,9 @@
 		"unmute": "Unmute"
 	},
 	"search": {
+		"title": "Search",
 		"placeholder": "Search for artists, albums, songs...",
+		"button": "Search",
 		"results": "Search Results",
 		"noResults": "No results found",
 		"artists": "Artists",
@@ -74,7 +78,7 @@
 	"common": {
 		"loading": "Loading...",
 		"error": "Error",
-		"retry": "Retry",
+		"retry": "Try again",
 		"cancel": "Cancel",
 		"save": "Save",
 		"delete": "Delete",
@@ -87,5 +91,29 @@
 		"page": "Page",
 		"of": "of",
 		"items": "items"
+	},
+	"nav": {
+		"dashboard": "Dashboard",
+		"search": "Search",
+		"artists": "Artists",
+		"albums": "Albums",
+		"welcome": "Welcome",
+		"logout": "Logout"
+	},
+	"login": {
+		"title": "Sign in to MeloAmp",
+		"subtitle": "Access your music library",
+		"serverUrl": "Server URL",
+		"email": "Email",
+		"password": "Password",
+		"emailPlaceholder": "Enter your email",
+		"passwordPlaceholder": "Enter your password",
+		"signIn": "Sign In"
+	},
+	"albums": {
+		"title": "Albums"
+	},
+	"artists": {
+		"title": "Artists"
 	}
 } 
