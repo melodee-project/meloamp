@@ -44,6 +44,22 @@
 		}
 	}
 
+	function handleButtonClick(event) {
+		console.log('🖱️ Submit button clicked!', event);
+		console.log('Button event type:', event.type);
+		console.log('Current form values before click:', { serverUrl, email, password: password ? '***' : 'empty' });
+		// Don't prevent default here - let the form submission happen naturally
+	}
+
+	function handleFormSubmit(event) {
+		console.log('📝 Form submit event triggered!', event);
+		console.log('Event type:', event.type);
+		console.log('Event target:', event.target);
+		console.log('Current form values on submit:', { serverUrl, email, password: password ? '***' : 'empty' });
+		event.preventDefault();
+		handleLogin();
+	}
+
 	function togglePasswordVisibility() {
 		showPassword = !showPassword;
 	}
@@ -65,10 +81,7 @@
 			</p>
 		</div>
 
-		<form class="mt-8 space-y-6" on:submit|preventDefault={(e) => {
-			console.log('📝 Form submit event triggered!', e);
-			handleLogin();
-		}}>
+		<form class="mt-8 space-y-6" on:submit={handleFormSubmit}>
 			{#if error}
 				<div class="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4">
 					<p class="text-red-700 dark:text-red-300 text-sm">{error}</p>
@@ -88,7 +101,6 @@
 							id="serverUrl"
 							name="serverUrl"
 							type="url"
-							required
 							bind:value={serverUrl}
 							class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
 							placeholder="http://192.168.8.130/api/v1/"
@@ -109,7 +121,6 @@
 							name="email"
 							type="email"
 							autocomplete="email"
-							required
 							bind:value={email}
 							class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
 							placeholder={$_('login.emailPlaceholder')}
@@ -130,7 +141,6 @@
 							name="password"
 							type={showPassword ? 'text' : 'password'}
 							autocomplete="current-password"
-							required
 							bind:value={password}
 							class="appearance-none relative block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
 							placeholder={$_('login.passwordPlaceholder')}
@@ -154,7 +164,7 @@
 				<button
 					type="submit"
 					disabled={isLoading}
-					on:click={() => console.log('🖱️ Submit button clicked!')}
+					on:click={handleButtonClick}
 					class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				>
 					{#if isLoading}
