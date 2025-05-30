@@ -1,0 +1,89 @@
+{
+  "app": {
+    "name": "MeloAmp",
+    "tagline": "Your Music, Everywhere"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "serverUrl": "Server URL",
+    "serverUrlPlaceholder": "https://your-music-server.com",
+    "emailPlaceholder": "your@email.com",
+    "passwordPlaceholder": "Your password",
+    "loginButton": "Sign In",
+    "loginError": "Login failed. Please check your credentials.",
+    "invalidUrl": "Please enter a valid server URL",
+    "required": "This field is required"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "artists": "Artists",
+    "albums": "Albums",
+    "songs": "Songs",
+    "playlists": "Playlists",
+    "search": "Search",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "recentAlbums": "Recent Albums",
+    "recentSongs": "Recently Played",
+    "recentArtists": "Recent Artists",
+    "yourPlaylists": "Your Playlists",
+    "viewAll": "View All",
+    "noData": "No data available"
+  },
+  "music": {
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next",
+    "previous": "Previous",
+    "shuffle": "Shuffle",
+    "repeat": "Repeat",
+    "volume": "Volume",
+    "duration": "Duration",
+    "artist": "Artist",
+    "album": "Album",
+    "song": "Song",
+    "playlist": "Playlist",
+    "addToPlaylist": "Add to Playlist",
+    "createPlaylist": "Create Playlist",
+    "deletePlaylist": "Delete Playlist",
+    "editPlaylist": "Edit Playlist"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": "Theme",
+    "audio": "Audio",
+    "quality": "Audio Quality",
+    "cache": "Cache",
+    "about": "About",
+    "version": "Version",
+    "save": "Save",
+    "cancel": "Cancel",
+    "reset": "Reset to Defaults"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "close": "Close",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search...",
+    "noResults": "No results found",
+    "page": "Page",
+    "of": "of",
+    "items": "items"
+  }
+} 

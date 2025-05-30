@@ -1,0 +1,89 @@
+{
+  "app": {
+    "name": "MeloAmp",
+    "tagline": "Tu Música, En Todas Partes"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "serverUrl": "URL del Servidor",
+    "serverUrlPlaceholder": "https://tu-servidor-de-musica.com",
+    "emailPlaceholder": "tu@correo.com",
+    "passwordPlaceholder": "Tu contraseña",
+    "loginButton": "Iniciar Sesión",
+    "loginError": "Error de inicio de sesión. Verifica tus credenciales.",
+    "invalidUrl": "Por favor ingresa una URL de servidor válida",
+    "required": "Este campo es obligatorio"
+  },
+  "navigation": {
+    "dashboard": "Panel Principal",
+    "artists": "Artistas",
+    "albums": "Álbumes",
+    "songs": "Canciones",
+    "playlists": "Listas de Reproducción",
+    "search": "Buscar",
+    "settings": "Configuración"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido de nuevo",
+    "recentAlbums": "Álbumes Recientes",
+    "recentSongs": "Reproducidas Recientemente",
+    "recentArtists": "Artistas Recientes",
+    "yourPlaylists": "Tus Listas de Reproducción",
+    "viewAll": "Ver Todo",
+    "noData": "No hay datos disponibles"
+  },
+  "music": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "shuffle": "Aleatorio",
+    "repeat": "Repetir",
+    "volume": "Volumen",
+    "duration": "Duración",
+    "artist": "Artista",
+    "album": "Álbum",
+    "song": "Canción",
+    "playlist": "Lista de Reproducción",
+    "addToPlaylist": "Agregar a Lista",
+    "createPlaylist": "Crear Lista",
+    "deletePlaylist": "Eliminar Lista",
+    "editPlaylist": "Editar Lista"
+  },
+  "settings": {
+    "title": "Configuración",
+    "general": "General",
+    "appearance": "Apariencia",
+    "language": "Idioma",
+    "theme": "Tema",
+    "audio": "Audio",
+    "quality": "Calidad de Audio",
+    "cache": "Caché",
+    "about": "Acerca de",
+    "version": "Versión",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "reset": "Restablecer"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "ok": "OK",
+    "yes": "Sí",
+    "no": "No",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "search": "Buscar...",
+    "noResults": "No se encontraron resultados",
+    "page": "Página",
+    "of": "de",
+    "items": "elementos"
+  }
+} 

@@ -1,0 +1,91 @@
+{
+	"app": {
+		"name": "MeloAmp",
+		"tagline": "Your Music, Amplified"
+	},
+	"auth": {
+		"login": "Login",
+		"logout": "Logout",
+		"email": "Email",
+		"password": "Password",
+		"serverUrl": "Server URL",
+		"loginButton": "Sign In",
+		"loginError": "Login failed. Please check your credentials.",
+		"serverUrlPlaceholder": "https://your-music-server.com",
+		"emailPlaceholder": "your@email.com",
+		"passwordPlaceholder": "Your password",
+		"required": "This field is required",
+		"invalidEmail": "Please enter a valid email address",
+		"invalidUrl": "Please enter a valid server URL"
+	},
+	"navigation": {
+		"home": "Home",
+		"artists": "Artists",
+		"albums": "Albums",
+		"songs": "Songs",
+		"playlists": "Playlists",
+		"search": "Search",
+		"settings": "Settings"
+	},
+	"dashboard": {
+		"recentAlbums": "Recent Albums",
+		"recentSongs": "Recently Played",
+		"recentArtists": "Recent Artists",
+		"yourPlaylists": "Your Playlists",
+		"viewAll": "View All",
+		"noData": "No data available"
+	},
+	"player": {
+		"play": "Play",
+		"pause": "Pause",
+		"next": "Next",
+		"previous": "Previous",
+		"shuffle": "Shuffle",
+		"repeat": "Repeat",
+		"volume": "Volume",
+		"mute": "Mute",
+		"unmute": "Unmute"
+	},
+	"search": {
+		"placeholder": "Search for artists, albums, songs...",
+		"results": "Search Results",
+		"noResults": "No results found",
+		"artists": "Artists",
+		"albums": "Albums",
+		"songs": "Songs",
+		"playlists": "Playlists"
+	},
+	"settings": {
+		"title": "Settings",
+		"theme": "Theme",
+		"language": "Language",
+		"preferences": "Preferences",
+		"autoPlay": "Auto Play",
+		"notifications": "Notifications",
+		"quality": "Audio Quality",
+		"volume": "Default Volume",
+		"light": "Light",
+		"dark": "Dark",
+		"system": "System",
+		"low": "Low",
+		"medium": "Medium",
+		"high": "High"
+	},
+	"common": {
+		"loading": "Loading...",
+		"error": "Error",
+		"retry": "Retry",
+		"cancel": "Cancel",
+		"save": "Save",
+		"delete": "Delete",
+		"edit": "Edit",
+		"create": "Create",
+		"close": "Close",
+		"back": "Back",
+		"next": "Next",
+		"previous": "Previous",
+		"page": "Page",
+		"of": "of",
+		"items": "items"
+	}
+} 

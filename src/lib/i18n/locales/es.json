@@ -1,0 +1,91 @@
+{
+	"app": {
+		"name": "MeloAmp",
+		"tagline": "Tu Música, Amplificada"
+	},
+	"auth": {
+		"login": "Iniciar Sesión",
+		"logout": "Cerrar Sesión",
+		"email": "Correo Electrónico",
+		"password": "Contraseña",
+		"serverUrl": "URL del Servidor",
+		"loginButton": "Iniciar Sesión",
+		"loginError": "Error de inicio de sesión. Verifica tus credenciales.",
+		"serverUrlPlaceholder": "https://tu-servidor-musica.com",
+		"emailPlaceholder": "tu@correo.com",
+		"passwordPlaceholder": "Tu contraseña",
+		"required": "Este campo es obligatorio",
+		"invalidEmail": "Por favor ingresa un correo válido",
+		"invalidUrl": "Por favor ingresa una URL de servidor válida"
+	},
+	"navigation": {
+		"home": "Inicio",
+		"artists": "Artistas",
+		"albums": "Álbumes",
+		"songs": "Canciones",
+		"playlists": "Listas de Reproducción",
+		"search": "Buscar",
+		"settings": "Configuración"
+	},
+	"dashboard": {
+		"recentAlbums": "Álbumes Recientes",
+		"recentSongs": "Reproducidas Recientemente",
+		"recentArtists": "Artistas Recientes",
+		"yourPlaylists": "Tus Listas de Reproducción",
+		"viewAll": "Ver Todo",
+		"noData": "No hay datos disponibles"
+	},
+	"player": {
+		"play": "Reproducir",
+		"pause": "Pausar",
+		"next": "Siguiente",
+		"previous": "Anterior",
+		"shuffle": "Aleatorio",
+		"repeat": "Repetir",
+		"volume": "Volumen",
+		"mute": "Silenciar",
+		"unmute": "Activar Sonido"
+	},
+	"search": {
+		"placeholder": "Buscar artistas, álbumes, canciones...",
+		"results": "Resultados de Búsqueda",
+		"noResults": "No se encontraron resultados",
+		"artists": "Artistas",
+		"albums": "Álbumes",
+		"songs": "Canciones",
+		"playlists": "Listas de Reproducción"
+	},
+	"settings": {
+		"title": "Configuración",
+		"theme": "Tema",
+		"language": "Idioma",
+		"preferences": "Preferencias",
+		"autoPlay": "Reproducción Automática",
+		"notifications": "Notificaciones",
+		"quality": "Calidad de Audio",
+		"volume": "Volumen Predeterminado",
+		"light": "Claro",
+		"dark": "Oscuro",
+		"system": "Sistema",
+		"low": "Baja",
+		"medium": "Media",
+		"high": "Alta"
+	},
+	"common": {
+		"loading": "Cargando...",
+		"error": "Error",
+		"retry": "Reintentar",
+		"cancel": "Cancelar",
+		"save": "Guardar",
+		"delete": "Eliminar",
+		"edit": "Editar",
+		"create": "Crear",
+		"close": "Cerrar",
+		"back": "Atrás",
+		"next": "Siguiente",
+		"previous": "Anterior",
+		"page": "Página",
+		"of": "de",
+		"items": "elementos"
+	}
+} 
