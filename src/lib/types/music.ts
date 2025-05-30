@@ -1,29 +1,35 @@
+import type { User } from './user';
+
 export interface Artist {
 	id: string;
 	name: string;
 	bio?: string;
-	image?: string;
+	thumbnailUrl?: string;
+	imageUrl?: string;
 	albumCount: number;
 	songCount: number;
 	genres: string[];
+	userStarred: boolean;
+	userRating: number;
 	createdAt: string;
 	updatedAt: string;
 }
 
 export interface Album {
 	id: string;
-	title: string;
+	name: string;
 	artist: string;
 	artistId: string;
-	releaseDate: string;
-	image?: string;
-	coverArt?: string;
-	year?: number;
-	genre: string;
-	trackCount: number;
-	songCount?: number;
+	releaseYear: number;
+	thumbnailUrl?: string;
+	imageUrl?: string;
+	genre: string;	
+	songCount: number;
 	duration: number;
+	durationFormatted: string;
 	description?: string;
+	userStarred: boolean;
+	userRating: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -31,19 +37,19 @@ export interface Album {
 export interface Song {
 	id: string;
 	title: string;
-	artist: string;
-	album: string;
-	artistId: string;
-	albumId: string;
-	trackNumber: number;
+	artist: Artist;
+	album: Album;
+	songNumber: number;
 	duration: number;
-	image?: string;
-	fileUrl: string;
-	genre: string;
+	durationFormatted: string;
+	thumbnailUrl?: string;
+	imageUrl?: string;
+	streamUrl?: string;
+	genre?: string;
 	bitrate?: number;
-	sampleRate?: number;
 	playCount: number;
-	liked: boolean;
+	userStarred: boolean;
+	userRating: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -52,17 +58,13 @@ export interface Playlist {
 	id: string;
 	name: string;
 	description?: string;
-	image?: string;
-	coverArt?: string;
+	thumbnailUrl?: string;
+	imageUrl?: string;
+	duration: number;
+	durationFormatted: string;	
 	isPublic: boolean;
 	songCount: number;
-	duration: number;
-	owner: {
-		id: string;
-		username: string;
-		avatar?: string;
-	};
-	songs?: Song[];
+	owner: User;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -70,14 +72,6 @@ export interface Playlist {
 export interface RecentlyPlayed {
 	song: Song;
 	playedAt: string;
-}
-
-export interface SearchResults {
-	artists: Artist[];
-	albums: Album[];
-	songs: Song[];
-	playlists: Playlist[];
-	total: number;
 }
 
 export interface PlayerState {

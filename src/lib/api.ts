@@ -1,4 +1,6 @@
 import { fetch } from '@tauri-apps/plugin-http';
+import type { Album, Artist, Playlist, Song } from './types/music';
+import type { User } from './types/user';
 
 export interface AuthCredentials {
   serverUrl: string;
@@ -6,63 +8,35 @@ export interface AuthCredentials {
   password: string;
 }
 
-export interface User {
-  id: string;
-  email: string;
-  username: string;
-  avatar?: string;
+export interface SearchResults {
+	meta: PaginationMeta;
+	data: SearchResultData;
 }
 
-export interface Artist {
-  id: string;
-  name: string;
-  image?: string;
-  albumCount: number;
-  songCount: number;
+export interface SearchResultData {
+	artists: Artist[];
+	albums: Album[];
+	songs: Song[];
+	playlists: Playlist[];
 }
 
-export interface Album {
-  id: string;
-  title: string;
-  artist: string;
-  artistId: string;
-  image?: string;
-  year?: number;
-  songCount: number;
-  duration: number;
+export interface PaginationMeta {
+	totalCount: number;
+	pageSize: number;
+	currentPage: number;
+	totalPages: number;
+	hasPreviousPage: boolean;
+	hasNextPage: boolean;
 }
 
-export interface Song {
-  id: string;
-  title: string;
-  artist: string;
-  artistId: string;
-  album: string;
-  albumId: string;
-  duration: number;
-  track?: number;
-  year?: number;
-  genre?: string;
-  streamUrl: string;
-}
-
-export interface Playlist {
-  id: string;
-  name: string;
-  description?: string;
-  songCount: number;
-  duration: number;
-  isPublic: boolean;
-  createdAt: string;
-  updatedAt: string;
+export interface LoginResponse {
+	user: User;
+	token: string;
 }
 
 export interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+	meta: PaginationMeta;
 }
 
 class ApiService {
@@ -109,7 +83,7 @@ class ApiService {
   async login(credentials: AuthCredentials): Promise<{ token: string; user: User }> {
     this.setBaseUrl(credentials.serverUrl);
     
-    const response = await this.request<{ token: string; user: User }>('/auth/login', {
+    const response = await this.request<{ token: string; user: User }>('/user/authenticate', {
       method: 'POST',
       body: JSON.stringify({
         email: credentials.email,
@@ -122,7 +96,7 @@ class ApiService {
   }
 
   async getProfile(): Promise<User> {
-    return this.request<User>('/auth/profile');
+    return this.request<User>('/user/me');
   }
 
   // Artists
