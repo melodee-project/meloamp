@@ -3,6 +3,7 @@
 	import { api } from '$lib/api';
 	import { _ } from '$lib/i18n';
 	import { Play, Users, Star } from 'lucide-svelte';
+	import SSLImage from '$lib/components/SSLImage.svelte';
 	import type { Artist } from '$lib/types/music';
 
 	let artists: Artist[] = [];
@@ -91,10 +92,10 @@
 					<div class="music-card group text-center">
 						<div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
 							{#if artist.thumbnailUrl || artist.imageUrl}
-								<img 
+								<SSLImage 
 									src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
 									alt={artist.name}
-									class="w-full h-full object-cover"
+									className="w-full h-full object-cover"
 								/>
 							{:else}
 								<div class="w-full h-full flex items-center justify-center">

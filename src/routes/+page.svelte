@@ -4,6 +4,7 @@
 	import { api } from '$lib/api';
 	import { _ } from '$lib/i18n';
 	import { Play, Music, Users, Disc3, ListMusic, Star } from 'lucide-svelte';
+	import SSLImage from '$lib/components/SSLImage.svelte';
 	import type { Album, Song, Artist, Playlist } from '$lib/types/music';
 
 	let recentAlbums: Album[] = [];
@@ -111,10 +112,10 @@
 					{#each recentAlbums as album}
 						<div class="music-card group">
 							<div class="music-card-image relative mb-3">
-								<img 
+								<SSLImage 
 									src={getImageUrl(album.thumbnailUrl, album.imageUrl)} 
 									alt={album.name}
-									class="w-full h-full object-cover"
+									className="w-full h-full object-cover"
 								/>
 								<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
 									<Play size={24} class="text-white" />
@@ -157,7 +158,7 @@
 						<div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group">
 							<div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center relative overflow-hidden">
 								{#if song.thumbnailUrl || song.imageUrl}
-									<img src={getImageUrl(song.thumbnailUrl, song.imageUrl)} alt={song.title} class="w-full h-full object-cover" />
+									<SSLImage src={getImageUrl(song.thumbnailUrl, song.imageUrl)} alt={song.title} className="w-full h-full object-cover" />
 								{:else}
 									<Music size={20} class="text-gray-500" />
 								{/if}
@@ -206,10 +207,10 @@
 						<div class="music-card group text-center">
 							<div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
 								{#if artist.thumbnailUrl || artist.imageUrl}
-									<img 
+									<SSLImage 
 										src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
 										alt={artist.name}
-										class="w-full h-full object-cover"
+										className="w-full h-full object-cover"
 									/>
 								{:else}
 									<div class="w-full h-full flex items-center justify-center">
@@ -260,10 +261,10 @@
 						<div class="music-card group">
 							<div class="music-card-image relative mb-3">
 								{#if playlist.thumbnailUrl || playlist.imageUrl}
-									<img 
+									<SSLImage 
 										src={getImageUrl(playlist.thumbnailUrl, playlist.imageUrl)} 
 										alt={playlist.name}
-										class="w-full h-full object-cover"
+										className="w-full h-full object-cover"
 									/>
 								{:else}
 									<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">

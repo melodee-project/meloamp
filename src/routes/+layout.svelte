@@ -3,7 +3,10 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
+	import { theme } from '$lib/stores/theme';
 	import { initI18n, _ } from '$lib/i18n';
+	import { Sun, Moon, LogOut } from 'lucide-svelte';
+	import SSLImage from '$lib/components/SSLImage.svelte';
 	import '../app.css';
 
 	let i18nReady = false;
@@ -41,7 +44,7 @@
 						<div class="flex items-center space-x-8">
 							<!-- Logo -->
 							<a href="/" class="flex items-center space-x-2">
-								<img src="/logo.png" alt="MeloAmp" class="h-8 w-8" />
+								<SSLImage src="/logo.png" alt="MeloAmp" className="h-8 w-8" />
 								<span class="text-xl font-bold text-gray-900 dark:text-white">MeloAmp</span>
 							</a>
 

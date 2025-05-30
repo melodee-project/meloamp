@@ -3,6 +3,7 @@
 	import { api } from '$lib/api';
 	import { _ } from '$lib/i18n';
 	import { Play, Disc3, Star } from 'lucide-svelte';
+	import SSLImage from '$lib/components/SSLImage.svelte';
 	import type { Album } from '$lib/types/music';
 
 	let albums: Album[] = [];
@@ -90,10 +91,10 @@
 				{#each albums as album}
 					<div class="music-card group">
 						<div class="music-card-image relative mb-3">
-							<img 
+							<SSLImage 
 								src={getImageUrl(album.thumbnailUrl, album.imageUrl)} 
 								alt={album.name}
-								class="w-full h-full object-cover"
+								className="w-full h-full object-cover"
 							/>
 							<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
 								<Play size={24} class="text-white" />

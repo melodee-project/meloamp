@@ -2,6 +2,14 @@ import { fetch } from '@tauri-apps/plugin-http';
 import type { Album, Artist, Playlist, Song } from './types/music';
 import type { User } from './types/user';
 
+// Define the client options type according to Tauri v2 HTTP plugin
+interface ClientOptions {
+  danger?: {
+    acceptInvalidCerts?: boolean;
+    acceptInvalidHostnames?: boolean;
+  };
+}
+
 export interface AuthCredentials {
   serverUrl: string;
   email: string;
@@ -79,19 +87,38 @@ class ApiService {
     return this.baseUrl;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    // Check if baseUrl is properly set
-    if (!this.baseUrl || this.baseUrl.includes('localhost:1420')) {
-      console.error('API baseUrl is not properly configured:', this.baseUrl);
-      throw new Error('API configuration error: Base URL not set or invalid. Please login again.');
+  // Image proxy method to handle self-signed SSL certificates
+  async getImageBlob(imageUrl: string): Promise<string> {
+    try {
+      const response = await fetch(imageUrl, {
+        method: 'GET',
+        connectTimeout: 30000,
+        danger: {
+          acceptInvalidCerts: true,
+          acceptInvalidHostnames: true
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to load image: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error('Failed to load image through proxy:', error);
+      return '/placeholder-music.png'; // Return fallback
+    }
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    if (!this.baseUrl) {
+      throw new Error('API base URL not configured. Please authenticate first.');
     }
 
     const url = `${this.baseUrl}${endpoint}`;
-    console.log('Making API request to:', url);
-    
+    console.log(`Making ${options.method || 'GET'} request to:`, url);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -102,27 +129,31 @@ class ApiService {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    console.log('Request headers:', headers);
-    console.log('Request options:', options);
-
     try {
+      // Configure dangerous settings for self-signed certificates
       const response = await fetch(url, {
         ...options,
         headers,
+        // Use Tauri v2 HTTP plugin client options format
+        connectTimeout: 30000,
+        danger: {
+          acceptInvalidCerts: true,
+          acceptInvalidHostnames: true
+        }
       });
-
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+        console.error(`HTTP ${response.status}: ${errorText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      console.log('Response data:', data);
-      return data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        return await response.text() as unknown as T;
+      }
     } catch (error) {
       console.error('Request failed:', error);
       throw error;
