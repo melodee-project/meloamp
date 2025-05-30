@@ -12,7 +12,11 @@
 	let error = '';
 
 	async function handleLogin() {
+		console.log('🔥 handleLogin function called!');
+		console.log('Form values:', { serverUrl, email, password: password ? '***' : 'empty' });
+		
 		if (!serverUrl || !email || !password) {
+			console.log('❌ Validation failed - missing fields');
 			error = 'Please fill in all fields';
 			return;
 		}
@@ -21,12 +25,22 @@
 			isLoading = true;
 			error = '';
 			
-			await auth.login(serverUrl, email, password);
+			console.log('🚀 Starting login process...');
+			console.log('📡 Server URL:', serverUrl);
+			console.log('📧 Email:', email);
+			console.log('🔐 Password length:', password.length);
+			
+			console.log('📞 Calling auth.login...');
+			const result = await auth.login(serverUrl, email, password);
+			console.log('✅ Login successful:', result);
+			console.log('🔄 Redirecting to dashboard...');
 			goto('/');
 		} catch (err) {
+			console.error('❌ Login failed:', err);
 			error = err instanceof Error ? err.message : 'Login failed';
 		} finally {
 			isLoading = false;
+			console.log('🏁 Login process finished');
 		}
 	}
 
@@ -51,7 +65,10 @@
 			</p>
 		</div>
 
-		<form class="mt-8 space-y-6" on:submit|preventDefault={handleLogin}>
+		<form class="mt-8 space-y-6" on:submit|preventDefault={(e) => {
+			console.log('📝 Form submit event triggered!', e);
+			handleLogin();
+		}}>
 			{#if error}
 				<div class="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4">
 					<p class="text-red-700 dark:text-red-300 text-sm">{error}</p>
@@ -74,7 +91,7 @@
 							required
 							bind:value={serverUrl}
 							class="appearance-none relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-							placeholder="https://your-server.com"
+							placeholder="http://192.168.8.130/api/v1/"
 						/>
 					</div>
 				</div>
@@ -137,6 +154,7 @@
 				<button
 					type="submit"
 					disabled={isLoading}
+					on:click={() => console.log('🖱️ Submit button clicked!')}
 					class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				>
 					{#if isLoading}

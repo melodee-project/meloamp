@@ -22,8 +22,14 @@ function createAuthStore() {
 	return {
 		subscribe,
 		async login(apiUrl: string, email: string, password: string) {
+			console.log('🏪 Auth store login called');
+			console.log('📡 API URL:', apiUrl);
+			console.log('📧 Email:', email);
+			
 			try {
+				console.log('📞 Calling api.login...');
 				const response = await api.login({ serverUrl: apiUrl, email, password });
+				console.log('✅ API login response:', response);
 				
 				const newState: AuthState = {
 					isAuthenticated: true,
@@ -33,11 +39,14 @@ function createAuthStore() {
 				};
 
 				// Store in localStorage
+				console.log('💾 Storing auth state in localStorage');
 				localStorage.setItem('auth', JSON.stringify(newState));
 				
+				console.log('🔄 Updating auth store state');
 				set(newState);
 				return response;
 			} catch (error) {
+				console.error('❌ Auth store login error:', error);
 				throw error;
 			}
 		},

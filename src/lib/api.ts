@@ -44,11 +44,34 @@ class ApiService {
   private token: string = '';
 
   setBaseUrl(url: string) {
-    this.baseUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+    // Ensure the URL ends with /api/v1 (no trailing slash)
+    let cleanUrl = url.trim();
+    
+    // Remove trailing slash if present
+    if (cleanUrl.endsWith('/')) {
+      cleanUrl = cleanUrl.slice(0, -1);
+    }
+    
+    // Ensure it ends with /api/v1
+    if (!cleanUrl.endsWith('/api/v1')) {
+      if (cleanUrl.endsWith('/api')) {
+        cleanUrl += '/v1';
+      } else if (!cleanUrl.includes('/api')) {
+        cleanUrl += '/api/v1';
+      }
+    }
+    
+    this.baseUrl = cleanUrl;
+    console.log('API Base URL set to:', this.baseUrl);
   }
 
   setToken(token: string) {
     this.token = token;
+  }
+
+  // Test method to verify URL construction
+  getFullUrl(endpoint: string): string {
+    return `${this.baseUrl}${endpoint}`;
   }
 
   private async request<T>(
@@ -56,6 +79,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    console.log('Making API request to:', url);
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -68,20 +92,44 @@ class ApiService {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    console.log('Request headers:', headers);
+    console.log('Request options:', options);
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('Request failed:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async login(credentials: AuthCredentials): Promise<{ token: string; user: User }> {
+    console.log('Login attempt with credentials:', { 
+      serverUrl: credentials.serverUrl, 
+      email: credentials.email 
+    });
+    
     this.setBaseUrl(credentials.serverUrl);
+    
+    // Log the full URL that will be used
+    const fullUrl = this.getFullUrl('/user/authenticate');
+    console.log('Full authentication URL:', fullUrl);
     
     const response = await this.request<{ token: string; user: User }>('/user/authenticate', {
       method: 'POST',
