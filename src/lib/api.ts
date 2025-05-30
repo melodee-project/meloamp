@@ -138,10 +138,10 @@ class ApiService {
     this.setBaseUrl(credentials.serverUrl);
     
     // Log the full URL that will be used
-    const fullUrl = this.getFullUrl('/user/authenticate');
+    const fullUrl = this.getFullUrl('/users/authenticate');
     console.log('Full authentication URL:', fullUrl);
     
-    const response = await this.request<{ token: string; user: User }>('/user/authenticate', {
+    const response = await this.request<{ token: string; user: User }>('/users/authenticate', {
       method: 'POST',
       body: JSON.stringify({
         email: credentials.email,
@@ -154,7 +154,7 @@ class ApiService {
   }
 
   async getProfile(): Promise<User> {
-    return this.request<User>('/user/me');
+    return this.request<User>('/users/me');
   }
 
   // Artists
@@ -167,7 +167,9 @@ class ApiService {
   }
 
   async getRecentArtists(limit: number = 10): Promise<Artist[]> {
-    const response = await this.request<PaginatedResponse<Artist>>(`/artists/recent?limit=${limit}`);
+    const response = await this.request<PaginatedResponse<Artist>>(`/artists/recent?limit=${limit}`, {
+      method: 'POST'
+    });
     return response.data;
   }
 
@@ -181,12 +183,16 @@ class ApiService {
   }
 
   async getRecentAlbums(limit: number = 10): Promise<Album[]> {
-    const response = await this.request<PaginatedResponse<Album>>(`/albums/recent?limit=${limit}`);
+    const response = await this.request<PaginatedResponse<Album>>(`/albums/recent?limit=${limit}`, {
+      method: 'POST'
+    });
     return response.data;
   }
 
   async getArtistAlbums(artistId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Album>> {
-    return this.request<PaginatedResponse<Album>>(`/artists/${artistId}/albums?page=${page}&pageSize=${pageSize}`);
+    return this.request<PaginatedResponse<Album>>(`/artists/${artistId}/albums?page=${page}&pageSize=${pageSize}`, {
+      method: 'POST'
+    });
   }
 
   // Songs
@@ -199,17 +205,23 @@ class ApiService {
   }
 
   async getRecentSongs(limit: number = 10): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/songs/recent?limit=${limit}`);
+    const response = await this.request<PaginatedResponse<Song>>(`/songs/recent?limit=${limit}`, {
+      method: 'POST'
+    });
     return response.data;
   }
 
   async getAlbumSongs(albumId: string): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/albums/${albumId}/songs`);
+    const response = await this.request<PaginatedResponse<Song>>(`/albums/${albumId}/songs`, {
+      method: 'POST'
+    });
     return response.data;
   }
 
   async getArtistSongs(artistId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Song>> {
-    return this.request<PaginatedResponse<Song>>(`/artists/${artistId}/songs?page=${page}&pageSize=${pageSize}`);
+    return this.request<PaginatedResponse<Song>>(`/artists/${artistId}/songs?page=${page}&pageSize=${pageSize}`, {
+      method: 'POST'
+    });
   }
 
   // Playlists
@@ -222,7 +234,9 @@ class ApiService {
   }
 
   async getPlaylistSongs(playlistId: string): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/playlist/${playlistId}/songs`);
+    const response = await this.request<PaginatedResponse<Song>>(`/playlist/${playlistId}/songs`, {
+      method: 'POST'
+    });
     return response.data;
   }
 

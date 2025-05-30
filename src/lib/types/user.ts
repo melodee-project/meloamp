@@ -7,7 +7,7 @@ export interface User {
 	isAdmin: boolean;
 	isEditor: boolean;
 	roles?: string[];
-	songPlayed: number;
+	songsPlayed: number;
 	artistsLiked: number;
     artistsDisliked: number;
     albumsLiked: number;
