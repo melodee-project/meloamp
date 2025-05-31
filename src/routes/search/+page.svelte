@@ -9,19 +9,29 @@
 	import { debounce } from '$lib/utils/debounce';
 	import type { Artist, Album, Song, Playlist } from '$lib/types/music';
 	import type { SearchType } from '$lib/stores/theme';
+	import type { SearchResults, SearchResultData, PaginationMeta } from '$lib/api';
 
 	let query = '';
 	let selectedTypes: SearchType[] = ['artists', 'albums', 'songs', 'playlists'];
-	let searchResults: {
-		artists: Artist[];
-		albums: Album[];
-		songs: Song[];
-		playlists: Playlist[];
-	} = {
+	let currentPage = 1;
+	let pageSize = 20;
+	let searchResults: SearchResultData = {
 		artists: [],
+		totalArtists: 0,
 		albums: [],
+		totalAlbums: 0,
 		songs: [],
-		playlists: []
+		totalSongs: 0,
+		playlists: [],
+		totalPlaylists: 0
+	};
+	let paginationMeta: PaginationMeta = {
+		totalCount: 0,
+		pageSize: 20,
+		currentPage: 1,
+		totalPages: 1,
+		hasPreviousPage: false,
+		hasNextPage: false
 	};
 	let isLoading = false;
 	let error = '';
@@ -37,6 +47,7 @@
 	onMount(() => {
 		const urlQuery = $page.url.searchParams.get('q');
 		const urlTypes = $page.url.searchParams.get('types');
+		const urlPage = $page.url.searchParams.get('page');
 		
 		if (urlQuery) {
 			query = urlQuery;
@@ -50,41 +61,33 @@
 				selectedTypes = types;
 			}
 		}
+
+		if (urlPage) {
+			const pageNum = parseInt(urlPage, 10);
+			if (pageNum > 0) {
+				currentPage = pageNum;
+			}
+		}
 		
 		if (urlQuery) {
-			performSearch();
+			performSearch(currentPage);
 		}
 	});
 
-	async function performSearch() {
+	async function performSearch(page: number = 1) {
 		if (!query.trim()) return;
 
 		try {
 			isLoading = true;
 			error = '';
 			hasSearched = true;
+			currentPage = page;
 
-			// Call API for each selected type and combine results
-			const results = {
-				artists: [] as Artist[],
-				albums: [] as Album[],
-				songs: [] as Song[],
-				playlists: [] as Playlist[]
-			};
-
-			for (const type of selectedTypes) {
-				try {
-					const typeResult = await api.search(query.trim(), type);
-					results.artists.push(...typeResult.artists);
-					results.albums.push(...typeResult.albums);
-					results.songs.push(...typeResult.songs);
-					results.playlists.push(...typeResult.playlists);
-				} catch (typeError) {
-					console.warn(`Search failed for type ${type}:`, typeError);
-				}
-			}
-
-			searchResults = results;
+			// Make a single API call with all selected types and pagination
+			console.log('🔍 Performing search with types:', selectedTypes, 'page:', page);
+			const response = await api.search(query.trim(), selectedTypes, page, pageSize);
+			searchResults = response.data;
+			paginationMeta = response.meta;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Search failed';
 			console.error('Search error:', err);
@@ -93,11 +96,11 @@
 		}
 	}
 
-	// Debounced search function
-	const debouncedSearch = debounce(performSearch, 2000);
+	// Debounced search function - always search from page 1
+	const debouncedSearch = debounce(() => performSearch(1), 2000);
 
 	function handleSubmit() {
-		performSearch();
+		performSearch(1);
 	}
 
 	function handleSearchInput() {
@@ -119,15 +122,33 @@
 		}
 
 		if (query.trim()) {
-			performSearch();
+			performSearch(1); // Reset to page 1 when changing filters
 		}
 	}
 
 	function getTotalResults(): number {
-		return searchResults.artists.length + 
-			   searchResults.albums.length + 
-			   searchResults.songs.length + 
-			   searchResults.playlists.length;
+		return searchResults.totalArtists + 
+			   searchResults.totalAlbums + 
+			   searchResults.totalSongs + 
+			   searchResults.totalPlaylists;
+	}
+
+	async function nextPage() {
+		if (paginationMeta.hasNextPage) {
+			await performSearch(currentPage + 1);
+		}
+	}
+
+	async function previousPage() {
+		if (paginationMeta.hasPreviousPage) {
+			await performSearch(currentPage - 1);
+		}
+	}
+
+	async function goToPage(page: number) {
+		if (page >= 1 && page <= paginationMeta.totalPages) {
+			await performSearch(page);
+		}
 	}
 </script>
 
@@ -201,7 +222,10 @@
 	{:else if hasSearched && !isLoading}
 		{#if getTotalResults() > 0}
 			<div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-				Found {getTotalResults()} results for "{query}"
+				Found {getTotalResults()} total results for "{query}" 
+				{#if paginationMeta.totalPages > 1}
+					(showing page {paginationMeta.currentPage} of {paginationMeta.totalPages})
+				{/if}
 			</div>
 
 			<!-- Artists Results -->
@@ -209,7 +233,7 @@
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
 						<Users size={24} class="text-primary-500" />
-						<span class="text-gray-900 dark:text-white">Artists ({searchResults.artists.length})</span>
+						<span class="text-gray-900 dark:text-white">Artists ({searchResults.totalArtists})</span>
 					</h2>
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 						{#each searchResults.artists as artist}
@@ -247,7 +271,7 @@
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
 						<Disc3 size={24} class="text-primary-500" />
-						<span class="text-gray-900 dark:text-white">Albums ({searchResults.albums.length})</span>
+						<span class="text-gray-900 dark:text-white">Albums ({searchResults.totalAlbums})</span>
 					</h2>
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 						{#each searchResults.albums as album}
@@ -280,7 +304,7 @@
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
 						<Music size={24} class="text-primary-500" />
-						<span class="text-gray-900 dark:text-white">Songs ({searchResults.songs.length})</span>
+						<span class="text-gray-900 dark:text-white">Songs ({searchResults.totalSongs})</span>
 					</h2>
 					<div class="space-y-2">
 						{#each searchResults.songs as song}
@@ -315,7 +339,7 @@
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
 						<ListMusic size={24} class="text-primary-500" />
-						<span class="text-gray-900 dark:text-white">Playlists ({searchResults.playlists.length})</span>
+						<span class="text-gray-900 dark:text-white">Playlists ({searchResults.totalPlaylists})</span>
 					</h2>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 						{#each searchResults.playlists as playlist}
@@ -340,6 +364,53 @@
 						{/each}
 					</div>
 				</section>
+			{/if}
+
+			<!-- Pagination Controls -->
+			{#if paginationMeta.totalPages > 1}
+				<div class="flex items-center justify-center space-x-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-600">
+					<button
+						on:click={previousPage}
+						disabled={!paginationMeta.hasPreviousPage || isLoading}
+						class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					>
+						Previous
+					</button>
+					
+					<!-- Page Numbers -->
+					<div class="flex space-x-1">
+						{#each Array.from({ length: Math.min(5, paginationMeta.totalPages) }, (_, i) => {
+							const startPage = Math.max(1, paginationMeta.currentPage - 2);
+							const endPage = Math.min(paginationMeta.totalPages, startPage + 4);
+							const adjustedStartPage = Math.max(1, endPage - 4);
+							return adjustedStartPage + i;
+						}).filter(page => page <= paginationMeta.totalPages) as page}
+							<button
+								on:click={() => goToPage(page)}
+								disabled={isLoading}
+								class="px-3 py-2 text-sm font-medium rounded-lg transition-colors {page === paginationMeta.currentPage 
+									? 'bg-primary-600 text-white' 
+									: 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'} disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								{page}
+							</button>
+						{/each}
+					</div>
+					
+					<button
+						on:click={nextPage}
+						disabled={!paginationMeta.hasNextPage || isLoading}
+						class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					>
+						Next
+					</button>
+				</div>
+
+				<!-- Results Info -->
+				<div class="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+					Showing {Math.min(paginationMeta.pageSize, paginationMeta.totalCount - (paginationMeta.currentPage - 1) * paginationMeta.pageSize)} 
+					of {paginationMeta.totalCount} results
+				</div>
 			{/if}
 		{:else}
 			<div class="text-center py-12">

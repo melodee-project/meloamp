@@ -1,5 +1,5 @@
 import { fetch } from '@tauri-apps/plugin-http';
-import type { Album, Artist, Playlist, Song } from './types/music';
+import type { Album as Albums, Artist as Artists, Playlist as Playlists, Song as Songs } from './types/music';
 import type { User } from './types/user';
 
 // Define the client options type according to Tauri v2 HTTP plugin
@@ -22,10 +22,15 @@ export interface SearchResults {
 }
 
 export interface SearchResultData {
-	artists: Artist[];
-	albums: Album[];
-	songs: Song[];
-	playlists: Playlist[];
+	artists: Artists[];
+  totalArtists: number;
+	albums: Albums[];
+  totalAlbums: number;
+	songs: Songs[];
+  totalSongs: number;
+	playlists: Playlists[];
+  totalPlaylists: number;
+  totalCount: number;
 }
 
 export interface PaginationMeta {
@@ -189,97 +194,97 @@ class ApiService {
   }
 
   // Artists
-  async getArtists(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Artist>> {
-    return this.request<PaginatedResponse<Artist>>(`/artists?page=${page}&pageSize=${pageSize}`);
+  async getArtists(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Artists>> {
+    return this.request<PaginatedResponse<Artists>>(`/artists?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getArtist(id: string): Promise<Artist> {
-    return this.request<Artist>(`/artist/${id}`);
+  async getArtist(id: string): Promise<Artists> {
+    return this.request<Artists>(`/artist/${id}`);
   }
 
-  async getRecentArtists(limit: number = 10): Promise<Artist[]> {
-    const response = await this.request<PaginatedResponse<Artist>>(`/artists/recent?limit=${limit}`, {
+  async getRecentArtists(limit: number = 10): Promise<Artists[]> {
+    const response = await this.request<PaginatedResponse<Artists>>(`/artists/recent?limit=${limit}`, {
       method: 'POST'
     });
     return response.data;
   }
 
   // Albums
-  async getAlbums(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Album>> {
-    return this.request<PaginatedResponse<Album>>(`/albums?page=${page}&pageSize=${pageSize}`);
+  async getAlbums(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Albums>> {
+    return this.request<PaginatedResponse<Albums>>(`/albums?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getAlbum(id: string): Promise<Album> {
-    return this.request<Album>(`/album/${id}`);
+  async getAlbum(id: string): Promise<Albums> {
+    return this.request<Albums>(`/album/${id}`);
   }
 
-  async getRecentAlbums(limit: number = 10): Promise<Album[]> {
-    const response = await this.request<PaginatedResponse<Album>>(`/albums/recent?limit=${limit}`, {
+  async getRecentAlbums(limit: number = 10): Promise<Albums[]> {
+    const response = await this.request<PaginatedResponse<Albums>>(`/albums/recent?limit=${limit}`, {
       method: 'POST'
     });
     return response.data;
   }
 
-  async getArtistAlbums(artistId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Album>> {
-    return this.request<PaginatedResponse<Album>>(`/artists/${artistId}/albums?page=${page}&pageSize=${pageSize}`, {
+  async getArtistAlbums(artistId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Albums>> {
+    return this.request<PaginatedResponse<Albums>>(`/artists/${artistId}/albums?page=${page}&pageSize=${pageSize}`, {
       method: 'POST'
     });
   }
 
   // Songs
-  async getSongs(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Song>> {
-    return this.request<PaginatedResponse<Song>>(`/songs?page=${page}&pageSize=${pageSize}`);
+  async getSongs(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Songs>> {
+    return this.request<PaginatedResponse<Songs>>(`/songs?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getSong(id: string): Promise<Song> {
-    return this.request<Song>(`/song/${id}`);
+  async getSong(id: string): Promise<Songs> {
+    return this.request<Songs>(`/song/${id}`);
   }
 
-  async getRecentSongs(limit: number = 10): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/songs/recent?limit=${limit}`, {
+  async getRecentSongs(limit: number = 10): Promise<Songs[]> {
+    const response = await this.request<PaginatedResponse<Songs>>(`/songs/recent?limit=${limit}`, {
       method: 'POST'
     });
     return response.data;
   }
 
-  async getAlbumSongs(albumId: string): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/albums/${albumId}/songs`, {
+  async getAlbumSongs(albumId: string): Promise<Songs[]> {
+    const response = await this.request<PaginatedResponse<Songs>>(`/albums/${albumId}/songs`, {
       method: 'POST'
     });
     return response.data;
   }
 
-  async getArtistSongs(artistId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Song>> {
-    return this.request<PaginatedResponse<Song>>(`/artists/${artistId}/songs?page=${page}&pageSize=${pageSize}`, {
+  async getArtistSongs(artistId: string, page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Songs>> {
+    return this.request<PaginatedResponse<Songs>>(`/artists/${artistId}/songs?page=${page}&pageSize=${pageSize}`, {
       method: 'POST'
     });
   }
 
   // Playlists
-  async getPlaylists(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Playlist>> {
-    return this.request<PaginatedResponse<Playlist>>(`/playlists?page=${page}&pageSize=${pageSize}`);
+  async getPlaylists(page: number = 1, pageSize: number = 20): Promise<PaginatedResponse<Playlists>> {
+    return this.request<PaginatedResponse<Playlists>>(`/playlists?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getPlaylist(id: string): Promise<Playlist> {
-    return this.request<Playlist>(`/playlist/${id}`);
+  async getPlaylist(id: string): Promise<Playlists> {
+    return this.request<Playlists>(`/playlist/${id}`);
   }
 
-  async getPlaylistSongs(playlistId: string): Promise<Song[]> {
-    const response = await this.request<PaginatedResponse<Song>>(`/playlist/${playlistId}/songs`, {
+  async getPlaylistSongs(playlistId: string): Promise<Songs[]> {
+    const response = await this.request<PaginatedResponse<Songs>>(`/playlist/${playlistId}/songs`, {
       method: 'POST'
     });
     return response.data;
   }
 
-  async createPlaylist(name: string, description?: string, isPublic: boolean = false): Promise<Playlist> {
-    return this.request<Playlist>('/playlists', {
+  async createPlaylist(name: string, description?: string, isPublic: boolean = false): Promise<Playlists> {
+    return this.request<Playlists>('/playlists', {
       method: 'POST',
       body: JSON.stringify({ name, description, isPublic }),
     });
   }
 
-  async updatePlaylist(id: string, updates: Partial<Playlist>): Promise<Playlist> {
-    return this.request<Playlist>(`/playlists/${id}`, {
+  async updatePlaylist(id: string, updates: Partial<Playlists>): Promise<Playlists> {
+    return this.request<Playlists>(`/playlists/${id}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
@@ -305,21 +310,14 @@ class ApiService {
   }
 
   // Search
-  async search(query: string, type?: 'artists' | 'albums' | 'songs' | 'playlists'): Promise<{
-    artists: Artist[];
-    albums: Album[];
-    songs: Song[];
-    playlists: Playlist[];
-  }> {
-    const params = new URLSearchParams({ q: query });
-    if (type) params.append('type', type);
+  async search(query: string, types?: ('artists' | 'albums' | 'songs' | 'playlists')[], page: number = 1, pageSize: number = 20): Promise<SearchResults> {
+    const params = new URLSearchParams({ q: query, page: page.toString(), pageSize: pageSize.toString() });
+    if (types && types.length > 0) {
+      // Pass multiple types as comma-separated values
+      params.append('type', types.join(','));
+    }
     
-    return this.request<{
-      artists: Artist[];
-      albums: Album[];
-      songs: Song[];
-      playlists: Playlist[];
-    }>(`/search?${params.toString()}`, {
+    return this.request<SearchResults>(`/search?${params.toString()}`, {
       method: 'POST'
     });
   }
