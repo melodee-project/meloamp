@@ -51,10 +51,24 @@ function createAuthStore() {
 			}
 		},
 		logout() {
+			console.log('🔴 Logging out and clearing auth state');
 			localStorage.removeItem('auth');
+			api.setToken('');
+			api.setBaseUrl('');
 			set(initialState);
 		},
-		init() {
+		async validateToken(): Promise<boolean> {
+			try {
+				console.log('🔍 Validating stored token...');
+				await api.getProfile();
+				console.log('✅ Token is valid');
+				return true;
+			} catch (error) {
+				console.log('❌ Token validation failed:', error);
+				return false;
+			}
+		},
+		async init() {
 			console.log('🏁 Auth store init called');
 			const stored = localStorage.getItem('auth');
 			if (stored) {
@@ -70,20 +84,33 @@ function createAuthStore() {
 						api.setBaseUrl(authState.apiUrl);
 						api.setToken(authState.token);
 						
-						// Verify the configuration was applied
-						console.log('🔍 API base URL after configuration:', api.getCurrentBaseUrl());
+						// Validate the token by making a test API call
+						console.log('🔍 Validating token with server...');
+						const isTokenValid = await this.validateToken();
 						
-						set(authState);
-						console.log('✅ Auth state restored successfully');
+						if (isTokenValid) {
+							console.log('✅ Token is valid, restoring auth state');
+							set(authState);
+						} else {
+							console.log('❌ Token is invalid/expired, clearing auth state');
+							localStorage.removeItem('auth');
+							api.setToken('');
+							api.setBaseUrl('');
+							set(initialState);
+						}
 					} else {
 						console.log('❌ Invalid auth state, missing required fields');
+						localStorage.removeItem('auth');
+						set(initialState);
 					}
 				} catch (error) {
-					console.error('❌ Failed to parse stored auth state:', error);
+					console.error('❌ Failed to parse stored auth state or validate token:', error);
 					localStorage.removeItem('auth');
+					set(initialState);
 				}
 			} else {
 				console.log('ℹ️ No stored auth state found');
+				set(initialState);
 			}
 		}
 	};

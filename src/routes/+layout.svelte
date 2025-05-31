@@ -3,29 +3,48 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
-	import { theme } from '$lib/stores/theme';
 	import { initI18n, _ } from '$lib/i18n';
 	import { Sun, Moon, LogOut } from 'lucide-svelte';
 	import SSLImage from '$lib/components/SSLImage.svelte';
 	import '../app.css';
 
 	let i18nReady = false;
+	let authInitialized = false;
 
 	onMount(async () => {
-		// Initialize i18n first
-		await initI18n();
-		i18nReady = true;
+		try {
+			// Clear any potentially corrupted auth data first
+			console.log('🧹 Clearing any existing auth data as precaution...');
+			localStorage.removeItem('auth');
+			
+			// Initialize i18n first
+			console.log('🌍 Initializing i18n...');
+			await initI18n();
+			i18nReady = true;
+			console.log('✅ i18n initialized');
 
-		// Initialize auth
-		auth.init();
+			// Initialize auth (now async)
+			console.log('🔐 Initializing auth...');
+			await auth.init();
+			authInitialized = true;
+			console.log('✅ Auth initialized');
 
-		// Redirect to login if not authenticated and not already on login page
-		auth.subscribe(($auth) => {
-			if (!$auth.isAuthenticated && $page.route.id !== '/login') {
-				goto('/login');
-			}
-		});
+		} catch (error) {
+			console.error('❌ Error during initialization:', error);
+			// Ensure we show something even if initialization fails
+			i18nReady = true;
+			authInitialized = true;
+		}
 	});
+
+	// React to auth state changes
+	$: if (authInitialized && i18nReady) {
+		console.log('🔄 Auth state changed:', $auth.isAuthenticated);
+		if (!$auth.isAuthenticated && $page.route.id !== '/login') {
+			console.log('🔄 Redirecting to login...');
+			goto('/login');
+		}
+	}
 </script>
 
 <svelte:head>
@@ -33,7 +52,7 @@
 	<meta name="description" content="Your personal music streaming application" />
 </svelte:head>
 
-{#if i18nReady}
+{#if i18nReady && authInitialized}
 	{#if $auth.isAuthenticated}
 		<!-- Main App Layout -->
 		<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
