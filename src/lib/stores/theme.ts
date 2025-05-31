@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 export type Theme = 'light' | 'dark' | 'system';
+export type SearchType = 'artists' | 'albums' | 'songs' | 'playlists';
 
 export interface ThemeState {
 	theme: Theme;
@@ -11,6 +12,7 @@ export interface ThemeState {
 		volume: number;
 		quality: 'low' | 'medium' | 'high';
 		notifications: boolean;
+		defaultSearchTypes: SearchType[];
 	};
 }
 
@@ -21,7 +23,8 @@ const defaultThemeState: ThemeState = {
 		autoPlay: false,
 		volume: 0.8,
 		quality: 'high',
-		notifications: true
+		notifications: true,
+		defaultSearchTypes: ['artists', 'albums', 'songs', 'playlists']
 	}
 };
 

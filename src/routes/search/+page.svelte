@@ -6,9 +6,12 @@
 	import { Search, Music, Users, Disc3, ListMusic, Star } from 'lucide-svelte';
 	import SSLImage from '$lib/components/SSLImage.svelte';
 	import { getContextualImageUrl, ImageContext } from '$lib/utils/imageUtils';
+	import { debounce } from '$lib/utils/debounce';
 	import type { Artist, Album, Song, Playlist } from '$lib/types/music';
+	import type { SearchType } from '$lib/stores/theme';
 
 	let query = '';
+	let selectedTypes: SearchType[] = ['artists', 'albums', 'songs', 'playlists'];
 	let searchResults: {
 		artists: Artist[];
 		albums: Album[];
@@ -24,10 +27,31 @@
 	let error = '';
 	let hasSearched = false;
 
+	const searchTypes = [
+		{ value: 'artists', label: 'Artists', icon: Users },
+		{ value: 'albums', label: 'Albums', icon: Disc3 },
+		{ value: 'songs', label: 'Songs', icon: Music },
+		{ value: 'playlists', label: 'Playlists', icon: ListMusic }
+	] as const;
+
 	onMount(() => {
 		const urlQuery = $page.url.searchParams.get('q');
+		const urlTypes = $page.url.searchParams.get('types');
+		
 		if (urlQuery) {
 			query = urlQuery;
+		}
+		
+		if (urlTypes) {
+			const types = urlTypes.split(',').filter(t => 
+				['artists', 'albums', 'songs', 'playlists'].includes(t)
+			) as SearchType[];
+			if (types.length > 0) {
+				selectedTypes = types;
+			}
+		}
+		
+		if (urlQuery) {
 			performSearch();
 		}
 	});
@@ -40,7 +64,27 @@
 			error = '';
 			hasSearched = true;
 
-			searchResults = await api.search(query.trim());
+			// Call API for each selected type and combine results
+			const results = {
+				artists: [] as Artist[],
+				albums: [] as Album[],
+				songs: [] as Song[],
+				playlists: [] as Playlist[]
+			};
+
+			for (const type of selectedTypes) {
+				try {
+					const typeResult = await api.search(query.trim(), type);
+					results.artists.push(...typeResult.artists);
+					results.albums.push(...typeResult.albums);
+					results.songs.push(...typeResult.songs);
+					results.playlists.push(...typeResult.playlists);
+				} catch (typeError) {
+					console.warn(`Search failed for type ${type}:`, typeError);
+				}
+			}
+
+			searchResults = results;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Search failed';
 			console.error('Search error:', err);
@@ -49,8 +93,34 @@
 		}
 	}
 
+	// Debounced search function
+	const debouncedSearch = debounce(performSearch, 2000);
+
 	function handleSubmit() {
 		performSearch();
+	}
+
+	function handleSearchInput() {
+		if (query.trim()) {
+			debouncedSearch();
+		}
+	}
+
+	function handleTypeToggle(type: SearchType) {
+		if (selectedTypes.includes(type)) {
+			selectedTypes = selectedTypes.filter(t => t !== type);
+		} else {
+			selectedTypes = [...selectedTypes, type];
+		}
+		
+		// Ensure at least one type is always selected
+		if (selectedTypes.length === 0) {
+			selectedTypes = ['artists'];
+		}
+
+		if (query.trim()) {
+			performSearch();
+		}
 	}
 
 	function getTotalResults(): number {
@@ -72,6 +142,22 @@
 		<h1 class="text-3xl font-bold">{$_('search.title')}</h1>
 	</div>
 
+
+	<!-- Search Type Tabs -->
+	<div class="flex flex-wrap gap-2">
+		{#each searchTypes as type}
+			<button
+				on:click={() => handleTypeToggle(type.value)}
+				class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm {selectedTypes.includes(type.value) 
+					? 'bg-blue-600 text-white' 
+					: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}"
+			>
+				<svelte:component this={type.icon} size={16} />
+				<span>{type.label}</span>
+			</button>
+		{/each}
+	</div>	
+
 	<!-- Search Form -->
 	<form on:submit|preventDefault={handleSubmit} class="max-w-2xl">
 		<div class="relative">
@@ -81,6 +167,7 @@
 			<input
 				type="text"
 				bind:value={query}
+				on:input={handleSearchInput}
 				placeholder={$_('search.placeholder')}
 				class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 			/>

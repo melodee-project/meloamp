@@ -2,7 +2,8 @@
 	import { themeStore } from '$lib/stores/theme';
 	import { _, locale } from '$lib/i18n';
 	import { supportedLocales, setLocale } from '$lib/i18n';
-	import { Settings, Palette, Globe, Volume2, Bell } from 'lucide-svelte';
+	import { Settings, Palette, Globe, Volume2, Bell, Search } from 'lucide-svelte';
+	import type { SearchType } from '$lib/stores/theme';
 
 	let selectedTheme = $themeStore.theme;
 	let selectedLanguage = $locale || 'en';
@@ -10,6 +11,7 @@
 	let volume = $themeStore.preferences.volume;
 	let quality = $themeStore.preferences.quality;
 	let notifications = $themeStore.preferences.notifications;
+	let defaultSearchTypes = [...$themeStore.preferences.defaultSearchTypes];
 
 	const themes = [
 		{ value: 'light', label: 'settings.light' },
@@ -23,6 +25,13 @@
 		{ value: 'high', label: 'settings.high' }
 	];
 
+	const searchTypes = [
+		{ value: 'artists', label: 'Artists' },
+		{ value: 'albums', label: 'Albums' },
+		{ value: 'songs', label: 'Songs' },
+		{ value: 'playlists', label: 'Playlists' }
+	] as { value: SearchType; label: string }[];
+
 	function handleThemeChange() {
 		themeStore.setTheme(selectedTheme);
 	}
@@ -34,25 +43,43 @@
 		}
 	}
 
+	function handleSearchTypeToggle(type: SearchType) {
+		if (defaultSearchTypes.includes(type)) {
+			defaultSearchTypes = defaultSearchTypes.filter(t => t !== type);
+		} else {
+			defaultSearchTypes = [...defaultSearchTypes, type];
+		}
+		
+		// Ensure at least one type is always selected
+		if (defaultSearchTypes.length === 0) {
+			defaultSearchTypes = ['artists'];
+		}
+		
+		handlePreferenceChange();
+	}
+
 	function handlePreferenceChange() {
 		themeStore.updatePreferences({
 			autoPlay,
 			volume,
 			quality,
-			notifications
+			notifications,
+			defaultSearchTypes
 		});
 	}
 
-	// React to changes
-	$: if (selectedTheme !== $themeStore.theme) {
-		handleThemeChange();
-	}
-
+	// React to language changes
 	$: if (selectedLanguage !== $locale) {
 		handleLanguageChange();
 	}
 
-	$: handlePreferenceChange();
+	// React to preference changes
+	$: if (autoPlay !== $themeStore.preferences.autoPlay || 
+		   volume !== $themeStore.preferences.volume || 
+		   quality !== $themeStore.preferences.quality || 
+		   notifications !== $themeStore.preferences.notifications) {
+		handlePreferenceChange();
+	}
 </script>
 
 <svelte:head>
@@ -62,15 +89,15 @@
 <div class="space-y-8">
 	<!-- Header -->
 	<div class="flex items-center space-x-3">
-		<Settings size={32} class="text-primary-500" />
-		<h1 class="text-3xl font-bold">{$_('settings.title')}</h1>
+		<Settings size={32} class="text-blue-500" />
+		<h1 class="text-3xl font-bold text-gray-900 dark:text-white">{$_('settings.title')}</h1>
 	</div>
 
 	<!-- Theme Settings -->
-	<section class="bg-surface-100-800-token rounded-xl p-6">
+	<section class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
 		<div class="flex items-center space-x-3 mb-6">
-			<Palette size={24} class="text-primary-500" />
-			<h2 class="text-xl font-semibold">{$_('settings.theme')}</h2>
+			<Palette size={24} class="text-blue-500" />
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{$_('settings.theme')}</h2>
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -80,12 +107,13 @@
 						type="radio"
 						bind:group={selectedTheme}
 						value={theme.value}
+						on:change={handleThemeChange}
 						class="sr-only"
 					/>
 					<div 
 						class="p-4 border-2 rounded-lg transition-all {selectedTheme === theme.value 
-							? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
-							: 'border-surface-300-600-token hover:border-surface-400-500-token'}"
+							? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+							: 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}"
 					>
 						<div class="text-center">
 							<div class="w-12 h-12 mx-auto mb-3 rounded-lg {theme.value === 'light' 
@@ -94,7 +122,7 @@
 									? 'bg-gray-900 border border-gray-700' 
 									: 'bg-gradient-to-br from-white to-gray-900 border border-gray-400'}">
 							</div>
-							<span class="font-medium">{$_(theme.label)}</span>
+							<span class="font-medium text-gray-900 dark:text-white">{$_(theme.label)}</span>
 						</div>
 					</div>
 				</label>
@@ -103,16 +131,16 @@
 	</section>
 
 	<!-- Language Settings -->
-	<section class="bg-surface-100-800-token rounded-xl p-6">
+	<section class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
 		<div class="flex items-center space-x-3 mb-6">
-			<Globe size={24} class="text-primary-500" />
-			<h2 class="text-xl font-semibold">{$_('settings.language')}</h2>
+			<Globe size={24} class="text-blue-500" />
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{$_('settings.language')}</h2>
 		</div>
 
 		<div class="max-w-md">
 			<select 
 				bind:value={selectedLanguage}
-				class="w-full px-4 py-3 bg-surface-200-700-token border border-surface-300-600-token rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+				class="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
 			>
 				{#each supportedLocales as locale}
 					<option value={locale.code}>{locale.name}</option>
@@ -122,18 +150,18 @@
 	</section>
 
 	<!-- Audio Preferences -->
-	<section class="bg-surface-100-800-token rounded-xl p-6">
+	<section class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
 		<div class="flex items-center space-x-3 mb-6">
-			<Volume2 size={24} class="text-primary-500" />
-			<h2 class="text-xl font-semibold">{$_('settings.preferences')}</h2>
+			<Volume2 size={24} class="text-blue-500" />
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{$_('settings.preferences')}</h2>
 		</div>
 
 		<div class="space-y-6">
 			<!-- Auto-play -->
 			<div class="flex items-center justify-between">
 				<div>
-					<h3 class="font-medium">{$_('settings.autoPlay')}</h3>
-					<p class="text-sm text-surface-600-300-token">Automatically play music when starting the app</p>
+					<h3 class="font-medium text-gray-900 dark:text-white">{$_('settings.autoPlay')}</h3>
+					<p class="text-sm text-gray-600 dark:text-gray-300">Automatically play music when starting the app</p>
 				</div>
 				<label class="relative inline-flex items-center cursor-pointer">
 					<input 
@@ -141,15 +169,15 @@
 						bind:checked={autoPlay}
 						class="sr-only peer"
 					/>
-					<div class="relative w-11 h-6 bg-surface-300-600-token peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+					<div class="relative w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
 				</label>
 			</div>
 
 			<!-- Default Volume -->
 			<div>
 				<div class="flex items-center justify-between mb-2">
-					<h3 class="font-medium">{$_('settings.volume')}</h3>
-					<span class="text-sm text-surface-600-300-token">{Math.round(volume * 100)}%</span>
+					<h3 class="font-medium text-gray-900 dark:text-white">{$_('settings.volume')}</h3>
+					<span class="text-sm text-gray-600 dark:text-gray-300">{Math.round(volume * 100)}%</span>
 				</div>
 				<input 
 					type="range" 
@@ -157,13 +185,13 @@
 					max="1" 
 					step="0.01"
 					bind:value={volume}
-					class="w-full h-2 bg-surface-300-600-token rounded-lg appearance-none cursor-pointer slider"
+					class="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
 				/>
 			</div>
 
 			<!-- Audio Quality -->
 			<div>
-				<h3 class="font-medium mb-3">{$_('settings.quality')}</h3>
+				<h3 class="font-medium mb-3 text-gray-900 dark:text-white">{$_('settings.quality')}</h3>
 				<div class="grid grid-cols-3 gap-3">
 					{#each qualities as qualityOption}
 						<label class="relative cursor-pointer">
@@ -175,10 +203,10 @@
 							/>
 							<div 
 								class="p-3 text-center border-2 rounded-lg transition-all {quality === qualityOption.value 
-									? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
-									: 'border-surface-300-600-token hover:border-surface-400-500-token'}"
+									? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+									: 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}"
 							>
-								<span class="font-medium">{$_(qualityOption.label)}</span>
+								<span class="font-medium text-gray-900 dark:text-white">{$_(qualityOption.label)}</span>
 							</div>
 						</label>
 					{/each}
@@ -188,11 +216,11 @@
 			<!-- Notifications -->
 			<div class="flex items-center justify-between">
 				<div>
-					<h3 class="font-medium flex items-center space-x-2">
+					<h3 class="font-medium flex items-center space-x-2 text-gray-900 dark:text-white">
 						<Bell size={20} />
 						<span>{$_('settings.notifications')}</span>
 					</h3>
-					<p class="text-sm text-surface-600-300-token">Show notifications for new songs and updates</p>
+					<p class="text-sm text-gray-600 dark:text-gray-300">Show notifications for new songs and updates</p>
 				</div>
 				<label class="relative inline-flex items-center cursor-pointer">
 					<input 
@@ -200,15 +228,42 @@
 						bind:checked={notifications}
 						class="sr-only peer"
 					/>
-					<div class="relative w-11 h-6 bg-surface-300-600-token peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+					<div class="relative w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
 				</label>
 			</div>
 		</div>
 	</section>
 
+	<!-- Search Preferences -->
+	<section class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+		<div class="flex items-center space-x-3 mb-6">
+			<Search size={24} class="text-blue-500" />
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Search Preferences</h2>
+		</div>
+
+		<div>
+			<h3 class="font-medium mb-3 text-gray-900 dark:text-white">Default Search Types</h3>
+			<p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Choose what to search by default when using the header search</p>
+			<div class="space-y-2">
+				{#each searchTypes as searchType}
+					<label class="flex items-center cursor-pointer">
+						<input
+							type="checkbox"
+							checked={defaultSearchTypes.includes(searchType.value)}
+							on:change={() => handleSearchTypeToggle(searchType.value)}
+							class="sr-only peer"
+						/>
+						<div class="relative w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+						<span class="ml-3 font-medium text-gray-900 dark:text-white">{searchType.label}</span>
+					</label>
+				{/each}
+			</div>
+		</div>
+	</section>
+
 	<!-- Save Notice -->
-	<div class="bg-success-100 dark:bg-success-900 border border-success-300 dark:border-success-700 rounded-lg p-4">
-		<p class="text-success-700 dark:text-success-300 text-sm">
+	<div class="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 rounded-lg p-4">
+		<p class="text-green-700 dark:text-green-300 text-sm">
 			✓ Settings are automatically saved as you make changes
 		</p>
 	</div>
@@ -220,7 +275,7 @@
 		height: 20px;
 		width: 20px;
 		border-radius: 50%;
-		background: rgb(var(--color-primary-500));
+		background: rgb(59 130 246); /* blue-500 */
 		cursor: pointer;
 	}
 
@@ -228,7 +283,7 @@
 		height: 20px;
 		width: 20px;
 		border-radius: 50%;
-		background: rgb(var(--color-primary-500));
+		background: rgb(59 130 246); /* blue-500 */
 		cursor: pointer;
 		border: none;
 	}
