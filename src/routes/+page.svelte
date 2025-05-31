@@ -185,55 +185,6 @@
 			{/if}
 		</section>
 
-		<!-- Recent Songs -->
-		<section>
-			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-xl font-semibold flex items-center space-x-2">
-					<Music size={24} class="text-primary-500" />
-					<span class="text-gray-900 dark:text-white">{$_('dashboard.recentSongs')}</span>
-				</h2>
-				<a href="/songs" class="text-primary-500 hover:text-primary-600 text-sm font-medium">
-					{$_('dashboard.viewAll')}
-				</a>
-			</div>
-			
-			{#if recentSongs.length > 0}
-				<div class="space-y-2">
-					{#each recentSongs as song, index}
-						<div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group">
-							<div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center relative overflow-hidden">
-								{#if song.thumbnailUrl || song.imageUrl}
-									<SSLImage src={getContextualImageUrl(song, ImageContext.LIST_ITEM)} alt={song.title} className="w-full h-full object-cover" />
-								{:else}
-									<Music size={20} class="text-gray-500" />
-								{/if}
-								<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-									<Play size={16} class="text-white" />
-								</button>
-							</div>
-							<div class="flex-1 min-w-0">
-								<div class="flex items-center space-x-2">
-									<h3 class="font-medium truncate">{song.title}</h3>
-									{#if song.userStarred}
-										<Star size={14} class="text-yellow-400 fill-current" />
-									{/if}
-								</div>
-								<p class="text-sm text-gray-600 dark:text-gray-300 truncate">{song.artist.name} • {song.album.name}</p>
-								{#if song.playCount > 0}
-									<p class="text-xs text-gray-500 dark:text-gray-400">{formatNumber(song.playCount)} plays</p>
-								{/if}
-							</div>
-							<div class="text-sm text-gray-500 dark:text-gray-400">
-								{song.durationFormatted}
-							</div>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-gray-600 dark:text-gray-300 text-center py-8">{$_('dashboard.noData')}</p>
-			{/if}
-		</section>
-
 		<!-- Your Playlists -->
 		<section>
 			<div class="flex items-center justify-between mb-4">

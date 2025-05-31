@@ -7,7 +7,7 @@
 	import SSLImage from '$lib/components/SSLImage.svelte';
 	import { getContextualImageUrl, ImageContext } from '$lib/utils/imageUtils';
 	import { debounce } from '$lib/utils/debounce';
-	import type { Artist, Album, Song, Playlist } from '$lib/types/music';
+	import type { Artist as Artists, Album as Albums, Song as Songs, Playlist as Playlists } from '$lib/types/music';
 	import type { SearchType } from '$lib/stores/theme';
 	import type { SearchResults, SearchResultData, PaginationMeta } from '$lib/api';
 
@@ -23,7 +23,8 @@
 		songs: [],
 		totalSongs: 0,
 		playlists: [],
-		totalPlaylists: 0
+		totalPlaylists: 0,
+		totalCount: 0
 	};
 	let paginationMeta: PaginationMeta = {
 		totalCount: 0,
@@ -127,10 +128,7 @@
 	}
 
 	function getTotalResults(): number {
-		return searchResults.totalArtists + 
-			   searchResults.totalAlbums + 
-			   searchResults.totalSongs + 
-			   searchResults.totalPlaylists;
+		return Math.max(searchResults.totalCount || 0);
 	}
 
 	async function nextPage() {
@@ -220,7 +218,7 @@
 			</button>
 		</div>
 	{:else if hasSearched && !isLoading}
-		{#if getTotalResults() > 0}
+		{#if getTotalResults() > 0 || searchResults.songs.length > 0 || searchResults.artists.length > 0 || searchResults.albums.length > 0 || searchResults.playlists.length > 0}
 			<div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
 				Found {getTotalResults()} total results for "{query}" 
 				{#if paginationMeta.totalPages > 1}
