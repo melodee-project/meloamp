@@ -138,8 +138,8 @@
 <div class="space-y-6">
 	<!-- Search Header -->
 	<div class="flex items-center space-x-4">
-		<Search size={32} class="text-blue-500" />
-		<h1 class="text-3xl font-bold">{$_('search.title')}</h1>
+		<Search size={32} class="text-primary-500" />
+		<h1 class="text-3xl font-bold text-gray-900 dark:text-white">{$_('search.title')}</h1>
 	</div>
 
 
@@ -149,7 +149,7 @@
 			<button
 				on:click={() => handleTypeToggle(type.value)}
 				class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm {selectedTypes.includes(type.value) 
-					? 'bg-blue-600 text-white' 
+					? 'bg-primary-600 text-white' 
 					: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}"
 			>
 				<svelte:component this={type.icon} size={16} />
@@ -169,13 +169,13 @@
 				bind:value={query}
 				on:input={handleSearchInput}
 				placeholder={$_('search.placeholder')}
-				class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+				class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
 			/>
 		</div>
 		<button
 			type="submit"
 			disabled={isLoading || !query.trim()}
-			class="mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed"
+			class="mt-3 px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed"
 		>
 			{#if isLoading}
 				<div class="flex items-center space-x-2">
@@ -208,8 +208,8 @@
 			{#if searchResults.artists.length > 0}
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
-						<Users size={24} class="text-blue-500" />
-						<span>Artists ({searchResults.artists.length})</span>
+						<Users size={24} class="text-primary-500" />
+						<span class="text-gray-900 dark:text-white">Artists ({searchResults.artists.length})</span>
 					</h2>
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 						{#each searchResults.artists as artist}
@@ -246,8 +246,8 @@
 			{#if searchResults.albums.length > 0}
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
-						<Disc3 size={24} class="text-blue-500" />
-						<span>Albums ({searchResults.albums.length})</span>
+						<Disc3 size={24} class="text-primary-500" />
+						<span class="text-gray-900 dark:text-white">Albums ({searchResults.albums.length})</span>
 					</h2>
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 						{#each searchResults.albums as album}
@@ -279,8 +279,8 @@
 			{#if searchResults.songs.length > 0}
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
-						<Music size={24} class="text-blue-500" />
-						<span>Songs ({searchResults.songs.length})</span>
+						<Music size={24} class="text-primary-500" />
+						<span class="text-gray-900 dark:text-white">Songs ({searchResults.songs.length})</span>
 					</h2>
 					<div class="space-y-2">
 						{#each searchResults.songs as song}
@@ -314,8 +314,8 @@
 			{#if searchResults.playlists.length > 0}
 				<section>
 					<h2 class="text-xl font-semibold flex items-center space-x-2 mb-4">
-						<ListMusic size={24} class="text-blue-500" />
-						<span>Playlists ({searchResults.playlists.length})</span>
+						<ListMusic size={24} class="text-primary-500" />
+						<span class="text-gray-900 dark:text-white">Playlists ({searchResults.playlists.length})</span>
 					</h2>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 						{#each searchResults.playlists as playlist}

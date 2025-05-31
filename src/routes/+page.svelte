@@ -71,7 +71,7 @@
 	{#if isLoading}
 		<div class="flex items-center justify-center py-12">
 			<div class="text-center">
-				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
 				<p class="text-gray-600 dark:text-gray-300">{$_('dashboard.loading')}</p>
 			</div>
 		</div>
@@ -90,10 +90,10 @@
 		<section>
 			<div class="flex items-center justify-between mb-4">
 				<h2 class="text-xl font-semibold flex items-center space-x-2">
-					<Users size={24} class="text-blue-500" />
-					<span>{$_('dashboard.recentArtists')}</span>
+					<Users size={24} class="text-primary-500" />
+					<span class="text-gray-900 dark:text-white">{$_('dashboard.recentArtists')}</span>
 				</h2>
-				<a href="/artists" class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+				<a href="/artists" class="text-primary-500 hover:text-primary-600 text-sm font-medium">
 					{$_('dashboard.viewAll')}
 				</a>
 			</div>
@@ -144,10 +144,10 @@
 		<section>
 			<div class="flex items-center justify-between mb-4">
 				<h2 class="text-xl font-semibold flex items-center space-x-2">
-					<Disc3 size={24} class="text-blue-500" />
-					<span>{$_('dashboard.recentAlbums')}</span>
+					<Disc3 size={24} class="text-primary-500" />
+					<span class="text-gray-900 dark:text-white">{$_('dashboard.recentAlbums')}</span>
 				</h2>
-				<a href="/albums" class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+				<a href="/albums" class="text-primary-500 hover:text-primary-600 text-sm font-medium">
 					{$_('dashboard.viewAll')}
 				</a>
 			</div>
@@ -189,10 +189,10 @@
 		<section>
 			<div class="flex items-center justify-between mb-4">
 				<h2 class="text-xl font-semibold flex items-center space-x-2">
-					<Music size={24} class="text-blue-500" />
-					<span>{$_('dashboard.recentSongs')}</span>
+					<Music size={24} class="text-primary-500" />
+					<span class="text-gray-900 dark:text-white">{$_('dashboard.recentSongs')}</span>
 				</h2>
-				<a href="/songs" class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+				<a href="/songs" class="text-primary-500 hover:text-primary-600 text-sm font-medium">
 					{$_('dashboard.viewAll')}
 				</a>
 			</div>
@@ -238,10 +238,10 @@
 		<section>
 			<div class="flex items-center justify-between mb-4">
 				<h2 class="text-xl font-semibold flex items-center space-x-2">
-					<ListMusic size={24} class="text-blue-500" />
-					<span>{$_('dashboard.yourPlaylists')}</span>
+					<ListMusic size={24} class="text-primary-500" />
+					<span class="text-gray-900 dark:text-white">{$_('dashboard.yourPlaylists')}</span>
 				</h2>
-				<a href="/playlists" class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+				<a href="/playlists" class="text-primary-500 hover:text-primary-600 text-sm font-medium">
 					{$_('dashboard.viewAll')}
 				</a>
 			</div>
@@ -258,7 +258,7 @@
 										className="w-full h-full object-cover"
 									/>
 								{:else}
-									<div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+									<div class="w-full h-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
 										<ListMusic size={32} class="text-white" />
 									</div>
 								{/if}

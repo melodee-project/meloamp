@@ -59,15 +59,15 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-center space-x-3">
-			<Users size={32} class="text-blue-500" />
-			<h1 class="text-3xl font-bold">{$_('artists.title')}</h1>
+			<Users size={32} class="text-primary-500" />
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-white">{$_('artists.title')}</h1>
 		</div>
 	</div>
 
 	{#if isLoading}
 		<div class="flex items-center justify-center py-12">
 			<div class="text-center">
-				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
 				<p class="text-gray-600 dark:text-gray-300">{$_('common.loading')}</p>
 			</div>
 		</div>

@@ -124,32 +124,32 @@
 								<a 
 									href="/" 
 									class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors"
-									class:text-blue-600={$page.route.id === '/'}
-									class:dark:text-blue-400={$page.route.id === '/'}
+									class:text-primary-500={$page.route.id === '/'}
+									class:dark:text-primary-400={$page.route.id === '/'}
 								>
 									{$_('nav.dashboard')}
 								</a>
 								<a 
 									href="/search" 
 									class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors"
-									class:text-blue-600={$page.route.id === '/search'}
-									class:dark:text-blue-400={$page.route.id === '/search'}
+									class:text-primary-500={$page.route.id === '/search'}
+									class:dark:text-primary-400={$page.route.id === '/search'}
 								>
 									{$_('nav.search')}
 								</a>
 								<a 
 									href="/artists" 
 									class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors"
-									class:text-blue-600={$page.route.id === '/artists'}
-									class:dark:text-blue-400={$page.route.id === '/artists'}
+									class:text-primary-500={$page.route.id === '/artists'}
+									class:dark:text-primary-400={$page.route.id === '/artists'}
 								>
 									{$_('nav.artists')}
 								</a>
 								<a 
 									href="/albums" 
 									class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors"
-									class:text-blue-600={$page.route.id === '/albums'}
-									class:dark:text-blue-400={$page.route.id === '/albums'}
+									class:text-primary-500={$page.route.id === '/albums'}
+									class:dark:text-primary-400={$page.route.id === '/albums'}
 								>
 									{$_('nav.albums')}
 								</a>
@@ -167,7 +167,7 @@
 									bind:value={searchQuery}
 									on:input={handleSearchInput}
 									placeholder="Search music..."
-									class="block w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm h-10"
+									class="block w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm h-10"
 								/>
 							</form>
 						</div>
@@ -177,11 +177,19 @@
 							<div class="relative">
 								<button
 									on:click={() => showUserMenu = !showUserMenu}
-									class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+									class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
 								>
 									<!-- User Avatar -->
-									<div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-										<User size={16} class="text-white" />
+									<div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center overflow-hidden">
+										{#if $auth.user?.avatarThumbnailUrl}
+											<SSLImage 
+												src={$auth.user.avatarThumbnailUrl} 
+												alt={$auth.user.username || 'User'} 
+												className="w-full h-full object-cover"
+											/>
+										{:else}
+											<User size={16} class="text-white" />
+										{/if}
 									</div>
 									<!-- User Name and Welcome Text -->
 									<div class="hidden sm:block text-left">
@@ -202,8 +210,16 @@
 										<!-- User Info Section -->
 										<div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
 											<div class="flex items-center space-x-3">
-												<div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-													<User size={20} class="text-white" />
+												<div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center overflow-hidden">
+													{#if $auth.user?.avatarThumbnailUrl}
+														<SSLImage 
+															src={$auth.user.avatarThumbnailUrl} 
+															alt={$auth.user.username || 'User'} 
+															className="w-full h-full object-cover"
+														/>
+													{:else}
+														<User size={20} class="text-white" />
+													{/if}
 												</div>
 												<div class="flex-1 min-w-0">
 													<p class="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -265,7 +281,7 @@
 	<!-- Loading Screen -->
 	<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
 		<div class="text-center">
-			<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+			<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
 			<p class="text-gray-600 dark:text-gray-300">Loading...</p>
 		</div>
 	</div>
