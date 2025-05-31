@@ -69,11 +69,12 @@
 </svelte:head>
 
 <div class="space-y-8">
-	<!-- Welcome Header -->
+	<!-- Stats Header -->
 	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="text-3xl font-bold">{$_('dashboard.welcome')}, {$auth.user?.username}!</h1>
-			<p class="text-gray-600 dark:text-gray-300 mt-1">Discover and enjoy your music library</p>
+		<div class="flex items-center space-x-4">
+			<div>
+				<p class="text-gray-600 dark:text-gray-300">Put some statistics here</p>
+			</div>
 		</div>
 	</div>
 
@@ -95,6 +96,60 @@
 			</button>
 		</div>
 	{:else}
+		<!-- Recent Artists -->
+		<section>
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-xl font-semibold flex items-center space-x-2">
+					<Users size={24} class="text-blue-500" />
+					<span>{$_('dashboard.recentArtists')}</span>
+				</h2>
+				<a href="/artists" class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+					{$_('dashboard.viewAll')}
+				</a>
+			</div>
+			
+			{#if recentArtists.length > 0}
+				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+					{#each recentArtists as artist}
+						<div class="music-card group text-center">
+							<div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
+								{#if artist.thumbnailUrl || artist.imageUrl}
+									<SSLImage 
+										src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
+										alt={artist.name}
+										className="w-full h-full object-cover"
+									/>
+								{:else}
+									<div class="w-full h-full flex items-center justify-center">
+										<Users size={32} class="text-gray-500" />
+									</div>
+								{/if}
+								<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+									<Play size={20} class="text-white" />
+								</button>
+								{#if artist.userStarred}
+									<div class="absolute top-2 right-2">
+										<Star size={16} class="text-yellow-400 fill-current" />
+									</div>
+								{/if}
+							</div>
+							<div class="flex items-center justify-center space-x-1 mb-1">
+								<h3 class="font-medium text-sm truncate" title={artist.name}>{artist.name}</h3>
+							</div>
+							{#if artist.albumCount > 0}
+								<p class="text-xs text-gray-600 dark:text-gray-300">{artist.albumCount} albums</p>
+							{/if}
+							{#if artist.songCount > 0}
+								<p class="text-xs text-gray-500 dark:text-gray-400">{artist.songCount} songs</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="text-gray-600 dark:text-gray-300 text-center py-8">{$_('dashboard.noData')}</p>
+			{/if}
+		</section>
+			
 		<!-- Recent Albums -->
 		<section>
 			<div class="flex items-center justify-between mb-4">
@@ -181,60 +236,6 @@
 							<div class="text-sm text-gray-500 dark:text-gray-400">
 								{song.durationFormatted}
 							</div>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-gray-600 dark:text-gray-300 text-center py-8">{$_('dashboard.noData')}</p>
-			{/if}
-		</section>
-
-		<!-- Recent Artists -->
-		<section>
-			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-xl font-semibold flex items-center space-x-2">
-					<Users size={24} class="text-blue-500" />
-					<span>{$_('dashboard.recentArtists')}</span>
-				</h2>
-				<a href="/artists" class="text-blue-500 hover:text-blue-600 text-sm font-medium">
-					{$_('dashboard.viewAll')}
-				</a>
-			</div>
-			
-			{#if recentArtists.length > 0}
-				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-					{#each recentArtists as artist}
-						<div class="music-card group text-center">
-							<div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
-								{#if artist.thumbnailUrl || artist.imageUrl}
-									<SSLImage 
-										src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
-										alt={artist.name}
-										className="w-full h-full object-cover"
-									/>
-								{:else}
-									<div class="w-full h-full flex items-center justify-center">
-										<Users size={32} class="text-gray-500" />
-									</div>
-								{/if}
-								<button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-									<Play size={20} class="text-white" />
-								</button>
-								{#if artist.userStarred}
-									<div class="absolute top-2 right-2">
-										<Star size={16} class="text-yellow-400 fill-current" />
-									</div>
-								{/if}
-							</div>
-							<div class="flex items-center justify-center space-x-1 mb-1">
-								<h3 class="font-medium text-sm truncate" title={artist.name}>{artist.name}</h3>
-							</div>
-							{#if artist.albumCount > 0}
-								<p class="text-xs text-gray-600 dark:text-gray-300">{artist.albumCount} albums</p>
-							{/if}
-							{#if artist.songCount > 0}
-								<p class="text-xs text-gray-500 dark:text-gray-400">{artist.songCount} songs</p>
-							{/if}
 						</div>
 					{/each}
 				</div>
