@@ -4,6 +4,7 @@
 	import { _ } from '$lib/i18n';
 	import { Play, Disc3, Star } from 'lucide-svelte';
 	import SSLImage from '$lib/components/SSLImage.svelte';
+	import { getContextualImageUrl, ImageContext } from '$lib/utils/imageUtils';
 	import type { Album } from '$lib/types/music';
 
 	let albums: Album[] = [];
@@ -48,10 +49,6 @@
 			await loadAlbums(currentPage - 1);
 		}
 	}
-
-	function getImageUrl(thumbnailUrl?: string, imageUrl?: string): string {
-		return thumbnailUrl || imageUrl || '/placeholder-music.png';
-	}
 </script>
 
 <svelte:head>
@@ -92,7 +89,7 @@
 					<div class="music-card group">
 						<div class="music-card-image relative mb-3">
 							<SSLImage 
-								src={getImageUrl(album.thumbnailUrl, album.imageUrl)} 
+								src={getContextualImageUrl(album, ImageContext.GRID_THUMBNAIL)} 
 								alt={album.name}
 								className="w-full h-full object-cover"
 							/>

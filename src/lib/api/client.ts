@@ -30,7 +30,8 @@ export interface LoginResponse {
 		id: string;
 		email: string;
 		username: string;
-		avatar?: string;
+		avatarThumbnailUrl?: string;
+		avatarUrl?: string;
 	};
 	token: string;
 }

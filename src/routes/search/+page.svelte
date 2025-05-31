@@ -5,6 +5,7 @@
 	import { _ } from '$lib/i18n';
 	import { Search, Music, Users, Disc3, ListMusic, Star } from 'lucide-svelte';
 	import SSLImage from '$lib/components/SSLImage.svelte';
+	import { getContextualImageUrl, ImageContext } from '$lib/utils/imageUtils';
 	import type { Artist, Album, Song, Playlist } from '$lib/types/music';
 
 	let query = '';
@@ -50,10 +51,6 @@
 
 	function handleSubmit() {
 		performSearch();
-	}
-
-	function getImageUrl(thumbnailUrl?: string, imageUrl?: string): string {
-		return thumbnailUrl || imageUrl || '/placeholder-music.png';
 	}
 
 	function getTotalResults(): number {
@@ -133,7 +130,7 @@
 								<div class="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
 									{#if artist.thumbnailUrl || artist.imageUrl}
 										<SSLImage
-											src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
+											src={getContextualImageUrl(artist, ImageContext.GRID_THUMBNAIL)} 
 											alt={artist.name}
 											className="w-full h-full object-cover"
 										/>
@@ -170,7 +167,7 @@
 							<div class="music-card group">
 								<div class="music-card-image relative mb-3">
 									<SSLImage
-										src={getImageUrl(album.thumbnailUrl, album.imageUrl)} 
+										src={getContextualImageUrl(album, ImageContext.GRID_THUMBNAIL)} 
 										alt={album.name}
 										className="w-full h-full object-cover"
 									/>
@@ -203,7 +200,7 @@
 							<div class="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group">
 								<div class="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg flex items-center justify-center relative overflow-hidden">
 									{#if song.thumbnailUrl || song.imageUrl}
-										<SSLImage src={getImageUrl(song.thumbnailUrl, song.imageUrl)} alt={song.title} className="w-full h-full object-cover" />
+										<SSLImage src={getContextualImageUrl(song, ImageContext.LIST_ITEM)} alt={song.title} className="w-full h-full object-cover" />
 									{:else}
 										<Music size={20} class="text-gray-500" />
 									{/if}
@@ -239,7 +236,7 @@
 								<div class="music-card-image relative mb-3">
 									{#if playlist.thumbnailUrl || playlist.imageUrl}
 										<SSLImage
-											src={getImageUrl(playlist.thumbnailUrl, playlist.imageUrl)} 
+											src={getContextualImageUrl(playlist, ImageContext.GRID_THUMBNAIL)} 
 											alt={playlist.name}
 											className="w-full h-full object-cover"
 										/>

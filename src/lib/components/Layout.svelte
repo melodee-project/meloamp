@@ -18,6 +18,7 @@
 		Monitor,
 		User
 	} from 'lucide-svelte';
+	import { getContextualAvatarUrl, ImageContext } from '$lib/utils/imageUtils';
 
 	export let showSidebar = true;
 
@@ -133,8 +134,8 @@
 							on:click={() => showUserMenu = !showUserMenu}
 							class="flex items-center space-x-3 p-2 rounded-lg hover:bg-surface-200-700-token transition-colors"
 						>
-							{#if $auth.user?.avatar}
-								<img src={$auth.user.avatar} alt="Avatar" class="w-8 h-8 rounded-full" />
+							{#if $auth.user?.avatarUrl || $auth.user?.avatarThumbnailUrl}
+								<img src={getContextualAvatarUrl($auth.user, ImageContext.NAVIGATION)} alt="Avatar" class="w-8 h-8 rounded-full" />
 							{:else}
 								<div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
 									<User size={16} class="text-white" />

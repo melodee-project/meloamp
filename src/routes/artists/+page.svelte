@@ -4,6 +4,7 @@
 	import { _ } from '$lib/i18n';
 	import { Play, Users, Star } from 'lucide-svelte';
 	import SSLImage from '$lib/components/SSLImage.svelte';
+	import { getContextualImageUrl, ImageContext } from '$lib/utils/imageUtils';
 	import type { Artist } from '$lib/types/music';
 
 	let artists: Artist[] = [];
@@ -48,10 +49,6 @@
 			await loadArtists(currentPage - 1);
 		}
 	}
-
-	function getImageUrl(thumbnailUrl?: string, imageUrl?: string): string {
-		return thumbnailUrl || imageUrl || '/placeholder-music.png';
-	}
 </script>
 
 <svelte:head>
@@ -93,7 +90,7 @@
 						<div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 relative">
 							{#if artist.thumbnailUrl || artist.imageUrl}
 								<SSLImage 
-									src={getImageUrl(artist.thumbnailUrl, artist.imageUrl)} 
+									src={getContextualImageUrl(artist, ImageContext.GRID_THUMBNAIL)} 
 									alt={artist.name}
 									className="w-full h-full object-cover"
 								/>
