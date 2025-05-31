@@ -319,7 +319,9 @@ class ApiService {
       albums: Album[];
       songs: Song[];
       playlists: Playlist[];
-    }>(`/search?${params.toString()}`);
+    }>(`/search?${params.toString()}`, {
+      method: 'POST'
+    });
   }
 }
 

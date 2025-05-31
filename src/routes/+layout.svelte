@@ -4,12 +4,13 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth';
 	import { initI18n, _ } from '$lib/i18n';
-	import { Sun, Moon, LogOut } from 'lucide-svelte';
+	import { Sun, Moon, LogOut, Search } from 'lucide-svelte';
 	import SSLImage from '$lib/components/SSLImage.svelte';
 	import '../app.css';
 
 	let i18nReady = false;
 	let authInitialized = false;
+	let searchQuery = '';
 
 	onMount(async () => {
 		try {
@@ -43,6 +44,14 @@
 		if (!$auth.isAuthenticated && $page.route.id !== '/login') {
 			console.log('🔄 Redirecting to login...');
 			goto('/login');
+		}
+	}
+
+	function handleSearch(event: Event) {
+		event.preventDefault();
+		if (searchQuery.trim()) {
+			goto(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+			searchQuery = '';
 		}
 	}
 </script>
@@ -101,6 +110,21 @@
 								>
 									{$_('nav.albums')}
 								</a>
+							</div>
+
+							<!-- Center Search Bar -->
+							<div class="flex-1 max-w-lg mx-8">
+								<form on:submit={handleSearch} class="relative">
+									<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+										<Search size={16} class="text-gray-400" />
+									</div>
+									<input
+										type="text"
+										bind:value={searchQuery}
+										placeholder="Search music..."
+										class="block w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+									/>
+								</form>
 							</div>
 						</div>
 

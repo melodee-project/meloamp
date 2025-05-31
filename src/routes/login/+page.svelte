@@ -3,6 +3,7 @@
 	import { auth } from '$lib/stores/auth';
 	import { _ } from '$lib/i18n';
 	import { Eye, EyeOff, Server, Mail, Lock } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 
 	let serverUrl = '';
 	let email = '';
@@ -10,6 +11,14 @@
 	let showPassword = false;
 	let isLoading = false;
 	let error = '';
+
+	onMount(() => {
+		// Load the last used server URL from a separate localStorage key that persists through logout
+		const lastServerUrl = localStorage.getItem('lastServerUrl');
+		if (lastServerUrl) {
+			serverUrl = lastServerUrl;
+		}
+	});
 
 	async function handleLogin() {
 		console.log('🔥 handleLogin function called!');
@@ -32,6 +41,10 @@
 			
 			console.log('📞 Calling auth.login...');
 			const result = await auth.login(serverUrl, email, password);
+			
+			// Save the server URL for future logins (separate from auth data so it persists through logout)
+			localStorage.setItem('lastServerUrl', serverUrl);
+			
 			console.log('✅ Login successful:', result);
 			console.log('🔄 Redirecting to dashboard...');
 			goto('/');
