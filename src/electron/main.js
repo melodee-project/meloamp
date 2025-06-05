@@ -1,8 +1,24 @@
 // main.js - Electron Main Process
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const express = require('express');
+let staticServer;
+const SERVER_PORT = 3001;
+
+function startStaticServer() {
+  if (staticServer) return;
+  const server = express();
+  const buildPath = path.join(__dirname, '../ui/build');
+  server.use(express.static(buildPath));
+  // Use a catch-all route for static files, not a wildcard string
+  server.get('/*', (req, res) => res.sendFile(path.join(buildPath, 'index.html')));
+  staticServer = server.listen(SERVER_PORT, () => {
+    console.log('Static server running on http://localhost:' + SERVER_PORT);
+  });
+}
 
 function createWindow() {
+  startStaticServer();
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -13,10 +29,14 @@ function createWindow() {
     },
   });
 
-  // In production, load the React build output
-  win.loadFile(path.join(__dirname, '../ui/build/index.html'));
-  // In development, use the React dev server (uncomment if needed)
-  // win.loadURL('http://localhost:3000');
+  // Hide the default menu bar
+  win.setMenu(null);
+
+  // Open DevTools for debugging
+  win.webContents.openDevTools();
+
+  // Load the React build output via HTTP server
+  win.loadURL('http://localhost:' + SERVER_PORT);
 }
 
 app.whenReady().then(createWindow);

@@ -11,5 +11,8 @@
   "description": "",
   "devDependencies": {
     "electron": "^36.4.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
   }
 }
