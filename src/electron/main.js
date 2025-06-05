@@ -11,7 +11,7 @@ function startStaticServer() {
   const buildPath = path.join(__dirname, '../ui/build');
   server.use(express.static(buildPath));
   // Use a catch-all route for static files, not a wildcard string
-  server.get('/*', (req, res) => res.sendFile(path.join(buildPath, 'index.html')));
+  server.get(/^\/.*$/, (req, res) => res.sendFile(path.join(buildPath, 'index.html')));
   staticServer = server.listen(SERVER_PORT, () => {
     console.log('Static server running on http://localhost:' + SERVER_PORT);
   });
