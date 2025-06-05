@@ -1,6 +1,7 @@
 import axios from 'axios';
+import mockApiClient from './mockApiClient';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+let API_BASE = localStorage.getItem('serverUrl') || process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
 let jwt: string | null = localStorage.getItem('jwt');
 
@@ -12,6 +13,16 @@ export function setJwt(token: string) {
 export function clearJwt() {
   jwt = null;
   localStorage.removeItem('jwt');
+}
+
+let useMockApi = false;
+
+export function setUseMockApi(val: boolean) {
+  useMockApi = val;
+}
+
+export function isUsingMockApi() {
+  return useMockApi;
 }
 
 const api = axios.create({
@@ -36,5 +47,26 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export function setApiBaseUrl(url: string) {
+  API_BASE = url;
+  api.defaults.baseURL = url;
+}
+
+export async function authenticate({ email, password }: { email: string; password: string }) {
+  if (useMockApi) {
+    return mockApiClient.mockAuthenticate({ email, password });
+  } else {
+    return api.post('/user/authenticate', { email, password });
+  }
+}
+
+export async function apiRequest(path: string, options: any = {}) {
+  if (useMockApi) {
+    return mockApiClient.mockApiRequest(path, options);
+  } else {
+    return api.request({ url: path, ...options });
+  }
+}
 
 export default api;

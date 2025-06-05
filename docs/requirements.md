@@ -165,16 +165,16 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Settings: Theme selection, light/dark mode toggle, logout, etc.
 
 ### Phase 5: Authentication
-- [ ] Display login form
-- [ ] Display login form will have Server URL
-    - [ ] This is the root URL of the API
-    - [ ] This value  will be saved and loaded on application restarts
-    - [ ] This value may end with "/api/v1" and may not, when saving ensure that ends with "/api/v1"
-- [ ] Authenticate user against API with user provided email and password
+- [x] Display login form
+- [x] Display login form will have Server URL
+    - [x] This is the root URL of the API
+    - [x] This value  will be saved and loaded on application restarts
+    - [x] This value may end with "/api/v1" and may not, when saving ensure that ends with "/api/v1"
+- [x] Authenticate user against API with user provided email and password
     * Endpoint for auth is "/user/authenticate"
-- [ ] Securely store token
-- [ ] When the API returns a 401 delete the token and force the user to login again
-- [ ] Handle network errors gracefully
+- [x] Securely store token
+- [x] When the API returns a 401 delete the token and force the user to login again
+- [x] Handle network errors gracefully
     * Display a toast like message that says "An error has occurred" and log the response
 
 ### Phase 6: Music Library Integration

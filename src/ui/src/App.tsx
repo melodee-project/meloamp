@@ -196,6 +196,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/artists" element={<Artists />} />
               <Route path="/albums" element={<Albums />} />
+              <Route path="/playlists" element={<Playlists />} />
               <Route path="/songs" element={<Songs />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
