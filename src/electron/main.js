@@ -13,8 +13,10 @@ function createWindow() {
     },
   });
 
-  // Load React build
+  // In production, load the React build output
   win.loadFile(path.join(__dirname, '../ui/build/index.html'));
+  // In development, use the React dev server (uncomment if needed)
+  // win.loadURL('http://localhost:3000');
 }
 
 app.whenReady().then(createWindow);

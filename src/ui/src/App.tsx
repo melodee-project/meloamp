@@ -1,16 +1,34 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton, InputBase, Menu, MenuItem, Avatar, Box, Button, Tooltip } from '@mui/material';
 import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info } from '@mui/icons-material';
 import logo from './logo.svg';
 import './App.css';
 
 // Placeholder pages
-function Home() { return <div>Home Page</div>; }
+function Dashboard() { return <div>Dashboard Page</div>; }
 function Browse() { return <div>Browse Page</div>; }
 function Library() { return <div>Library Page</div>; }
 function SettingsPage() { return <div>Settings Page</div>; }
 function ProfilePage() { return <div>Profile Page</div>; }
+
+// Navigation bar component with active highlighting
+function NavBar() {
+  const location = useLocation();
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+        <img src={logo} alt="MeloAmp Logo" style={{ height: 40, marginRight: 12 }} />
+        <Typography variant="h6" noWrap>MeloAmp</Typography>
+      </Link>
+      <Box sx={{ ml: 4, display: 'flex', gap: 2 }}>
+        <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/">Dashboard</Button>
+        <Button color={location.pathname === '/browse' ? 'primary' : 'inherit'} component={Link} to="/browse">Browse</Button>
+        <Button color={location.pathname === '/library' ? 'primary' : 'inherit'} component={Link} to="/library">Library</Button>
+      </Box>
+    </Box>
+  );
+}
 
 export default function App() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -27,18 +45,7 @@ export default function App() {
     <Router>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
-          {/* Left: Logo and Menu */}
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-            <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-              <img src={logo} alt="MeloAmp Logo" style={{ height: 40, marginRight: 12 }} />
-              <Typography variant="h6" noWrap>MeloAmp</Typography>
-            </Link>
-            <Box sx={{ ml: 4, display: 'flex', gap: 2 }}>
-              <Button color="inherit" component={Link} to="/">Home</Button>
-              <Button color="inherit" component={Link} to="/browse">Browse</Button>
-              <Button color="inherit" component={Link} to="/library">Library</Button>
-            </Box>
-          </Box>
+          <NavBar />
           {/* Right: Search, Theme, User */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box sx={{ position: 'relative', mr: 2 }}>
@@ -78,7 +85,7 @@ export default function App() {
       </AppBar>
       <Box sx={{ p: 3 }}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/library" element={<Library />} />
           <Route path="/settings" element={<SettingsPage />} />
