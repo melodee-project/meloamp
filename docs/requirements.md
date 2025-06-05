@@ -75,7 +75,7 @@ To ensure a consistent and accessible user experience, the following feedback pa
 
 ```
 /src
-  /UI                # This is the React application
+  /ui                # This is the React application
     /components      # Reusable UI components (buttons, modals, etc.)
     /pages           # Route-based views (Login, Player, Search, Settings)
     /theme           # Theme definitions and context
@@ -101,7 +101,9 @@ To ensure a consistent and accessible user experience, the following feedback pa
 ## Technology and Tools
 
 ### Phase 1: Setup
-- [ ] Setup: Create new solution in the `/src` directory adhereing to defined Architecture Overview and Technology and Tools
+- [ ] Setup: Create new React solution in the `/src/ui` directory
+- [ ] Setup: Create new Electron solution in the `/src/electron` directory
+- [ ] Setup: Create a script in the root `run-it.sh` that runs the Electron application locally
 - [ ] Mock API: Implement mock API for development
     * Mock API must generate enough fake data to be able to test pagination and infinite scrolling
     * Mock API should have random images that allow for testing of various color contrasts
