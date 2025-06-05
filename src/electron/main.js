@@ -9,9 +9,13 @@ function startStaticServer() {
   if (staticServer) return;
   const server = express();
   const buildPath = path.join(__dirname, '../ui/build');
+  // Serve static files
   server.use(express.static(buildPath));
-  // Use a catch-all route for static files, not a wildcard string
-  server.get(/^\/.*$/, (req, res) => res.sendFile(path.join(buildPath, 'index.html')));
+
+  // Only serve index.html for non-API routes
+  server.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
   staticServer = server.listen(SERVER_PORT, () => {
     console.log('Static server running on http://localhost:' + SERVER_PORT);
   });

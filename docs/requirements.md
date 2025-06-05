@@ -179,7 +179,14 @@ To ensure a consistent and accessible user experience, the following feedback pa
 
 ### Phase 6: Music Library Integration
 - [ ] Fetch music library from REST API
-- [ ] Display albums and tracks in UI
+  - [ ] PaginatedResponse result on "/artists" for Artists page
+  - [ ] PaginatedResponse result on "/albums" for Ablums page
+  - [ ] PaginatedResponse result on "/songs" for Songs page
+  - [ ] PaginatedResponse result on "/artists/recent" to get most recent Artists to dislay on Dashboard
+  - [ ] PaginatedResponse result on "/albums/recent" to get most recent Artists to dislay on Dashboard
+  - [ ] PaginatedResponse result on "/users/playlists" for Playlists page
+  - [ ] PaginatedResponse result on "/playlists/<id>/songs" to get Songs for a Playlist
+  - [ ] User detail used to populate profile model from "/users/me"
 - [ ] Handle API errors and loading states
 - [ ] Caching of artist, album, song and playlist images
 
