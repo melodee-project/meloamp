@@ -75,17 +75,20 @@ To ensure a consistent and accessible user experience, the following feedback pa
 
 ```
 /src
-  /components      # Reusable UI components (buttons, modals, etc.)
-  /pages           # Route-based views (Login, Player, Search, Settings)
-  /theme           # Theme definitions and context
-  /api             # API client (with JWT handling)
-  /store           # State management (auth, user, player, theme)
-  /assets          # Images, icons, etc.
-  App.tsx
-  main.tsx
-electron/
-  main.js          # Electron main process
-  preload.js
+  /UI                # This is the React application
+    /components      # Reusable UI components (buttons, modals, etc.)
+    /pages           # Route-based views (Login, Player, Search, Settings)
+    /theme           # Theme definitions and context
+    /api             # API client (with JWT handling)
+    /store           # State management (auth, user, player, theme)
+    /assets          # Images, icons, etc.
+    App.tsx
+    main.tsx
+    
+/src
+  /electron          # This is the Electron application
+    main.js          # Electron main process
+    preload.js
 ```
 
 ### **Desktop Platform**
