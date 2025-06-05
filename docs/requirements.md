@@ -101,17 +101,17 @@ To ensure a consistent and accessible user experience, the following feedback pa
 ## Technology and Tools
 
 ### Phase 1: Setup
-- [ ] Setup: Create new React solution in the `/src/ui` directory
-- [ ] Setup: Create new Electron solution in the `/src/electron` directory
-- [ ] Setup: Create a script in the root `run-it.sh` that runs the Electron application locally
-- [ ] Mock API: Implement mock API for development
+- [x] Setup: Create new React solution in the `/src/ui` directory
+- [x] Setup: Create new Electron solution in the `/src/electron` directory
+- [x] Setup: Create a script in the root `run-it.sh` that runs the Electron application locally
+- [x] Mock API: Implement mock API for development
     * Mock API must generate enough fake data to be able to test pagination and infinite scrolling
     * Mock API should have random images that allow for testing of various color contrasts
 
 ### Phase 2: Application Interface
-- [ ] Ensure accessibility and responsive design
-- [ ] Ensure application has modern look and feel with a standard modern user experience akin to a web page
-- [ ] Create a top navigation that includes these elements
+- [x] Ensure accessibility and responsive design
+- [x] Ensure application has modern look and feel with a standard modern user experience akin to a web page
+- [x] Create a top navigation that includes these elements
     - **Horizontal Bar:** Stretches across the top of the app.
     - **Left Section:**
       - **Logo:** Display the app logo; clicking it navigates to the home/dashboard.
