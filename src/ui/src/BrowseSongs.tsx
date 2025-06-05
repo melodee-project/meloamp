@@ -11,11 +11,12 @@ export default function BrowseSongs() {
   useEffect(() => {
     setLoading(true);
     api.get('/songs', { params: { page, pageSize: 20 } })
-      .then(res => {
+      .then((res: any) => {
         setSongs(res.data.data);
         setTotal(res.data.total);
       })
-      .finally(() => setLoading(false));
+      .catch(() => {})
+    setLoading(false);
   }, [page]);
 
   return (

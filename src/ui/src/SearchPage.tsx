@@ -14,9 +14,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     setLoading(true);
     setError('');
     api.get('/search', { params: { q: search } })
-      .then(res => setResults(res.data))
-      .catch(() => setError('Search failed'))
-      .finally(() => setLoading(false));
+      .then((res: any) => setResults(res.data))
+      .catch(() => setError('Search failed'));
+    setLoading(false);
   }, [search]);
 
   return (

@@ -11,11 +11,12 @@ export default function BrowseAlbums() {
   useEffect(() => {
     setLoading(true);
     api.get('/albums', { params: { page, pageSize: 20 } })
-      .then(res => {
+      .then((res: any) => {
         setAlbums(res.data.data);
         setTotal(res.data.total);
       })
-      .finally(() => setLoading(false));
+      .catch(() => {})
+    setLoading(false);
   }, [page]);
 
   return (

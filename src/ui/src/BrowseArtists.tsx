@@ -11,11 +11,12 @@ export default function BrowseArtists() {
   useEffect(() => {
     setLoading(true);
     api.get('/artists', { params: { page, pageSize: 20 } })
-      .then(res => {
+      .then((res: any) => {
         setArtists(res.data.data);
         setTotal(res.data.total);
       })
-      .finally(() => setLoading(false));
+      .catch(() => {})
+    setLoading(false);
   }, [page]);
 
   return (

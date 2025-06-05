@@ -18,7 +18,7 @@ const api = axios.create({
   baseURL: API_BASE,
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: any) => {
   if (jwt) {
     config.headers = config.headers || {};
     config.headers['Authorization'] = `Bearer ${jwt}`;
@@ -27,8 +27,8 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response: any) => response,
+  (error: any) => {
     if (error.response && error.response.status === 401) {
       clearJwt();
       window.location.href = '/'; // Always redirect to root (login view)

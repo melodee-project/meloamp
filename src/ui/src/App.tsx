@@ -6,7 +6,7 @@ import logo from './logo.svg';
 import './App.css';
 import UserSettings from './UserSettings';
 import LoginPage from './LoginPage';
-import api, { clearJwt } from './api';
+import { clearJwt } from './api';
 import classicTheme from './themes/classicTheme';
 import oceanTheme from './themes/oceanTheme';
 import sunsetTheme from './themes/sunsetTheme';
@@ -35,34 +35,6 @@ function Playlists() { return <PlaylistManager />; }
 function Artists() { return <BrowseArtists />; }
 function Songs() { return <BrowseSongs />; }
 
-function SettingsPage() {
-  const [settings, setSettings] = React.useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('userSettings') || '') || {
-        theme: 'classic',
-        language: 'en',
-        highContrast: false,
-        fontScale: 1,
-        caching: false,
-      };
-    } catch {
-      return {
-        theme: 'classic',
-        language: 'en',
-        highContrast: false,
-        fontScale: 1,
-        caching: false,
-      };
-    }
-  });
-  React.useEffect(() => {
-    localStorage.setItem('userSettings', JSON.stringify(settings));
-    // Optionally trigger a reload to apply theme/font changes globally
-    // window.location.reload();
-  }, [settings]);
-  return <UserSettings settings={settings} onChange={setSettings} />;
-}
-
 function ProfilePage() { return <div>Profile Page</div>; }
 
 // Navigation bar component with active highlighting
@@ -90,12 +62,6 @@ export default function App() {
   const open = Boolean(anchorEl);
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
-  const [themeMode, setThemeMode] = React.useState<'light' | 'dark'>('light');
-  const toggleTheme = () => setThemeMode((prev) => (prev === 'light' ? 'dark' : 'light'));
-
-  // Simulated user data
-  const user = { name: 'User', avatar: '', version: 'v0.1.0', apiVersion: 'v1.0.0' };
-
   const [settings, setSettings] = React.useState(() => {
     try {
       return JSON.parse(localStorage.getItem('userSettings') || '') || {
@@ -160,6 +126,9 @@ export default function App() {
       setSearchLoading(false);
     }
   };
+
+  // Simulated user data
+  const user = { name: 'User', avatar: '', version: 'v0.1.0', apiVersion: 'v1.0.0' };
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
