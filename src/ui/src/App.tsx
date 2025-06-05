@@ -5,12 +5,19 @@ import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info
 import logo from './logo.svg';
 import './App.css';
 import UserSettings from './UserSettings';
+import LoginPage from './LoginPage';
+import api, { clearJwt } from './api';
 import classicTheme from './themes/classicTheme';
 import oceanTheme from './themes/oceanTheme';
 import sunsetTheme from './themes/sunsetTheme';
 import forestTheme from './themes/forestTheme';
 import darkTheme from './themes/darkTheme';
 import modernMinimalTheme from './themes/modernMinimalTheme';
+import BrowseAlbums from './BrowseAlbums';
+import PlaylistManager from './PlaylistManager';
+import BrowseArtists from './BrowseArtists';
+import BrowseSongs from './BrowseSongs';
+import SearchPage from './SearchPage';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -23,8 +30,10 @@ const themeMap: any = {
 
 // Placeholder pages
 function Dashboard() { return <div>Dashboard Page</div>; }
-function Browse() { return <div>Browse Page</div>; }
-function Library() { return <div>Library Page</div>; }
+function Albums() { return <BrowseAlbums />; }
+function Playlists() { return <PlaylistManager />; }
+function Artists() { return <BrowseArtists />; }
+function Songs() { return <BrowseSongs />; }
 
 function SettingsPage() {
   const [settings, setSettings] = React.useState(() => {
@@ -67,8 +76,10 @@ function NavBar() {
       </Link>
       <Box sx={{ ml: 4, display: 'flex', gap: 2 }}>
         <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/">Dashboard</Button>
-        <Button color={location.pathname === '/browse' ? 'primary' : 'inherit'} component={Link} to="/browse">Browse</Button>
-        <Button color={location.pathname === '/library' ? 'primary' : 'inherit'} component={Link} to="/library">Library</Button>
+        <Button color={location.pathname === '/artists' ? 'primary' : 'inherit'} component={Link} to="/artists">Artists</Button>
+        <Button color={location.pathname === '/albums' ? 'primary' : 'inherit'} component={Link} to="/albums">Albums</Button>
+        <Button color={location.pathname === '/playlists' ? 'primary' : 'inherit'} component={Link} to="/playlists">Playlists</Button>
+        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs">Songs</Button>        
       </Box>
     </Box>
   );
@@ -109,6 +120,51 @@ export default function App() {
   }, [settings]);
   const theme = themeMap[settings.theme] || classicTheme;
 
+  const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
+
+  React.useEffect(() => {
+    const checkAuth = () => {
+      if (!localStorage.getItem('jwt')) {
+        setIsAuthenticated(false);
+      }
+    };
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
+
+  const handleLogout = () => {
+    clearJwt();
+    setIsAuthenticated(false);
+  };
+
+  const [searchValue, setSearchValue] = React.useState('');
+  const [searchActive, setSearchActive] = React.useState(false);
+  const [searchLoading, setSearchLoading] = React.useState(false);
+  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+    setSearchLoading(true);
+    setSearchActive(false);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setSearchActive(true);
+      setSearchLoading(false);
+    }, 2000);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      setSearchActive(true);
+      setSearchLoading(false);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -132,7 +188,17 @@ export default function App() {
                     height: 36,
                     width: 180,
                   }}
+                  value={searchValue}
+                  onChange={handleSearchInput}
+                  onKeyDown={handleSearchKeyDown}
                 />
+                {searchLoading && (
+                  <Box sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+                    <span className="MuiCircularProgress-root MuiCircularProgress-colorPrimary MuiCircularProgress-indeterminate" style={{ width: 20, height: 20 }}>
+                      <svg className="MuiCircularProgress-svg" viewBox="22 22 44 44"><circle className="MuiCircularProgress-circle" cx="44" cy="44" r="20.2" fill="none" strokeWidth="3.6" /></svg>
+                    </span>
+                  </Box>
+                )}
               </Box>
               <Tooltip title={`Switch to ${settings.theme === 'dark' ? 'classic' : 'dark'} mode`}>
                 <IconButton color="inherit" onClick={() => setSettings((s: any) => ({ ...s, theme: s.theme === 'dark' ? 'classic' : 'dark' }))} aria-label="toggle theme">
@@ -146,7 +212,7 @@ export default function App() {
               <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
                 <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />Settings</MenuItem>
                 <MenuItem component={Link} to="/profile" onClick={handleClose}><AccountCircle sx={{ mr: 1 }} />Profile</MenuItem>
-                <MenuItem onClick={handleClose}><Logout sx={{ mr: 1 }} />Log out</MenuItem>
+                <MenuItem onClick={() => { handleClose(); handleLogout(); }}><Logout sx={{ mr: 1 }} />Log out</MenuItem>
                 <MenuItem disabled><Info sx={{ mr: 1 }} />MeloAmp {user.version}</MenuItem>
                 <MenuItem disabled><Info sx={{ mr: 1 }} />API {user.apiVersion}</MenuItem>
               </Menu>
@@ -154,13 +220,19 @@ export default function App() {
           </Toolbar>
         </AppBar>
         <Box sx={{ p: 3 }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/browse" element={<Browse />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
+          {searchActive ? (
+            <SearchPage query={searchValue} onClose={() => setSearchActive(false)} />
+          ) : (
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/artists" element={<Artists />} />
+              <Route path="/albums" element={<Albums />} />
+              <Route path="/songs" element={<Songs />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Routes>
+          )}
         </Box>
       </Router>
     </ThemeProvider>

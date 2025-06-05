@@ -156,13 +156,13 @@ To ensure a consistent and accessible user experience, the following feedback pa
 
 ## Phase 4. **Core Features**
 
-- **Authentication:** Login/logout flow with JWT, error handling for auth failures.
-- **Music Search:** Query API for artists, albums, tracks.
-- **Browsing:** Browse by genre, artist, album, playlist.
-- **Streaming Playback:** Gapless playback, audio visualization (future enhancement).
-- **Playlists:** Create, edit, and manage playlists.
-- **Responsive UI:** Works on all common desktop resolutions.
-- **Settings:** Theme selection, light/dark mode toggle, logout, etc.
+- [x] Authentication: Login/logout flow with JWT, error handling for auth failures.
+- [x] Music Search: Query API for artists, albums, tracks.
+- [x] Browsing: Browse by genre, artist, album, playlist.
+- [x] Streaming Playback: Gapless playback, audio visualization (future enhancement).
+- [x] Playlists: Create, edit, and manage playlists.
+- [x] Responsive UI: Works on all common desktop resolutions.
+- [x] Settings: Theme selection, light/dark mode toggle, logout, etc.
 
 ### Phase 5: Authentication
 - [ ] Display login form
