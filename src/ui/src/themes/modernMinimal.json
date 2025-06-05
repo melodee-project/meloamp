@@ -1,0 +1,8 @@
+// This file stores user theme settings in a human-readable JSON format.
+{
+  "theme": "modernMinimal",
+  "language": "en",
+  "highContrast": false,
+  "fontScale": 1,
+  "caching": false
+}

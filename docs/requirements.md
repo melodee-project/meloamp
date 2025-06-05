@@ -105,8 +105,8 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Setup: Create new Electron solution in the `/src/electron` directory
 - [x] Setup: Create a script in the root `run-it.sh` that runs the Electron application locally
 - [x] Mock API: Implement mock API for development
-    * Mock API must generate enough fake data to be able to test pagination and infinite scrolling
-    * Mock API should have random images that allow for testing of various color contrasts
+    * [x] Mock API must generate enough fake data to be able to test pagination and infinite scrolling
+    * [x] Mock API should have random images that allow for testing of various color contrasts
 
 ### Phase 2: Application Interface
 - [x] Ensure accessibility and responsive design
@@ -135,23 +135,23 @@ To ensure a consistent and accessible user experience, the following feedback pa
     * Include a display of position like "Viewing 1 to 20 of 500"
 
 ### Phase 3: Theming & UX
-- [ ] Implement light and dark mode
-- [ ] Add user theme selection on users setting view
-    * Offer a set of predefined color themes (e.g., Classic, Ocean, Sunset, Forest, etc.).
-    * Themes are to be stored in the applications data directory in a "themes" directory in a human readable JSON file: one theme per file, file name is the theme name
-    * Support font scaling and high-contrast modes if possible.
-- [ ] Save user settings in a human readable JSON file in the application data directory
-- [ ] Leverage MUI’s theme provider for dynamic theme switching.
-- [ ] User setting page to contain
-    * Language
-    * Theme
-    * Keybindings
-    * Caching options    
-- [ ] A Queue view that allows the user to manage songs in the playback Queue
-    * Reorder using drag-n-drop
-    * Remove songs from queue
-    * Shuffle queue
-    * Save queue as playlist by posting to API endpoint
+- [x] Implement light and dark mode
+- [x] Add user theme selection on users setting view
+    * [x] Offer a set of predefined color themes (e.g., Classic, Ocean, Sunset, Forest, etc.).
+    * [x] Themes are to be stored in the applications data directory in a "themes" directory in a human readable JSON file: one theme per file, file name is the theme name
+    * [x] Support font scaling and high-contrast modes if possible.
+- [x] Save user settings in a human readable JSON file in the application data directory
+- [x] Leverage MUI’s theme provider for dynamic theme switching.
+- [x] User setting page to contain
+    * [x] Language
+    * [x] Theme
+    * [x] Keybindings
+    * [x] Caching options    
+- [x] A Queue view that allows the user to manage songs in the playback Queue
+    * [ ] Reorder using drag-n-drop
+    * [ ] Remove songs from queue
+    * [ ] Shuffle queue
+    * [ ] Save queue as playlist by posting to API endpoint
 
 
 ## Phase 4. **Core Features**
