@@ -136,7 +136,7 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [ ] Implement light and dark mode
 - [ ] Add user theme selection on users setting view
     * Offer a set of predefined color themes (e.g., Classic, Ocean, Sunset, Forest, etc.).
-    * Themes are to be stored in the applications data directory in a "themes" directory in a human readable JSON file: one theme per file
+    * Themes are to be stored in the applications data directory in a "themes" directory in a human readable JSON file: one theme per file, file name is the theme name
     * Support font scaling and high-contrast modes if possible.
 - [ ] Save user settings in a human readable JSON file in the application data directory
 - [ ] Leverage MUI’s theme provider for dynamic theme switching.
