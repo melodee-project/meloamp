@@ -29,7 +29,7 @@ MeloAmp is a streaming music application which allows the user to browse Artists
 - [ ] Use Resource Files (resx) for Localization
 
 ### Phase 1: Setup
-- [ ] Setup: Create Avalonia solution structure in `/src`
+- [ ] Setup: Create Avalonia solution structure in `/src` adhereing to defined Architecture Overview and Technology and Tools
     * /Api: REST API client & DTOs
     * /Audio: Audio player service (LibVLCSharp abstraction)
     * /ViewModels: MVVM view models
