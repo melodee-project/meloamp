@@ -1,6 +1,7 @@
 // mockApi.js - Simple mock API for development
-const faker = require('faker');
+const { faker } = require('@faker-js/faker');
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const PORT = 4000;
 
@@ -9,6 +10,7 @@ function randomImage() {
   return `https://picsum.photos/seed/${Math.floor(Math.random()*10000)}/200/200`;
 }
 
+app.use(cors());
 app.use(express.json());
 
 app.get('/albums', (req, res) => {
