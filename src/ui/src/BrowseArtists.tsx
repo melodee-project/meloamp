@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination } from '@mui/material';
+import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
 import api from './api';
+import { useQueueStore } from './queueStore';
 
 export default function BrowseArtists() {
   const [artists, setArtists] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const addToQueue = useQueueStore((state: any) => state.addToQueue);
 
   useEffect(() => {
     setLoading(true);
@@ -25,7 +28,9 @@ export default function BrowseArtists() {
       {loading ? <CircularProgress /> : (
         <List>
           {artists.map((artist: any) => (
-            <ListItem key={artist.id}>
+            <ListItem key={artist.id} secondaryAction={
+              <Button variant="outlined" size="small" onClick={() => addToQueue(artist)}>Add to Queue</Button>
+            }>
               <ListItemAvatar>
                 <Avatar src={artist.imageUrl || artist.thumbnailUrl} alt={artist.name} />
               </ListItemAvatar>

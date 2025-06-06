@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination } from '@mui/material';
+import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
 import api from './api';
+import { useQueueStore } from './queueStore';
 
 export default function BrowseSongs() {
   const [songs, setSongs] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const addToQueue = useQueueStore((state: any) => state.addToQueue);
 
   useEffect(() => {
     setLoading(true);
@@ -25,7 +27,9 @@ export default function BrowseSongs() {
       {loading ? <CircularProgress /> : (
         <List>
           {songs.map((song: any) => (
-            <ListItem key={song.id}>
+            <ListItem key={song.id} secondaryAction={
+              <Button variant="outlined" size="small" onClick={() => addToQueue(song)}>Add to Queue</Button>
+            }>
               <ListItemAvatar>
                 <Avatar src={song.imageUrl || song.thumbnailUrl} alt={song.title} />
               </ListItemAvatar>

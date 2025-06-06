@@ -18,6 +18,8 @@ import PlaylistManager from './PlaylistManager';
 import BrowseArtists from './BrowseArtists';
 import BrowseSongs from './BrowseSongs';
 import SearchPage from './SearchPage';
+import Player from './Player';
+import { useQueueStore } from './queueStore';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -130,6 +132,9 @@ export default function App() {
   // Simulated user data
   const user = { name: 'User', avatar: '', version: 'v0.1.0', apiVersion: 'v1.0.0' };
 
+  const queue = useQueueStore((state: any) => state.queue);
+  const current = useQueueStore((state: any) => state.current);
+
   if (!isAuthenticated) {
     return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
   }
@@ -188,7 +193,7 @@ export default function App() {
             </Box>
           </Toolbar>
         </AppBar>
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, pb: queue.length > 0 ? 10 : 3 }}>
           {searchActive ? (
             <SearchPage query={searchValue} onClose={() => setSearchActive(false)} />
           ) : (
@@ -204,6 +209,9 @@ export default function App() {
             </Routes>
           )}
         </Box>
+        {queue.length > 0 && (
+          <Player src={queue[current]?.url || ''} />
+        )}
       </Router>
     </ThemeProvider>
   );

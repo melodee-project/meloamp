@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, IconButton } from '@mui/material';
 import { Add, Delete, Shuffle, Save } from '@mui/icons-material';
+import { useQueueStore } from './queueStore';
 
 export default function PlaylistManager() {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [name, setName] = useState('');
+  const addToQueue = useQueueStore((state: any) => state.addToQueue);
 
   const handleCreate = () => {
     if (!name) return;
@@ -26,7 +28,10 @@ export default function PlaylistManager() {
       <List>
         {playlists.map(p => (
           <ListItem key={p.id} secondaryAction={
-            <IconButton edge="end" onClick={() => handleDelete(p.id)}><Delete /></IconButton>
+            <>
+              <Button variant="outlined" size="small" onClick={() => addToQueue(p)}>Add to Queue</Button>
+              <IconButton edge="end" onClick={() => handleDelete(p.id)}><Delete /></IconButton>
+            </>
           }>
             <ListItemText primary={p.name} />
           </ListItem>

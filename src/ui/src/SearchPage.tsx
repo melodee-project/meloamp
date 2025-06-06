@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, InputAdornment, IconButton, CircularProgress, List, ListItem, ListItemText, Button } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import api from './api';
+import { useQueueStore } from './queueStore';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
   const [search, setSearch] = useState(query || '');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState('');
+
+  const addToQueue = useQueueStore((state: any) => state.addToQueue);
 
   useEffect(() => {
     if (!search) return setResults(null);
@@ -44,7 +47,13 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
         <List>
           {results.artists?.map((a: any) => <ListItem key={a.id}><ListItemText primary={a.name} secondary="Artist" /></ListItem>)}
           {results.albums?.map((a: any) => <ListItem key={a.id}><ListItemText primary={a.name} secondary="Album" /></ListItem>)}
-          {results.songs?.map((s: any) => <ListItem key={s.id}><ListItemText primary={s.title} secondary="Song" /></ListItem>)}
+          {results.songs?.map((s: any) => (
+            <ListItem key={s.id} secondaryAction={
+              <Button variant="outlined" size="small" onClick={() => addToQueue(s)}>Add to Queue</Button>
+            }>
+              <ListItemText primary={s.title} secondary="Song" />
+            </ListItem>
+          ))}
           {results.playlists?.map((p: any) => <ListItem key={p.id}><ListItemText primary={p.name} secondary="Playlist" /></ListItem>)}
         </List>
       )}

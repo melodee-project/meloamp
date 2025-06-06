@@ -197,15 +197,15 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Update Mock API with all required endpoints 
 
 ### Phase 7: Audio Playback
-- [ ] Stream audio from URL
-- [ ] Integrate playback controls (play, pause, stop, seek)
-- [ ] Playback control will be a persist control that always appears at the bottom of the application when there are song in the playback queue
-- [ ] Show playback status and progress bar
+- [x] Stream audio from URL
+- [x] Integrate playback controls (play, pause, stop, seek)
+- [x] Playback control will be a persist control that always appears at the bottom of the application when there are song in the playback queue
+- [x] Show playback status and progress bar
 - [ ] Implement crossfade between tracks
 - [ ] Support gapless playback for albums
 - [ ] Implement equalizer functionality
 - [ ] Scrobbling to send API when song is played for 10 seconds of "nowPlaying" status and when 70% played of "played" status
-- [ ] User can add songs to the playback queue from a search result, from a browse page (like artist, album or song) or from a playlist
+- [x] User can add songs to the playback queue from a search result, from a browse page (like artist, album or song) or from a playlist
 
 ### Phase 8: Packaging & Distribution
 - [ ] Build for Windows
