@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
+import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
 import api from './api';
 import { useQueueStore } from './queueStore';
 import { Song, PaginatedResponse } from './apiModels';
+import SongCard from './components/SongCard';
 
 export default function BrowseSongs() {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -17,27 +18,28 @@ export default function BrowseSongs() {
       .then((res) => {
         setSongs(res.data.data);
         setTotal(res.data.meta?.totalCount || 0);
+        setLoading(false);
       })
-      .catch(() => {})
-    setLoading(false);
+      .catch(() => {
+        setLoading(false);
+      });
   }, [page]);
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
       <Typography variant="h5" gutterBottom>Browse Songs</Typography>
-      {loading ? <CircularProgress /> : (
-        <List>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
           {songs.map((song) => (
-            <ListItem key={song.id} secondaryAction={
-              <Button variant="outlined" size="small" onClick={() => addToQueue(song)}>Add to Queue</Button>
-            }>
-              <ListItemAvatar>
-                <Avatar src={song.imageUrl || song.thumbnailUrl} alt={song.title} />
-              </ListItemAvatar>
-              <ListItemText primary={song.title} secondary={song.artist?.name} />
-            </ListItem>
+            <Box key={song.id} sx={{ flex: '1 1 250px', maxWidth: 350, minWidth: 220, display: 'flex', justifyContent: 'center' }}>
+              <SongCard song={song} />
+            </Box>
           ))}
-        </List>
+        </Box>
       )}
       <Pagination
         count={Math.ceil(total / 20)}

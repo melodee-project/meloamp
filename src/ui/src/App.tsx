@@ -164,16 +164,20 @@ export default function App() {
               <Box sx={{ position: 'relative', mr: 2 }}>
                 <InputBase
                   placeholder="Search…"
-                  inputProps={{ 'aria-label': 'search' }}
+                  inputProps={{ 'aria-label': 'search', sx: { '::placeholder': { color: 'text.secondary', opacity: 1 } } }}
                   startAdornment={<Search sx={{ mr: 1 }} />}
                   sx={{
-                    color: 'inherit',
+                    color: theme => theme.palette.mode === 'dark' ? theme.palette.grey[100] : 'inherit',
                     background: '#f1f1f1',
                     borderRadius: 1,
                     pl: 1,
                     pr: 1,
                     height: 36,
                     width: 180,
+                    'input::placeholder': {
+                      color: theme => theme.palette.mode === 'dark' ? theme.palette.grey[400] : theme.palette.grey[600],
+                      opacity: 1,
+                    },
                   }}
                   value={searchValue}
                   onChange={handleSearchInput}

@@ -90,16 +90,27 @@ export interface Playlist {
 
 export interface SearchResultData {
   meta: Meta;
-  totalCount: number;
-  artists: Artist[];
-  totalArtists: number;
-  albums: Album[];
-  totalAlbums: number;
-  songs: Song[];
-  totalSongs: number;
-  playlists: Playlist[];
-  totalPlaylists: number;
+  data: { 
+    totalCount: number;
+    artists: Artist[];
+    totalArtists: number;
+    albums: Album[];
+    totalAlbums: number;
+    songs: Song[];
+    totalSongs: number;
+    playlists: Playlist[];
+    totalPlaylists: number
+  }
 }
+
+export interface SearchRequest {
+  query: string;
+  type?: 'artists' | 'albums' | 'songs' | 'playlists';
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+};
 
 export interface LoginResponse {
   user: User;

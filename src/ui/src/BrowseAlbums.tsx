@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
+import { Box, Typography, CircularProgress, Pagination, Button, Avatar } from '@mui/material';
 import api from './api';
 import { useQueueStore } from './queueStore';
 import { Album, PaginatedResponse } from './apiModels';
@@ -27,18 +27,19 @@ export default function BrowseAlbums() {
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
       <Typography variant="h5" gutterBottom>Browse Albums</Typography>
       {loading ? <CircularProgress /> : (
-        <List>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
           {albums.map((album) => (
-            <ListItem key={album.id} secondaryAction={
-              <Button variant="outlined" size="small" onClick={() => addToQueue(album)}>Add to Queue</Button>
-            }>
-              <ListItemAvatar>
-                <Avatar src={album.thumbnailUrl || album.imageUrl} alt={album.name} />
-              </ListItemAvatar>
-              <ListItemText primary={album.name} secondary={album.artist?.name} />
-            </ListItem>
+            <Box key={album.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
+              {/* Optionally, replace with <AlbumCard album={album} /> for consistency */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <Avatar src={album.thumbnailUrl || album.imageUrl} alt={album.name} sx={{ width: 80, height: 80, mb: 1 }} />
+                <Typography variant="subtitle1" noWrap>{album.name}</Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>{album.artist?.name}</Typography>
+                <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={() => addToQueue(album)}>Add to Queue</Button>
+              </Box>
+            </Box>
           ))}
-        </List>
+        </Box>
       )}
       <Pagination
         count={Math.ceil(total / 20)}
