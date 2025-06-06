@@ -40,6 +40,92 @@ app.post('/user/authenticate', (req, res) => {
   }
 });
 
+app.get('/artists', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 20;
+  const total = 500;
+  const artists = Array.from({ length: pageSize }, (_, i) => ({
+    id: (page-1)*pageSize + i + 1,
+    name: faker.name.findName(),
+    imageUrl: randomImage(),
+    thumbnailUrl: randomImage(),
+  }));
+  res.json({
+    data: artists,
+    page,
+    pageSize,
+    total,
+  });
+});
+
+app.get('/songs', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 20;
+  const total = 500;
+  const songs = Array.from({ length: pageSize }, (_, i) => ({
+    id: (page-1)*pageSize + i + 1,
+    title: faker.commerce.productName(),
+    artist: { name: faker.name.findName() },
+    imageUrl: randomImage(),
+    thumbnailUrl: randomImage(),
+  }));
+  res.json({
+    data: songs,
+    page,
+    pageSize,
+    total,
+  });
+});
+
+app.get('/artists/recent', (req, res) => {
+  const artists = Array.from({ length: 5 }, (_, i) => ({
+    id: i + 1,
+    name: faker.name.findName(),
+    imageUrl: randomImage(),
+    thumbnailUrl: randomImage(),
+  }));
+  res.json({ data: artists });
+});
+
+app.get('/albums/recent', (req, res) => {
+  const albums = Array.from({ length: 5 }, (_, i) => ({
+    id: i + 1,
+    title: faker.commerce.productName(),
+    artist: faker.name.findName(),
+    cover: randomImage(),
+  }));
+  res.json({ data: albums });
+});
+
+app.get('/users/playlists', (req, res) => {
+  const playlists = Array.from({ length: 5 }, (_, i) => ({
+    id: i + 1,
+    name: `Playlist ${i + 1}`,
+    imageUrl: randomImage(),
+  }));
+  res.json({ data: playlists });
+});
+
+app.get('/playlists/:id/songs', (req, res) => {
+  const songs = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1,
+    title: faker.commerce.productName(),
+    artist: { name: faker.name.findName() },
+    imageUrl: randomImage(),
+    thumbnailUrl: randomImage(),
+  }));
+  res.json({ data: songs });
+});
+
+app.get('/users/me', (req, res) => {
+  res.json({
+    id: 1,
+    name: 'Demo User',
+    email: 'melodee@home.arpa',
+    avatar: randomImage(),
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Mock API running on http://localhost:${PORT}`);
 });
