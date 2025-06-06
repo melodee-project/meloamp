@@ -187,8 +187,14 @@ To ensure a consistent and accessible user experience, the following feedback pa
   - [ ] PaginatedResponse result on "/users/playlists" for Playlists page
   - [ ] PaginatedResponse result on "/playlists/<id>/songs" to get Songs for a Playlist
   - [ ] User detail used to populate profile model from "/users/me"
+- [ ] Create detail views
+  - [ ] Artist
+  - [ ] Album
+  - [ ] Song
+  - [ ] Playlist
 - [ ] Handle API errors and loading states
-- [ ] Caching of artist, album, song and playlist images
+- [ ] Caching of user avatar, artist, album, song and playlist images
+- [ ] Update Mock API with all required endpoints 
 
 ### Phase 7: Audio Playback
 - [ ] Stream audio from URL
