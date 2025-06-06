@@ -22,15 +22,22 @@
     "executableName": "meloamp",
     "artifactName": "${name}-${version}.${ext}",
     "linux": {
-      "target": ["AppImage", "rpm", "deb", "snap", "pacman", "tar.gz"],
+      "target": [
+        "AppImage",
+        "rpm",
+        "deb",
+        "snap",
+        "pacman",
+        "tar.gz"
+      ],
       "category": "Audio",
       "icon": "../../graphics/logo.png",
       "executableName": "meloamp"
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "build",
+      "app": "."
     }
-  },
-  "directories": {
-    "output": "dist",
-    "buildResources": "build",
-    "app": "."
   }
 }
