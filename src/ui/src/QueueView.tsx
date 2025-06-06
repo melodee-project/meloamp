@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button } from '@mui/material';
 import { Delete, DragIndicator, Shuffle, Save } from '@mui/icons-material';
 import { useQueueStore, QueueState } from './queueStore';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function QueueView() {
   const queue = useQueueStore((state: QueueState) => state.queue);
