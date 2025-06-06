@@ -164,6 +164,15 @@ export default function Player({ src }: { src: string }) {
     });
   }, [src]);
 
+  // Always set the audio src from the current queue song
+  useEffect(() => {
+    if (audioRef.current && queue[current]?.url) {
+      audioRef.current.src = queue[current].url;
+    }
+    // Reset playing state on queue/current change (e.g., after refresh)
+    setPlaying(false);
+  }, [queue, current]);
+
   // Keep audio element volume in sync with slider
   useEffect(() => {
     if (audioRef.current) {
@@ -178,14 +187,53 @@ export default function Player({ src }: { src: string }) {
     setFavorite(queue[current]?.userStarred ?? false);
   }, [current, queue]);
 
+  // Load initial EQ from userSettings if present
+  useEffect(() => {
+    try {
+      const userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+      if (userSettings.equalizerGains && Array.isArray(userSettings.equalizerGains) && userSettings.equalizerGains.length === EQ_BANDS.length) {
+        setEqGains(userSettings.equalizerGains);
+      }
+    } catch {}
+    // eslint-disable-next-line
+  }, []);
+
+  // Persist EQ to userSettings on change
+  useEffect(() => {
+    try {
+      const userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+      userSettings.equalizerGains = eqGains;
+      localStorage.setItem('userSettings', JSON.stringify(userSettings));
+      // If App's setSettings is available via window, update it
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('userSettingsChanged', { detail: userSettings }));
+      }
+    } catch {}
+    // eslint-disable-next-line
+  }, [eqGains]);
+
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (playing) {
       audioRef.current.pause();
+      setPlaying(false);
     } else {
-      audioRef.current.play();
+      // Always set src in case it was lost on refresh
+      if (!audioRef.current.src && src) {
+        audioRef.current.src = src;
+      }
+      const playPromise = audioRef.current.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(() => {
+          setPlaying(true);
+        }).catch(() => {
+          setPlaying(false);
+          setSnackbar('Playback failed. Click play to try again.');
+        });
+      } else {
+        setPlaying(true);
+      }
     }
-    setPlaying(!playing);
   };
 
   const handleEqOpen = (e: React.MouseEvent<HTMLElement>) => setEqAnchor(e.currentTarget);
@@ -273,7 +321,7 @@ export default function Player({ src }: { src: string }) {
       </IconButton>
       <audio
         ref={audioRef}
-        src={src || undefined}
+        src={queue[current]?.url || ''}
         crossOrigin="anonymous"
         onTimeUpdate={e => setProgress((e.target as HTMLAudioElement).currentTime)}
         onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
