@@ -13,7 +13,9 @@ function randomImage() {
 app.use(cors());
 app.use(express.json());
 
-app.get('/albums', (req, res) => {
+const router = express.Router();
+
+router.get('/albums', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
   const total = 500;
@@ -31,7 +33,7 @@ app.get('/albums', (req, res) => {
   });
 });
 
-app.post('/user/authenticate', (req, res) => {
+router.post('/user/authenticate', (req, res) => {
   const { email, password } = req.body;
   if (email === 'meloamp@home.arpa' && password === 'password') {
     // Generate a fake JWT token (not secure, for mock only)
@@ -42,7 +44,7 @@ app.post('/user/authenticate', (req, res) => {
   }
 });
 
-app.get('/artists', (req, res) => {
+router.get('/artists', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
   const total = 500;
@@ -60,7 +62,7 @@ app.get('/artists', (req, res) => {
   });
 });
 
-app.get('/songs', (req, res) => {
+router.get('/songs', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
   const total = 500;
@@ -79,7 +81,7 @@ app.get('/songs', (req, res) => {
   });
 });
 
-app.get('/artists/recent', (req, res) => {
+router.get('/artists/recent', (req, res) => {
   const artists = Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
     name: faker.name.findName(),
@@ -89,7 +91,7 @@ app.get('/artists/recent', (req, res) => {
   res.json({ data: artists });
 });
 
-app.get('/albums/recent', (req, res) => {
+router.get('/albums/recent', (req, res) => {
   const albums = Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
     title: faker.commerce.productName(),
@@ -99,7 +101,7 @@ app.get('/albums/recent', (req, res) => {
   res.json({ data: albums });
 });
 
-app.get('/users/playlists', (req, res) => {
+router.get('/users/playlists', (req, res) => {
   const playlists = Array.from({ length: 5 }, (_, i) => ({
     id: i + 1,
     name: `Playlist ${i + 1}`,
@@ -108,7 +110,7 @@ app.get('/users/playlists', (req, res) => {
   res.json({ data: playlists });
 });
 
-app.get('/playlists/:id/songs', (req, res) => {
+router.get('/playlists/:id/songs', (req, res) => {
   const songs = Array.from({ length: 10 }, (_, i) => ({
     id: i + 1,
     title: faker.commerce.productName(),
@@ -119,7 +121,7 @@ app.get('/playlists/:id/songs', (req, res) => {
   res.json({ data: songs });
 });
 
-app.get('/users/me', (req, res) => {
+router.get('/users/me', (req, res) => {
   res.json({
     id: 1,
     name: 'Demo User',
@@ -127,6 +129,9 @@ app.get('/users/me', (req, res) => {
     avatar: randomImage(),
   });
 });
+
+app.use('/', router);
+app.use('/api/v1', router);
 
 app.listen(PORT, () => {
   console.log(`Mock API running on http://localhost:${PORT}`);
