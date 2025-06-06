@@ -11,6 +11,16 @@ npm cache clean --force
 npm install --verbose
 npm run build
 
+# Ubuntu/Debian users may need to install libxcrypt-compat
+# sudo apt-get update
+# sudo apt-get install -y libxcrypt-compat
+
+# Fedora/RHEL/CentOS users may need to install libxcrypt-compat
+# sudo dnf install libxcrypt-compat
+
+# Arch Linux users may need to install libxcrypt-compat
+# sudo pacman -S libxcrypt-compat
+
 # 2. Install Electron dependencies
 print '\n[2/4] Installing Electron dependencies...'
 cd ../electron
