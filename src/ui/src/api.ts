@@ -48,7 +48,14 @@ export async function authenticate({ email, password }: LoginRequest): Promise<{
 }
 
 export async function apiRequest(path: string, options: any = {}) {
-  return api.request({ url: path, ...options });
+  const response = await api.request({ url: path, ...options });
+  const data = response.data;
+  // If response has a 'meta' and 'data' property, treat as paginated
+  if (data && typeof data === 'object' && 'meta' in data && 'data' in data) {
+    return { ...response, data };
+  }
+  // Otherwise, treat as detail model
+  return { ...response, data };
 }
 
 export default api;

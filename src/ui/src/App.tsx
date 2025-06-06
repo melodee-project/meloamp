@@ -21,6 +21,7 @@ import SearchPage from './SearchPage';
 import Player from './Player';
 import QueueView from './QueueView';
 import { useQueueStore } from './queueStore';
+import DashboardWrapper from './Dashboard';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -207,7 +208,7 @@ export default function App() {
             <SearchPage query={searchValue} onClose={() => setSearchActive(false)} />
           ) : (
             <Routes>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<DashboardWrapper />} />
               <Route path="/artists" element={<Artists />} />
               <Route path="/albums" element={<Albums />} />
               <Route path="/playlists" element={<Playlists />} />

@@ -34,6 +34,16 @@ export default function UserSettings({ settings, onChange }: any) {
           <MenuItem value="en">English</MenuItem>
         </Select>
       </FormControl>
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Recent Items on Dashboard</InputLabel>
+        <Select
+          value={settings.dashboardRecentLimit || 10}
+          label="Recent Items on Dashboard"
+          onChange={e => onChange({ ...settings, dashboardRecentLimit: Number(e.target.value) })}
+        >
+          {[5, 10, 15, 20, 25].map(val => <MenuItem key={val} value={val}>{val}</MenuItem>)}
+        </Select>
+      </FormControl>
       <FormControlLabel
         control={<Switch checked={settings.highContrast} onChange={e => onChange({ ...settings, highContrast: e.target.checked })} />}
         label="High Contrast Mode"
