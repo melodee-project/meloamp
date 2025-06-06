@@ -11,14 +11,19 @@ npm cache clean --force
 npm install --verbose
 npm run build
 
-# Ubuntu/Debian users may need to install libxcrypt-compat
+# If you are using a Debian-based system, you may also need to install the following packages:
 # sudo apt-get update
+# sudo apt-get install rpm fakeroot
 # sudo apt-get install -y libxcrypt-compat
+# sudo apt-get install libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils at-spi2-core libuuid1
 
-# Fedora/RHEL/CentOS users may need to install libxcrypt-compat
+# If you are using a Fedora-based system, you may need to install the following packages:
 # sudo dnf install libxcrypt-compat
+# sudo dnf install rpm-build fakeroot
+# sudo dnf install gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
 
-# Arch Linux users may need to install libxcrypt-compat
+# If you are using an Arch-based system, you may need to install the following packages:
+# sudo pacman -S rpm fakeroot
 # sudo pacman -S libxcrypt-compat
 
 # 2. Install Electron dependencies

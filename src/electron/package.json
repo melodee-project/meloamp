@@ -1,5 +1,5 @@
 {
-  "name": "electron",
+  "name": "meloamp",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
@@ -18,9 +18,19 @@
     "express": "^5.1.0"
   },
   "build": {
+    "productName": "MeloAmp",
+    "executableName": "meloamp",
+    "artifactName": "${name}-${version}.${ext}",
     "linux": {
+      "target": ["AppImage", "rpm", "deb", "snap", "pacman", "tar.gz"],
       "category": "Audio",
-      "icon": "../../graphics/logo.png"
+      "icon": "../../graphics/logo.png",
+      "executableName": "meloamp"
     }
+  },
+  "directories": {
+    "output": "dist",
+    "buildResources": "build",
+    "app": "."
   }
 }
