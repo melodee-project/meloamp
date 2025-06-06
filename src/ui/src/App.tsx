@@ -46,7 +46,7 @@ function Queue() { return <QueueView />; }
 function ProfilePage() { return <div>Profile Page</div>; }
 
 // Navigation bar component with active highlighting
-function NavBar() {
+function NavBar({ user }: { user: any }) {
   const location = useLocation();
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
@@ -66,10 +66,9 @@ function NavBar() {
 }
 
 export default function App() {
+  // Move all hooks to the top level
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
-  const handleClose = () => setAnchorEl(null);
   const [settings, setSettings] = React.useState(() => {
     try {
       return JSON.parse(localStorage.getItem('userSettings') || '') || {
@@ -89,12 +88,23 @@ export default function App() {
       };
     }
   });
+  const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
+  const [user, setUser] = React.useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
+  });
+  const [searchValue, setSearchValue] = React.useState('');
+  const [searchActive, setSearchActive] = React.useState(false);
+  const [searchLoading, setSearchLoading] = React.useState(false);
+  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
   React.useEffect(() => {
     localStorage.setItem('userSettings', JSON.stringify(settings));
   }, [settings]);
   const theme = themeMap[settings.theme] || classicTheme;
-
-  const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
 
   React.useEffect(() => {
     const checkAuth = () => {
@@ -106,15 +116,33 @@ export default function App() {
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
+  // Replace local user variable with state
+  const apiVersion = sessionStorage.getItem('apiVersion') || '';
+
+  const queue = useQueueStore((state: any) => state.queue);
+  const current = useQueueStore((state: any) => state.current);
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={() => {
+      setIsAuthenticated(true);
+      // Update user state after login
+      try {
+        setUser(JSON.parse(sessionStorage.getItem('user') || 'null'));
+      } catch {
+        setUser(null);
+      }
+    }} />;
+  }
+
+  // Update user state on logout
   const handleLogout = () => {
     clearJwt();
     setIsAuthenticated(false);
+    setUser(null);
   };
 
-  const [searchValue, setSearchValue] = React.useState('');
-  const [searchActive, setSearchActive] = React.useState(false);
-  const [searchLoading, setSearchLoading] = React.useState(false);
-  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
@@ -135,30 +163,13 @@ export default function App() {
     }
   };
 
-  // Get user and API version from sessionStorage
-  const user = (() => {
-    try {
-      return JSON.parse(sessionStorage.getItem('user') || 'null');
-    } catch {
-      return null;
-    }
-  })();
-  const apiVersion = sessionStorage.getItem('apiVersion') || '';
-
-  const queue = useQueueStore((state: any) => state.queue);
-  const current = useQueueStore((state: any) => state.current);
-
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
-  }
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
         <AppBar position="static" color="default" elevation={1}>
           <Toolbar>
-            <NavBar />
+            <NavBar user={user} />
             {/* Right: Search, Theme, User */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ position: 'relative', mr: 2 }}>
@@ -198,11 +209,11 @@ export default function App() {
               </Tooltip>
               {/* Queue Icon Button */}
               <Tooltip title="Queue">
-                <IconButton color="inherit" component={Link} to="/queue" aria-label="queue" sx={{ ml: 1 }}>
+                <IconButton color="inherit" component={Link} to="/queue" aria-label="queue" sx={{ ml: 0.5 }}>
                   <QueueMusic />
                 </IconButton>
               </Tooltip>
-              <IconButton color="inherit" onClick={handleMenu} aria-label="user menu" sx={{ ml: 1 }}>
+              <IconButton color="inherit" onClick={handleMenu} aria-label="user menu" sx={{ ml: 0.5 }}>
                 <Avatar alt={user?.username || user?.name || ''} src={user?.thumbnailUrl || user?.imageUrl || ''} />
                 <Typography variant="body2" sx={{ ml: 1 }}>{user?.username || user?.name || ''}</Typography>
               </IconButton>

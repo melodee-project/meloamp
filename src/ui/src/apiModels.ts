@@ -143,9 +143,9 @@ export enum ScrobbleType {
   PLAYED = 'played',
 }
 
-export interface ScrobbleResut {
+export interface ScrobbleRequest {
   songId: string;
-  playerName: 'Meloamp';
+  playerName: 'MeloAmp';
   scrobbleType: ScrobbleType;
   timestamp: number;
   playbackDuration: number;

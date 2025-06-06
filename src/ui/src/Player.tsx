@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Box, IconButton, Slider, Typography, Popover } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer } from '@mui/icons-material';
 import { useQueueStore } from './queueStore';
+import api from './api';
+import { ScrobbleRequest, ScrobbleType } from './apiModels';
 
 // Simple equalizer bands
 const EQ_BANDS = [60, 170, 350, 1000, 3500, 10000];
@@ -117,24 +119,25 @@ export default function Player({ src }: { src: string }) {
   useEffect(() => {
     if (!audioRef.current) return;
     if (!queue[current]) return;
-    // Import apiBaseUrl from api.ts
-    // (Assume apiBaseUrl is exported, or use your API helper if needed)
-    // import { apiBaseUrl } from './api';
-    const apiBaseUrl = (window as any).apiBaseUrl || '/api/v1';
+    // Use api.post for scrobbling to ensure auth headers are set
+    const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
+      songId: queue[current].id,
+      playerName: 'MeloAmp',
+      timestamp: Date.now(),
+      playbackDuration: Math.floor(progress),
+    };
     if (!scrobbled && progress > 10) {
-      fetch(`${apiBaseUrl}/scrobble`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songId: queue[current].id, scrobbleType: 'nowPlaying' }),
-      });
+      api.post('/scrobble', {
+        ...baseScrobble,
+        scrobbleType: ScrobbleType.NOW_PLAYING,
+      } as ScrobbleRequest);
       setScrobbled(true);
     }
     if (progress > duration * 0.7) {
-      fetch(`${apiBaseUrl}/scrobble`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songId: queue[current].id, scrobbleType: 'played' }),
-      });
+      api.post('/scrobble', {
+        ...baseScrobble,
+        scrobbleType: ScrobbleType.PLAYED,
+      } as ScrobbleRequest);
     }
   }, [progress, duration, queue, current, scrobbled]);
 

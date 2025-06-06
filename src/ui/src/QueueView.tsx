@@ -9,7 +9,6 @@ export default function QueueView() {
   const removeFromQueue = useQueueStore((state: QueueState) => state.removeFromQueue);
   const reorderQueue = useQueueStore((state: QueueState) => state.reorderQueue);
   const clearQueue = useQueueStore((state: QueueState) => state.clearQueue);
-  const setCurrent = useQueueStore((state: QueueState) => state.setCurrent);
   const shuffleQueue = () => {
     const shuffled = [...queue];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -44,30 +43,36 @@ export default function QueueView() {
       <Button onClick={shuffleQueue} startIcon={<Shuffle />}>Shuffle</Button>
       <Button onClick={handleSaveAsPlaylist} startIcon={<Save />} sx={{ ml: 1 }}>Save as Playlist</Button>
       <Button onClick={clearQueue} sx={{ ml: 1 }}>Clear</Button>
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="queue">
-          {(provided: any) => (
-            <List ref={provided.innerRef} {...provided.droppableProps}>
-              {queue.map((song: any, idx: number) => (
-                <Draggable key={song.id} draggableId={song.id.toString()} index={idx}>
-                  {(provided: any) => (
-                    <ListItem ref={provided.innerRef} {...provided.draggableProps} secondaryAction={
-                      <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
-                    }>
-                      <span {...provided.dragHandleProps}><DragIndicator /></span>
-                      <ListItemAvatar>
-                        <Avatar src={song.imageUrl} alt={song.title} />
-                      </ListItemAvatar>
-                      <ListItemText primary={song.title} secondary={song.artist?.name} />
-                    </ListItem>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </List>
-          )}
-        </Droppable>
-      </DragDropContext>
+      {queue.length === 0 ? (
+        <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary', fontSize: 24 }}>
+          No Songs
+        </Box>
+      ) : (
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="queue">
+            {(provided: any) => (
+              <List ref={provided.innerRef} {...provided.droppableProps}>
+                {queue.map((song: any, idx: number) => (
+                  <Draggable key={song.id} draggableId={song.id.toString()} index={idx}>
+                    {(provided: any) => (
+                      <ListItem ref={provided.innerRef} {...provided.draggableProps} secondaryAction={
+                        <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
+                      }>
+                        <span {...provided.dragHandleProps}><DragIndicator /></span>
+                        <ListItemAvatar>
+                          <Avatar src={song.imageUrl} alt={song.title} />
+                        </ListItemAvatar>
+                        <ListItemText primary={song.title} secondary={song.artist?.name} />
+                      </ListItem>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </List>
+            )}
+          </Droppable>
+        </DragDropContext>
+      )}
     </Box>
   );
 }

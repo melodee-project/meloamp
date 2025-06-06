@@ -18,7 +18,15 @@ export default function AlbumCard({ album }: { album: Album }) {
       const res = await api.get<{ data: Song[] }>(`/albums/${album.id}/songs`);
       const songs: Song[] = res.data.data;
       if (songs.length === 0) return;
-      playNow(songs); // Play the entire album at once
+      // Map songs to include url property for the player
+      const queueSongs = songs.map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: { name: song.artist?.name || '' },
+        imageUrl: song.imageUrl || song.thumbnailUrl,
+        url: song.streamUrl || '',
+      }));
+      playNow(queueSongs); // Play the entire album at once
     } catch (err) {
       // Optionally show error
     }

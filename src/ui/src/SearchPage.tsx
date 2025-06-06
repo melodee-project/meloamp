@@ -6,6 +6,7 @@ import { useQueueStore } from './queueStore';
 import { SearchResultData, Song, Artist, Album, Playlist } from './apiModels';
 import ArtistCard from './components/ArtistCard';
 import AlbumCard from './components/AlbumCard';
+import { toQueueSong } from './components/toQueueSong';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
   const [search, setSearch] = useState(query || '');
@@ -87,7 +88,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           {/* Songs as list items */}
           {results.data.songs?.map((s: Song) => (
             <ListItem key={s.id} secondaryAction={
-              <Button variant="outlined" size="small" onClick={() => addToQueue(s)}>Add to Queue</Button>
+              <Button variant="outlined" size="small" onClick={() => addToQueue(toQueueSong(s))}>Add to Queue</Button>
             }>
               <ListItemText primary={s.title} secondary="Song" />
             </ListItem>
