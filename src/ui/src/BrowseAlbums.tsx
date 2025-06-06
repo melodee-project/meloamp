@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
 import api from './api';
 import { useQueueStore } from './queueStore';
+import { Album, PaginatedResponse } from './apiModels';
 
 export default function BrowseAlbums() {
-  const [albums, setAlbums] = useState([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -13,10 +14,10 @@ export default function BrowseAlbums() {
 
   useEffect(() => {
     setLoading(true);
-    api.get('/albums', { params: { page, pageSize: 20 } })
-      .then((res: any) => {
+    api.get<PaginatedResponse<Album>>('/albums', { params: { page, pageSize: 20 } })
+      .then((res) => {
         setAlbums(res.data.data);
-        setTotal(res.data.total);
+        setTotal(res.data.meta?.totalCount || 0);
       })
       .catch(() => {})
     setLoading(false);
@@ -27,14 +28,14 @@ export default function BrowseAlbums() {
       <Typography variant="h5" gutterBottom>Browse Albums</Typography>
       {loading ? <CircularProgress /> : (
         <List>
-          {albums.map((album: any) => (
+          {albums.map((album) => (
             <ListItem key={album.id} secondaryAction={
               <Button variant="outlined" size="small" onClick={() => addToQueue(album)}>Add to Queue</Button>
             }>
               <ListItemAvatar>
-                <Avatar src={album.cover} alt={album.title} />
+                <Avatar src={album.thumbnailUrl || album.imageUrl} alt={album.name} />
               </ListItemAvatar>
-              <ListItemText primary={album.title} secondary={album.artist} />
+              <ListItemText primary={album.name} secondary={album.artist?.name} />
             </ListItem>
           ))}
         </List>

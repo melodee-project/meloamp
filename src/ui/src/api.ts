@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { LoginRequest, LoginResponse } from './apiModels';
 
 let API_BASE = localStorage.getItem('serverUrl') || process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
@@ -42,8 +43,8 @@ export function setApiBaseUrl(url: string) {
   api.defaults.baseURL = url;
 }
 
-export async function authenticate({ email, password }: { email: string; password: string }) {
-  return api.post('/user/authenticate', { email, password });
+export async function authenticate({ email, password }: LoginRequest): Promise<{ data: LoginResponse }> {
+  return api.post<LoginResponse>('/users/authenticate', { email, password });
 }
 
 export async function apiRequest(path: string, options: any = {}) {

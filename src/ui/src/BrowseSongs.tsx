@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
 import api from './api';
 import { useQueueStore } from './queueStore';
+import { Song, PaginatedResponse } from './apiModels';
 
 export default function BrowseSongs() {
-  const [songs, setSongs] = useState([]);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -12,10 +13,10 @@ export default function BrowseSongs() {
 
   useEffect(() => {
     setLoading(true);
-    api.get('/songs', { params: { page, pageSize: 20 } })
-      .then((res: any) => {
+    api.get<PaginatedResponse<Song>>('/songs', { params: { page, pageSize: 20 } })
+      .then((res) => {
         setSongs(res.data.data);
-        setTotal(res.data.total);
+        setTotal(res.data.meta?.totalCount || 0);
       })
       .catch(() => {})
     setLoading(false);
@@ -26,7 +27,7 @@ export default function BrowseSongs() {
       <Typography variant="h5" gutterBottom>Browse Songs</Typography>
       {loading ? <CircularProgress /> : (
         <List>
-          {songs.map((song: any) => (
+          {songs.map((song) => (
             <ListItem key={song.id} secondaryAction={
               <Button variant="outlined" size="small" onClick={() => addToQueue(song)}>Add to Queue</Button>
             }>

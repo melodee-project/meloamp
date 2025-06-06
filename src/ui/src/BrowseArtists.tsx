@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, List, ListItem, ListItemAvatar, Avatar, ListItemText, Pagination, Button } from '@mui/material';
 import api from './api';
 import { useQueueStore } from './queueStore';
+import { Artist, PaginatedResponse } from './apiModels';
 
 export default function BrowseArtists() {
-  const [artists, setArtists] = useState([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -13,10 +14,10 @@ export default function BrowseArtists() {
 
   useEffect(() => {
     setLoading(true);
-    api.get('/artists', { params: { page, pageSize: 20 } })
-      .then((res: any) => {
+    api.get<PaginatedResponse<Artist>>('/artists', { params: { page, pageSize: 20 } })
+      .then((res) => {
         setArtists(res.data.data);
-        setTotal(res.data.total);
+        setTotal(res.data.meta?.totalCount || 0);
       })
       .catch(() => {})
     setLoading(false);
@@ -27,7 +28,7 @@ export default function BrowseArtists() {
       <Typography variant="h5" gutterBottom>Browse Artists</Typography>
       {loading ? <CircularProgress /> : (
         <List>
-          {artists.map((artist: any) => (
+          {artists.map((artist) => (
             <ListItem key={artist.id} secondaryAction={
               <Button variant="outlined" size="small" onClick={() => addToQueue(artist)}>Add to Queue</Button>
             }>

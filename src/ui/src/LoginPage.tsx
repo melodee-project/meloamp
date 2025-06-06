@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, TextField, Typography, Alert } from '@mui/material';
+import { Box, Button, TextField, Alert } from '@mui/material';
 import api, { setJwt, setApiBaseUrl, authenticate } from './api';
+import { LoginRequest, LoginResponse } from './apiModels';
 import logo from './logo.svg';
 
 const ensureApiUrl = (url: string) => {
@@ -31,13 +32,18 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       const apiUrl = ensureApiUrl(serverUrl);
       localStorage.setItem('serverUrl', apiUrl);
       setApiBaseUrl(apiUrl);
-      const res = await authenticate({ email, password });
-      let token: string | undefined;
-      if (res.data && typeof res.data === 'object' && res.data !== null && 'token' in res.data) {
-        token = (res.data as any).token; // axios
-      }
+      const res = await authenticate({ email, password } as LoginRequest);
+      const loginData: LoginResponse = res.data;
+      const token = loginData.token;
       if (!token) throw new Error('Invalid response from authentication');
       setJwt(token);
+      // Save user object and serverVersion in sessionStorage
+      sessionStorage.setItem('user', JSON.stringify(loginData.user));
+      if (loginData.serverVersion !== undefined && loginData.serverVersion !== null) {
+        sessionStorage.setItem('apiVersion', loginData.serverVersion.toString());
+      } else {
+        sessionStorage.removeItem('apiVersion');
+      }
       onLogin();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Login failed');
@@ -58,7 +64,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
           fullWidth
           margin="normal"
           required
-          helperText="Root URL of your Melodee API (e.g. https://myhost.com or https://myhost.com/api/v1)"
+          helperText="Your Melodee API (e.g. https://myhost.com or https://myhost.com/api/v1)"
         />
         <TextField
           label="Email"

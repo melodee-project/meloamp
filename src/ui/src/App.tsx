@@ -131,8 +131,15 @@ export default function App() {
     }
   };
 
-  // Simulated user data
-  const user = { name: 'User', avatar: '', version: 'v0.1.0', apiVersion: 'v1.0.0' };
+  // Get user and API version from sessionStorage
+  const user = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
+  })();
+  const apiVersion = sessionStorage.getItem('apiVersion') || '';
 
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
@@ -182,15 +189,15 @@ export default function App() {
                 </IconButton>
               </Tooltip>
               <IconButton color="inherit" onClick={handleMenu} aria-label="user menu" sx={{ ml: 1 }}>
-                <Avatar alt={user.name} src={user.avatar} />
-                <Typography variant="body2" sx={{ ml: 1 }}>{user.name}</Typography>
+                <Avatar alt={user?.username || user?.name || ''} src={user?.thumbnailUrl || user?.imageUrl || ''} />
+                <Typography variant="body2" sx={{ ml: 1 }}>{user?.username || user?.name || ''}</Typography>
               </IconButton>
               <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
                 <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />Settings</MenuItem>
                 <MenuItem component={Link} to="/profile" onClick={handleClose}><AccountCircle sx={{ mr: 1 }} />Profile</MenuItem>
                 <MenuItem onClick={() => { handleClose(); handleLogout(); }}><Logout sx={{ mr: 1 }} />Log out</MenuItem>
-                <MenuItem disabled><Info sx={{ mr: 1 }} />MeloAmp {user.version}</MenuItem>
-                <MenuItem disabled><Info sx={{ mr: 1 }} />API {user.apiVersion}</MenuItem>
+                <MenuItem disabled><Info sx={{ mr: 1 }} />MeloAmp {user?.version || 'v0.1.0'}</MenuItem>
+                <MenuItem disabled><Info sx={{ mr: 1 }} />API {apiVersion}</MenuItem>
               </Menu>
             </Box>
           </Toolbar>
