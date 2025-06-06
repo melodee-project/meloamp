@@ -45,6 +45,8 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
+app.UseCors(bb => bb.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });

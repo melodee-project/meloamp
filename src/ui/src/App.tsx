@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton, InputBase, Menu, MenuItem, Avatar, Box, Button, Tooltip, ThemeProvider, CssBaseline } from '@mui/material';
-import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info } from '@mui/icons-material';
+import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info, QueueMusic } from '@mui/icons-material';
 import logo from './logo.svg';
 import './App.css';
 import UserSettings from './UserSettings';
@@ -35,8 +35,8 @@ const themeMap: any = {
   modernMinimal: modernMinimalTheme
 };
 
-// Placeholder pages
-function Dashboard() { return <div>Dashboard Page</div>; }
+// Removed unused Dashboard function
+
 function Albums() { return <BrowseAlbums />; }
 function Playlists() { return <PlaylistManager />; }
 function Artists() { return <BrowseArtists />; }
@@ -196,6 +196,12 @@ export default function App() {
                   {settings.theme === 'dark' ? <Brightness7 /> : <Brightness4 />}
                 </IconButton>
               </Tooltip>
+              {/* Queue Icon Button */}
+              <Tooltip title="Queue">
+                <IconButton color="inherit" component={Link} to="/queue" aria-label="queue" sx={{ ml: 1 }}>
+                  <QueueMusic />
+                </IconButton>
+              </Tooltip>
               <IconButton color="inherit" onClick={handleMenu} aria-label="user menu" sx={{ ml: 1 }}>
                 <Avatar alt={user?.username || user?.name || ''} src={user?.thumbnailUrl || user?.imageUrl || ''} />
                 <Typography variant="body2" sx={{ ml: 1 }}>{user?.username || user?.name || ''}</Typography>
@@ -230,8 +236,11 @@ export default function App() {
             </Routes>
           )}
         </Box>
+        {/* Sticky Player at bottom if queue is not empty */}
         {queue.length > 0 && (
-          <Player src={queue[current]?.url || ''} />
+          <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1300 }}>
+            <Player src={queue[current]?.url || ''} />
+          </Box>
         )}
       </Router>
     </ThemeProvider>

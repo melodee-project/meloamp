@@ -8,9 +8,7 @@ import { PlayArrow } from '@mui/icons-material';
 
 export default function AlbumCard({ album }: { album: Album }) {
   const navigate = useNavigate();
-  const clearQueue = useQueueStore((state: any) => state.clearQueue);
-  const addToQueue = useQueueStore((state: any) => state.addToQueue);
-  const setCurrent = useQueueStore((state: any) => state.setCurrent);
+  const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
 
   // Handler for clicking the album image
@@ -20,9 +18,7 @@ export default function AlbumCard({ album }: { album: Album }) {
       const res = await api.get<{ data: Song[] }>(`/albums/${album.id}/songs`);
       const songs: Song[] = res.data.data;
       if (songs.length === 0) return;
-      clearQueue();
-      songs.forEach(song => addToQueue(song));
-      setCurrent(0);
+      playNow(songs); // Play the entire album at once
     } catch (err) {
       // Optionally show error
     }

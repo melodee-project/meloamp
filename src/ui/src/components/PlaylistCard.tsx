@@ -11,6 +11,7 @@ export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const clearQueue = useQueueStore((state: any) => state.clearQueue);
   const addToQueue = useQueueStore((state: any) => state.addToQueue);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
+  const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
 
   // Handler for clicking the playlist image
@@ -20,9 +21,7 @@ export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
       const res = await api.get<{ data: Song[] }>(`/playlists/${playlist.id}/songs`);
       const songs: Song[] = res.data.data;
       if (songs.length === 0) return;
-      clearQueue();
-      songs.forEach(song => addToQueue(song));
-      setCurrent(0);
+      playNow(songs); // Play the entire playlist at once
     } catch (err) {
       // Optionally show error
     }

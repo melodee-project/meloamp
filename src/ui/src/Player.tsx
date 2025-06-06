@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, IconButton, Slider, Typography, Menu, MenuItem, Popover } from '@mui/material';
+import { Box, IconButton, Slider, Typography, Popover } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer } from '@mui/icons-material';
 import { useQueueStore } from './queueStore';
 
@@ -15,23 +15,38 @@ export default function Player({ src }: { src: string }) {
   const [eqAnchor, setEqAnchor] = useState<null | HTMLElement>(null);
   const [eqGains, setEqGains] = useState<number[]>(Array(EQ_BANDS.length).fill(0));
   const [scrobbled, setScrobbled] = useState(false);
-  const { queue, current, setCurrent } = useQueueStore((state: any) => ({
-    queue: state.queue,
-    current: state.current,
-    setCurrent: state.setCurrent,
-  }));
+  const [volume, setVolume] = useState(1);
+  const queue = useQueueStore((state: any) => state.queue);
+  const current = useQueueStore((state: any) => state.current);
+  const setCurrent = useQueueStore((state: any) => state.setCurrent);
 
   // Equalizer setup
   const eqNodes = useRef<any[]>([]);
   const audioCtx = useRef<AudioContext | null>(null);
   const sourceNode = useRef<MediaElementAudioSourceNode | null>(null);
 
+  // Create audio context and source node only once
   useEffect(() => {
     if (!audioRef.current) return;
     if (!audioCtx.current) audioCtx.current = new window.AudioContext();
-    if (!sourceNode.current) sourceNode.current = audioCtx.current.createMediaElementSource(audioRef.current);
-    // Disconnect previous
-    sourceNode.current.disconnect();
+    if (!sourceNode.current) {
+      try {
+        sourceNode.current = audioCtx.current.createMediaElementSource(audioRef.current);
+      } catch (e) {
+        // Already connected, do nothing
+      }
+    }
+    // Clean up on unmount: only disconnect EQ nodes
+    return () => {
+      eqNodes.current.forEach(node => node.disconnect());
+      // Do NOT close or null audioCtx, and do NOT disconnect or null sourceNode
+    };
+  }, []);
+
+  // Update EQ nodes and connect chain on src or eqGains change
+  useEffect(() => {
+    if (!audioRef.current || !audioCtx.current || !sourceNode.current) return;
+    // Disconnect previous EQ nodes
     eqNodes.current.forEach(node => node.disconnect());
     // Create EQ nodes
     eqNodes.current = EQ_BANDS.map((freq, i) => {
@@ -53,10 +68,9 @@ export default function Player({ src }: { src: string }) {
     eqNodes.current.forEach((node, i) => {
       node.gain.value = eqGains[i];
     });
-    // Clean up on unmount
+    // Clean up EQ nodes only (not source node)
     return () => {
       eqNodes.current.forEach(node => node.disconnect());
-      sourceNode.current?.disconnect();
     };
     // eslint-disable-next-line
   }, [src, eqGains]);
@@ -103,22 +117,44 @@ export default function Player({ src }: { src: string }) {
   useEffect(() => {
     if (!audioRef.current) return;
     if (!queue[current]) return;
+    // Import apiBaseUrl from api.ts
+    // (Assume apiBaseUrl is exported, or use your API helper if needed)
+    // import { apiBaseUrl } from './api';
+    const apiBaseUrl = (window as any).apiBaseUrl || '/api/v1';
     if (!scrobbled && progress > 10) {
-      fetch('/scrobble', {
+      fetch(`${apiBaseUrl}/scrobble`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songId: queue[current].id, status: 'nowPlaying' }),
+        body: JSON.stringify({ songId: queue[current].id, scrobbleType: 'nowPlaying' }),
       });
       setScrobbled(true);
     }
     if (progress > duration * 0.7) {
-      fetch('/scrobble', {
+      fetch(`${apiBaseUrl}/scrobble`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songId: queue[current].id, status: 'played' }),
+        body: JSON.stringify({ songId: queue[current].id, scrobbleType: 'played' }),
       });
     }
   }, [progress, duration, queue, current, scrobbled]);
+
+  // Auto-play when src changes
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().then(() => {
+      setPlaying(true);
+    }).catch(() => {
+      setPlaying(false);
+    });
+  }, [src]);
+
+  // Keep audio element volume in sync with slider
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -151,6 +187,18 @@ export default function Player({ src }: { src: string }) {
         }}
         sx={{ mx: 2, flex: 1 }}
       />
+      {/* Volume slider */}
+      <Box sx={{ width: 120, mx: 2, display: 'flex', alignItems: 'center' }}>
+        <Typography variant="caption" sx={{ mr: 1 }}>Vol</Typography>
+        <Slider
+          value={volume * 100}
+          min={0}
+          max={100}
+          step={1}
+          onChange={(_, v) => setVolume((v as number) / 100)}
+          sx={{ flex: 1 }}
+        />
+      </Box>
       <IconButton onClick={handleEqOpen}><Equalizer /></IconButton>
       <Popover open={!!eqAnchor} anchorEl={eqAnchor} onClose={handleEqClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Box sx={{ p: 2, width: 300 }}>

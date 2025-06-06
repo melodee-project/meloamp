@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, CircularProgress, IconButton } from '@mui/material';
+import { Box, Typography, CircularProgress, IconButton } from '@mui/material';
 import { Statistic, Artist, Album, Playlist, PaginatedResponse } from './apiModels';
 import { apiRequest } from './api';
 import ArtistCard from './components/ArtistCard';
@@ -75,23 +75,25 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
         </IconButton>
       </Box>
       <Typography variant="h5" gutterBottom>Recent Artists</Typography>
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start', mb: 3 }}>
         {recentArtists.map(a => (
-          <Grid key={a.id} {...{item: true, xs: 12, sm: 6, md: 4, lg: 3}} sx={{ display: 'flex' }}>
+          <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
             <ArtistCard artist={a} />
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
       <Typography variant="h5" gutterBottom>Recent Albums</Typography>
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start', mb: 3 }}>
         {recentAlbums.map(a => (
-          <Grid key={a.id} {...{item: true, xs: 12, sm: 6, md: 4, lg: 3}} sx={{ display: 'flex' }}>
+          <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
             <AlbumCard album={a} />
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
       <Typography variant="h5" gutterBottom>Your Playlists</Typography>
-      <PlaylistScroller playlists={playlists} />
+      <Box sx={{ width: '100%' }}>
+        <PlaylistScroller playlists={playlists} />
+      </Box>
     </Box>
   );
 }

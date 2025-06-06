@@ -3,6 +3,7 @@ import { Box, Typography, CircularProgress, Pagination, Button, Avatar } from '@
 import api from './api';
 import { useQueueStore } from './queueStore';
 import { Album, PaginatedResponse } from './apiModels';
+import AlbumCard from './components/AlbumCard';
 
 export default function BrowseAlbums() {
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -11,6 +12,7 @@ export default function BrowseAlbums() {
   const [loading, setLoading] = useState(false);
 
   const addToQueue = useQueueStore((state: any) => state.addToQueue);
+
 
   useEffect(() => {
     setLoading(true);
@@ -30,13 +32,7 @@ export default function BrowseAlbums() {
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
           {albums.map((album) => (
             <Box key={album.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
-              {/* Optionally, replace with <AlbumCard album={album} /> for consistency */}
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                <Avatar src={album.thumbnailUrl || album.imageUrl} alt={album.name} sx={{ width: 80, height: 80, mb: 1 }} />
-                <Typography variant="subtitle1" noWrap>{album.name}</Typography>
-                <Typography variant="body2" color="text.secondary" noWrap>{album.artist?.name}</Typography>
-                <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={() => addToQueue(album)}>Add to Queue</Button>
-              </Box>
+              <AlbumCard album={album} />
             </Box>
           ))}
         </Box>

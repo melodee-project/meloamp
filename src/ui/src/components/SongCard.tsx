@@ -9,22 +9,33 @@ interface SongCardProps {
   song: Song;
 }
 
-export default function SongCard({ song }: SongCardProps) {
+const SongCardComponent = function SongCard({ song }: SongCardProps) {
   const navigate = useNavigate();
-  const clearQueue = useQueueStore((state: any) => state.clearQueue);
-  const addToQueue = useQueueStore((state: any) => state.addToQueue);
-  const setCurrent = useQueueStore((state: any) => state.setCurrent);
-  const queue = useQueueStore((state: any) => state.queue);
+  // Use stable selectors for each store value/action
+  const playNow = useQueueStore(state => state.playNow);
+  const addToQueue = useQueueStore(state => state.addToQueue);
+  const clearQueue = useQueueStore(state => state.clearQueue);
+  const setCurrent = useQueueStore(state => state.setCurrent);
+  const queue = useQueueStore(state => state.queue);
   const [favorite, setFavorite] = React.useState(song.userStarred);
   const [hated, setHated] = React.useState(song.userRating === -1);
   const [hovered, setHovered] = React.useState(false);
 
+  // Helper to normalize API Song to queueStore Song
+  function toQueueSong(song: Song) {
+    return {
+      id: song.id,
+      title: song.title,
+      artist: { name: song.artist?.name || '' },
+      imageUrl: song.imageUrl || song.thumbnailUrl,
+      url: song.streamUrl || '',
+    };
+  }
+
   // Play now: clear queue, add song, set current
   const handlePlayNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    clearQueue();
-    addToQueue(song);
-    setCurrent(0);
+    playNow(toQueueSong(song));
   };
 
   // Play next: insert after current
@@ -33,13 +44,13 @@ export default function SongCard({ song }: SongCardProps) {
     // Insert after current song in queue
     // (Assume addToQueue can take an index, otherwise append)
     // For now, just append
-    addToQueue(song);
+    addToQueue(toQueueSong(song));
   };
 
   // Add as last in queue
   const handleAddLast = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToQueue(song);
+    addToQueue(toQueueSong(song));
   };
 
   // Toggle favorite
@@ -131,3 +142,5 @@ export default function SongCard({ song }: SongCardProps) {
     </Card>
   );
 }
+
+export default React.memo(SongCardComponent);
