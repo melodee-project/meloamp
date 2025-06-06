@@ -19,6 +19,7 @@ import BrowseArtists from './BrowseArtists';
 import BrowseSongs from './BrowseSongs';
 import SearchPage from './SearchPage';
 import Player from './Player';
+import QueueView from './QueueView';
 import { useQueueStore } from './queueStore';
 
 const themeMap: any = {
@@ -36,6 +37,7 @@ function Albums() { return <BrowseAlbums />; }
 function Playlists() { return <PlaylistManager />; }
 function Artists() { return <BrowseArtists />; }
 function Songs() { return <BrowseSongs />; }
+function Queue() { return <QueueView />; }
 
 function ProfilePage() { return <div>Profile Page</div>; }
 
@@ -206,6 +208,7 @@ export default function App() {
               <Route path="/search" element={<SearchPage />} />
               <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/queue" element={<Queue />} />
             </Routes>
           )}
         </Box>

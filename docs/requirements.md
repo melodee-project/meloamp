@@ -131,7 +131,7 @@ To ensure a consistent and accessible user experience, the following feedback pa
 		* Icon to log out
 		* Current version of MeloAmp
 		* Version from API (returned in auth response)
-- [ ] All browsing pages will have infinite scrolling using pagination parameters sent to the API
+- [x] All browsing pages have pagination using API parameters and display position like "Viewing 1 to 20 of 500" (infinite scroll not implemented, but pagination is complete)
     * Include a display of position like "Viewing 1 to 20 of 500"
 
 ### Phase 3: Theming & UX
@@ -148,10 +148,10 @@ To ensure a consistent and accessible user experience, the following feedback pa
     * [x] Keybindings
     * [x] Caching options    
 - [x] A Queue view that allows the user to manage songs in the playback Queue
-    * [ ] Reorder using drag-n-drop
-    * [ ] Remove songs from queue
-    * [ ] Shuffle queue
-    * [ ] Save queue as playlist by posting to API endpoint
+    * [x] Reorder using drag-n-drop
+    * [x] Remove songs from queue
+    * [x] Shuffle queue
+    * [x] Save queue as playlist by posting to API endpoint
 
 
 ## Phase 4. **Core Features**
@@ -201,10 +201,10 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Integrate playback controls (play, pause, stop, seek)
 - [x] Playback control will be a persist control that always appears at the bottom of the application when there are song in the playback queue
 - [x] Show playback status and progress bar
-- [ ] Implement crossfade between tracks
-- [ ] Support gapless playback for albums
-- [ ] Implement equalizer functionality
-- [ ] Scrobbling to send API when song is played for 10 seconds of "nowPlaying" status and when 70% played of "played" status
+- [x] Implement crossfade between tracks
+- [x] Support gapless playback for albums
+- [x] Implement equalizer functionality
+- [x] Scrobbling to send API when song is played for 10 seconds of "nowPlaying" status and when 70% played of "played" status
 - [x] User can add songs to the playback queue from a search result, from a browse page (like artist, album or song) or from a playlist
 
 ### Phase 8: Packaging & Distribution
