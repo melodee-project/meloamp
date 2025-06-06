@@ -14,9 +14,6 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
   // Use stable selectors for each store value/action
   const playNow = useQueueStore(state => state.playNow);
   const addToQueue = useQueueStore(state => state.addToQueue);
-  const clearQueue = useQueueStore(state => state.clearQueue);
-  const setCurrent = useQueueStore(state => state.setCurrent);
-  const queue = useQueueStore(state => state.queue);
   const [favorite, setFavorite] = React.useState(song.userStarred);
   const [hated, setHated] = React.useState(song.userRating === -1);
   const [hovered, setHovered] = React.useState(false);
@@ -29,6 +26,7 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
       artist: { name: song.artist?.name || '' },
       imageUrl: song.imageUrl || song.thumbnailUrl,
       url: song.streamUrl || '',
+      durationMs: song.durationMs, // Ensure durationMs is included
     };
   }
 

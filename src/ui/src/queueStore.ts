@@ -7,6 +7,7 @@ export interface Song {
   imageUrl?: string;
   url?: string;
   played?: boolean; // Add played flag
+  durationMs: number; // Required for queue duration calculations
 }
 
 export interface QueueState {

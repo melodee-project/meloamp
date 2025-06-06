@@ -7,7 +7,6 @@ import './QueueView.css'; // <-- Add this import for custom CSS
 
 export default function QueueView() {
   const queue = useQueueStore((state: QueueState) => state.queue);
-  const current = useQueueStore((state: QueueState) => state.current);
   const removeFromQueue = useQueueStore((state: QueueState) => state.removeFromQueue);
   const reorderQueue = useQueueStore((state: QueueState) => state.reorderQueue);
   const clearQueue = useQueueStore((state: QueueState) => state.clearQueue);
@@ -54,9 +53,27 @@ export default function QueueView() {
     // Optionally show a snackbar or feedback
   };
 
+  // Helper to sum total duration in seconds using song.durationMs (guaranteed present and always a number)
+  const totalDuration = queue.reduce((sum, song) => sum + song.durationMs, 0);
+  // Helper to format ms as mm:ss or h:mm:ss
+  function formatMs(ms: number) {
+    if (typeof ms !== 'number' || isNaN(ms) || ms <= 0) return '';
+    const sec = Math.round(ms / 1000);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return h > 0
+      ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+      : `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <Typography variant="h6">Playback Queue</Typography>
+      <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+        {queue.length} song{queue.length === 1 ? '' : 's'}
+        {queue.length > 0 ? ` • ${formatMs(totalDuration)}` : ''}
+      </Typography>
       <Button onClick={shuffleQueue} startIcon={<Shuffle />}>Shuffle</Button>
       <Button onClick={handleSaveAsPlaylist} startIcon={<Save />} sx={{ ml: 1 }}>Save as Playlist</Button>
       <Button onClick={clearQueue} sx={{ ml: 1 }}>Clear</Button>
@@ -89,13 +106,13 @@ export default function QueueView() {
                           mb: 1,
                           borderRadius: 2,
                           border: idx === playerCurrent && playing ? '3px solid transparent' : '2px solid',
-                          borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'grey.400' : 'primary.main',
+                          borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
                           fontWeight: song.played ? 400 : 700,
                           opacity: song.played ? 0.5 : 1,
-                          background: idx === playerCurrent ? 'rgba(255,255,255,0.05)' : 'none',
+                          background: idx === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
                           position: 'relative',
                           zIndex: idx === playerCurrent ? 1 : 'auto',
-                          bgcolor: song.played ? 'action.selected' : (idx > 0 && !queue[idx-1].played ? 'warning.light' : 'background.paper'),
+                          bgcolor: song.played ? 'background.paper' : (idx > 0 && !queue[idx-1].played ? 'background.default' : 'background.paper'),
                           transition: 'background 0.2s, opacity 0.2s',
                         }}
                       >

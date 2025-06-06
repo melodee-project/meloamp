@@ -21,6 +21,7 @@ export default function AlbumCard({ album }: { album: Album }) {
       // Map songs to include url property for the player
       const queueSongs = songs.map(song => ({
         id: song.id,
+        durationMs: song.durationMs,
         title: song.title,
         artist: { name: song.artist?.name || '' },
         imageUrl: song.imageUrl || song.thumbnailUrl,

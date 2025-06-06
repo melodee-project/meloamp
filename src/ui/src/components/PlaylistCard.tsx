@@ -8,9 +8,6 @@ import { PlayArrow } from '@mui/icons-material';
 
 export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const navigate = useNavigate();
-  const clearQueue = useQueueStore((state: any) => state.clearQueue);
-  const addToQueue = useQueueStore((state: any) => state.addToQueue);
-  const setCurrent = useQueueStore((state: any) => state.setCurrent);
   const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
 
@@ -25,6 +22,7 @@ export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
       const queueSongs = songs.map(song => ({
         id: song.id,
         title: song.title,
+        durationMs: song.durationMs,
         artist: { name: song.artist?.name || '' },
         imageUrl: song.imageUrl || song.thumbnailUrl,
         url: song.streamUrl || '',

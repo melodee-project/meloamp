@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, IconButton, Slider, Typography, Popover } from '@mui/material';
-import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer } from '@mui/icons-material';
+import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress } from '@mui/material';
+import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { useQueueStore } from './queueStore';
 import api from './api';
 import { ScrobbleRequest, ScrobbleType } from './apiModels';
@@ -19,6 +19,9 @@ export default function Player({ src }: { src: string }) {
   const [scrobbled, setScrobbled] = useState(false);
   const [scrobbledPlayed, setScrobbledPlayed] = useState(false); // Track if PLAYED scrobble sent
   const [volume, setVolume] = useState(1);
+  const [favorite, setFavorite] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<string | null>(null);
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
@@ -170,6 +173,11 @@ export default function Player({ src }: { src: string }) {
     window.dispatchEvent(new CustomEvent('meloamp-player-state', { detail: { playing, current } }));
   }, [volume, playing, current]);
 
+  // Update favorite state when song changes
+  useEffect(() => {
+    setFavorite(queue[current]?.userStarred ?? false);
+  }, [current, queue]);
+
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (playing) {
@@ -184,6 +192,27 @@ export default function Player({ src }: { src: string }) {
   const handleEqClose = () => setEqAnchor(null);
   const handleEqChange = (i: number, value: number) => {
     setEqGains(gains => gains.map((g, idx) => (idx === i ? value : g)));
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!queue[current]) return;
+    setFavLoading(true);
+    const songId = queue[current].id;
+    try {
+      if (!favorite) {
+        await api.post(`/users/favorite/${songId}/true`);
+        setFavorite(true);
+        setSnackbar('Added to favorites');
+      } else {
+        await api.post(`/users/favorite/${songId}/false`);
+        setFavorite(false);
+        setSnackbar('Removed from favorites');
+      }
+    } catch (err) {
+      setSnackbar('Failed to update favorite');
+    } finally {
+      setFavLoading(false);
+    }
   };
 
   return (
@@ -239,6 +268,9 @@ export default function Player({ src }: { src: string }) {
           ))}
         </Box>
       </Popover>
+      <IconButton onClick={handleToggleFavorite} disabled={favLoading} sx={{ ml: 1 }}>
+        {favLoading ? <CircularProgress size={24} /> : favorite ? <Favorite color="primary" /> : <FavoriteBorder />}
+      </IconButton>
       <audio
         ref={audioRef}
         src={src || undefined}
@@ -247,7 +279,24 @@ export default function Player({ src }: { src: string }) {
         onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
         style={{ display: 'none' }}
       />
-      <Typography variant="caption">{Math.floor(progress)} / {Math.floor(duration)}s</Typography>
+      <Typography variant="caption">
+        {formatTime(progress)} / {formatTime(duration)}
+      </Typography>
+      <Snackbar
+        open={!!snackbar}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar(null)}
+        message={snackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
     </Box>
   );
+}
+
+// Helper to format seconds as mm:ss
+function formatTime(sec: number) {
+  if (!isFinite(sec) || sec < 0) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
