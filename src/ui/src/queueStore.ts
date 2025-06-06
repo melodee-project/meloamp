@@ -6,6 +6,7 @@ export interface Song {
   artist: { name: string };
   imageUrl?: string;
   url?: string;
+  played?: boolean; // Add played flag
 }
 
 export interface QueueState {
@@ -60,8 +61,13 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       return { queue: [], current: 0 };
     }),
     setCurrent: (index: number) => set((state: QueueState) => {
-      persist(state.queue, index);
-      return { current: index };
+      // Mark previous as played if moving forward
+      let queue = [...state.queue];
+      if (index > state.current && queue[state.current]) {
+        queue[state.current] = { ...queue[state.current], played: true };
+      }
+      persist(queue, index);
+      return { queue, current: index };
     }),
     playNow: (songs: Song | Song[]) => {
       let newQueue: Song[];

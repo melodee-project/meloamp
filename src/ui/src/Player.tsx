@@ -17,6 +17,7 @@ export default function Player({ src }: { src: string }) {
   const [eqAnchor, setEqAnchor] = useState<null | HTMLElement>(null);
   const [eqGains, setEqGains] = useState<number[]>(Array(EQ_BANDS.length).fill(0));
   const [scrobbled, setScrobbled] = useState(false);
+  const [scrobbledPlayed, setScrobbledPlayed] = useState(false); // Track if PLAYED scrobble sent
   const [volume, setVolume] = useState(1);
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
@@ -119,13 +120,13 @@ export default function Player({ src }: { src: string }) {
   useEffect(() => {
     if (!audioRef.current) return;
     if (!queue[current]) return;
-    // Use api.post for scrobbling to ensure auth headers are set
     const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
       songId: queue[current].id,
       playerName: 'MeloAmp',
       timestamp: Date.now(),
       playbackDuration: Math.floor(progress),
     };
+    // Only scrobble NOW_PLAYING once
     if (!scrobbled && progress > 10) {
       api.post('/scrobble', {
         ...baseScrobble,
@@ -133,13 +134,21 @@ export default function Player({ src }: { src: string }) {
       } as ScrobbleRequest);
       setScrobbled(true);
     }
-    if (progress > duration * 0.7) {
+    // Only scrobble PLAYED once
+    if (!scrobbledPlayed && progress > duration * 0.7) {
       api.post('/scrobble', {
         ...baseScrobble,
         scrobbleType: ScrobbleType.PLAYED,
       } as ScrobbleRequest);
+      setScrobbledPlayed(true);
     }
-  }, [progress, duration, queue, current, scrobbled]);
+  }, [progress, duration, queue, current, scrobbled, scrobbledPlayed]);
+
+  // Reset scrobble flags when song changes
+  useEffect(() => {
+    setScrobbled(false);
+    setScrobbledPlayed(false);
+  }, [current, src]);
 
   // Auto-play when src changes
   useEffect(() => {
@@ -157,7 +166,9 @@ export default function Player({ src }: { src: string }) {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
-  }, [volume]);
+    // Dispatch custom event for playing state and current index
+    window.dispatchEvent(new CustomEvent('meloamp-player-state', { detail: { playing, current } }));
+  }, [volume, playing, current]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -198,7 +209,13 @@ export default function Player({ src }: { src: string }) {
           min={0}
           max={100}
           step={1}
-          onChange={(_, v) => setVolume((v as number) / 100)}
+          onChange={(_, v) => {
+            const newVolume = (v as number) / 100;
+            setVolume(newVolume);
+            if (audioRef.current && newVolume > 0) {
+              audioRef.current.muted = false;
+            }
+          }}
           sx={{ flex: 1 }}
         />
       </Box>
@@ -224,7 +241,8 @@ export default function Player({ src }: { src: string }) {
       </Popover>
       <audio
         ref={audioRef}
-        src={src}
+        src={src || undefined}
+        crossOrigin="anonymous"
         onTimeUpdate={e => setProgress((e.target as HTMLAudioElement).currentTime)}
         onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
         style={{ display: 'none' }}

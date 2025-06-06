@@ -3,12 +3,29 @@ import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, Li
 import { Delete, DragIndicator, Shuffle, Save } from '@mui/icons-material';
 import { useQueueStore, QueueState } from './queueStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import './QueueView.css'; // <-- Add this import for custom CSS
 
 export default function QueueView() {
   const queue = useQueueStore((state: QueueState) => state.queue);
+  const current = useQueueStore((state: QueueState) => state.current);
   const removeFromQueue = useQueueStore((state: QueueState) => state.removeFromQueue);
   const reorderQueue = useQueueStore((state: QueueState) => state.reorderQueue);
   const clearQueue = useQueueStore((state: QueueState) => state.clearQueue);
+  // Get playing state from Player (global store or context)
+  const [playing, setPlaying] = React.useState(false);
+  const [playerCurrent, setPlayerCurrent] = React.useState<number>(-1);
+  React.useEffect(() => {
+    // Listen for playing state and current index from Player via window event
+    function handlePlayerState(e: any) {
+      if (e?.detail) {
+        if (typeof e.detail.playing === 'boolean') setPlaying(e.detail.playing);
+        if (typeof e.detail.current === 'number') setPlayerCurrent(e.detail.current);
+      }
+    }
+    window.addEventListener('meloamp-player-state', handlePlayerState);
+    return () => window.removeEventListener('meloamp-player-state', handlePlayerState);
+  }, []);
+
   const shuffleQueue = () => {
     const shuffled = [...queue];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -55,14 +72,42 @@ export default function QueueView() {
                 {queue.map((song: any, idx: number) => (
                   <Draggable key={song.id} draggableId={song.id.toString()} index={idx}>
                     {(provided: any) => (
-                      <ListItem ref={provided.innerRef} {...provided.draggableProps} secondaryAction={
-                        <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
-                      }>
+                      <ListItem 
+                        ref={provided.innerRef} 
+                        {...provided.draggableProps} 
+                        secondaryAction={
+                          <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
+                        }
+                        className={
+                          idx === playerCurrent && playing
+                            ? 'rainbow-border-playing'
+                            : song.played
+                            ? 'played-song'
+                            : 'unplayed-song'
+                        }
+                        sx={{
+                          mb: 1,
+                          borderRadius: 2,
+                          border: idx === playerCurrent && playing ? '3px solid transparent' : '2px solid',
+                          borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'grey.400' : 'primary.main',
+                          fontWeight: song.played ? 400 : 700,
+                          opacity: song.played ? 0.5 : 1,
+                          background: idx === playerCurrent ? 'rgba(255,255,255,0.05)' : 'none',
+                          position: 'relative',
+                          zIndex: idx === playerCurrent ? 1 : 'auto',
+                          bgcolor: song.played ? 'action.selected' : (idx > 0 && !queue[idx-1].played ? 'warning.light' : 'background.paper'),
+                          transition: 'background 0.2s, opacity 0.2s',
+                        }}
+                      >
                         <span {...provided.dragHandleProps}><DragIndicator /></span>
                         <ListItemAvatar>
                           <Avatar src={song.imageUrl} alt={song.title} />
                         </ListItemAvatar>
-                        <ListItemText primary={song.title} secondary={song.artist?.name} />
+                        <ListItemText 
+                          primary={song.title} 
+                          secondary={song.artist?.name} 
+                          primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
+                        />
                       </ListItem>
                     )}
                   </Draggable>
