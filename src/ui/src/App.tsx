@@ -22,6 +22,9 @@ import Player from './Player';
 import QueueView from './QueueView';
 import { useQueueStore } from './queueStore';
 import DashboardWrapper from './Dashboard';
+import ArtistDetailView from './detailViews/ArtistDetailView';
+import AlbumDetailView from './detailViews/AlbumDetailView';
+import PlaylistDetailView from './detailViews/PlaylistDetailView';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -217,6 +220,9 @@ export default function App() {
               <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/queue" element={<Queue />} />
+              <Route path="/artists/:id" element={<ArtistDetailView />} />
+              <Route path="/albums/:id" element={<AlbumDetailView />} />
+              <Route path="/playlists/:id" element={<PlaylistDetailView />} />
             </Routes>
           )}
         </Box>
