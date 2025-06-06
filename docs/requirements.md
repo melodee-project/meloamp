@@ -104,9 +104,6 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Setup: Create new React solution in the `/src/ui` directory
 - [x] Setup: Create new Electron solution in the `/src/electron` directory
 - [x] Setup: Create a script in the root `run-it.sh` that runs the Electron application locally
-- [x] Mock API: Implement mock API for development
-    * [x] Mock API must generate enough fake data to be able to test pagination and infinite scrolling
-    * [x] Mock API should have random images that allow for testing of various color contrasts
 
 ### Phase 2: Application Interface
 - [x] Ensure accessibility and responsive design
@@ -194,7 +191,6 @@ To ensure a consistent and accessible user experience, the following feedback pa
   - [x] Playlist
 - [x] Handle API errors and loading states
 - [x] Caching of user avatar, artist, album, song and playlist images
-- [x] Update Mock API with all required endpoints 
 
 ### Phase 7: Audio Playback
 - [x] Stream audio from URL

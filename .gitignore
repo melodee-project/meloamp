@@ -78,9 +78,6 @@ Thumbs.db
 # Misc
 coverage/
 
-# Ignore mock API data
-src/mockApi.js.log
-
 # Ignore Electron package-lock
 src/electron/package-lock.json
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, TextField, Typography, Alert } from '@mui/material';
-import api, { setJwt, setApiBaseUrl, authenticate, setUseMockApi } from './api';
+import api, { setJwt, setApiBaseUrl, authenticate } from './api';
 import logo from './logo.svg';
 
 const ensureApiUrl = (url: string) => {
@@ -10,10 +10,6 @@ const ensureApiUrl = (url: string) => {
   }
   return u;
 };
-
-function isMockUrl(url: string) {
-  return url.trim().toLowerCase().includes('mock') || url.trim().toLowerCase().includes('localhost:4000');
-}
 
 export default function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState('');
@@ -35,12 +31,9 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       const apiUrl = ensureApiUrl(serverUrl);
       localStorage.setItem('serverUrl', apiUrl);
       setApiBaseUrl(apiUrl);
-      setUseMockApi(isMockUrl(apiUrl));
       const res = await authenticate({ email, password });
       let token: string | undefined;
-      if ('token' in res) {
-        token = (res as any).token; // mock
-      } else if (res.data && typeof res.data === 'object' && res.data !== null && 'token' in res.data) {
+      if (res.data && typeof res.data === 'object' && res.data !== null && 'token' in res.data) {
         token = (res.data as any).token; // axios
       }
       if (!token) throw new Error('Invalid response from authentication');
