@@ -4,14 +4,16 @@ import { Artist } from '../apiModels';
 
 export default function ArtistCard({ artist }: { artist: Artist }) {
   return (
-    <Card sx={{ maxWidth: 345, m: 1 }}>
-      <CardMedia
-        component="img"
-        height="140"
-        image={artist.thumbnailUrl}
-        alt={artist.name}
-      />
-      <CardContent>
+    <Card sx={{ width: 200, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2 }}>
+        <CardMedia
+          component="img"
+          sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1 }}
+          image={artist.thumbnailUrl}
+          alt={artist.name}
+        />
+      </Box>
+      <CardContent sx={{ width: '100%', textAlign: 'center' }}>
         <Typography variant="h6">{artist.name}</Typography>
         <Typography variant="body2">Albums: {artist.albumCount}</Typography>
         <Typography variant="body2">Songs: {artist.songCount}</Typography>

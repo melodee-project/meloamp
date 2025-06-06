@@ -1,14 +1,24 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Card, CardMedia, CardContent } from '@mui/material';
 import { Album } from '../apiModels';
 
 export default function AlbumCard({ album }: { album: Album }) {
   return (
-    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 2, minWidth: 180, m: 1 }}>
-      <img src={album.thumbnailUrl} alt={album.name} style={{ width: '100%', borderRadius: '4px' }} />
-      <Typography variant="h6">{album.name}</Typography>
-      <Typography variant="body2">Artist: {album.artist.name}</Typography>
-      <Typography variant="body2">Year: {album.releaseYear}</Typography>
-    </Box>
+    <Card sx={{ width: 200, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2 }}>
+        <CardMedia
+          component="img"
+          sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1 }}
+          image={album.thumbnailUrl}
+          alt={album.name}
+        />
+      </Box>
+      <CardContent sx={{ width: '100%', textAlign: 'center' }}>
+        <Typography variant="subtitle1">{album.name}</Typography>
+        <Typography variant="body2">{album.artist.name}</Typography>
+        <Typography variant="body2">{album.releaseYear} | {album.songCount} | {album.durationFormatted}</Typography>
+
+      </CardContent>
+    </Card>    
   );
 }
