@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Pagination, Button, Avatar } from '@mui/material';
+import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
 import api from './api';
-import { useQueueStore } from './queueStore';
 import { Album, PaginatedResponse } from './apiModels';
 import AlbumCard from './components/AlbumCard';
 
@@ -10,9 +9,6 @@ export default function BrowseAlbums() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-
-  const addToQueue = useQueueStore((state: any) => state.addToQueue);
-
 
   useEffect(() => {
     setLoading(true);

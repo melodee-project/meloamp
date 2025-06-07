@@ -248,11 +248,11 @@ export default function Player({ src }: { src: string }) {
     const songId = queue[current].id;
     try {
       if (!favorite) {
-        await api.post(`/users/favorite/${songId}/true`);
+        await api.post(`/songs/starred/${songId}/true`);
         setFavorite(true);
         setSnackbar('Added to favorites');
       } else {
-        await api.post(`/users/favorite/${songId}/false`);
+        await api.post(`/songs/starred/${songId}/false`);
         setFavorite(false);
         setSnackbar('Removed from favorites');
       }
@@ -265,6 +265,34 @@ export default function Player({ src }: { src: string }) {
 
   return (
     <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', p: 2, display: 'flex', alignItems: 'center', zIndex: 1201 }}>
+            {queue[current] && (
+        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, mr: 2, width: '20vw', maxWidth: '20vw', flexShrink: 0 }}>
+          {queue[current].imageUrl && (
+            <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: 48, height: 48, borderRadius: 1, mr: 2, objectFit: 'cover', boxShadow: 1 }} />
+          )}
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{queue[current].title}</Typography>
+            {queue[current].album && (
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {queue[current].album.year ? `${queue[current].album.year} • ` : ''}
+                <Box component={"span"} sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }}
+                  onClick={() => window.location.assign(`/albums/${queue[current].album.id}`)}>
+                  {queue[current].album.name}
+                </Box>
+              </Typography>
+            )}
+            {queue[current].artist && (
+              <Typography variant="caption" color="text.secondary" noWrap>
+                <Box component={"span"} sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }}
+                  onClick={() => window.location.assign(`/artists/${queue[current].artist.id}`)}>
+                  {queue[current].artist.name}
+                </Box>
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      )}
+ 
       <IconButton onClick={() => setCurrent(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
       <IconButton onClick={togglePlay}>{playing ? <Pause /> : <PlayArrow />}</IconButton>
       <IconButton onClick={() => setCurrent(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>

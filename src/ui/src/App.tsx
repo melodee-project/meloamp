@@ -4,6 +4,7 @@ import { AppBar, Toolbar, Typography, IconButton, InputBase, Menu, MenuItem, Ava
 import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info, QueueMusic } from '@mui/icons-material';
 import logo from './logo.svg';
 import './App.css';
+import Badge from '@mui/material/Badge';
 import UserSettings from './UserSettings';
 import LoginPage from './LoginPage';
 import { clearJwt } from './api';
@@ -209,9 +210,11 @@ export default function App() {
               </Tooltip>
               {/* Queue Icon Button */}
               <Tooltip title="Queue">
-                <IconButton color="inherit" component={Link} to="/queue" aria-label="queue" sx={{ ml: 0.5 }}>
-                  <QueueMusic />
-                </IconButton>
+                <Badge badgeContent={queue.filter((song: any) => !song.played).length} color="primary">
+                  <IconButton color="inherit" component={Link} to="/queue" aria-label="queue" sx={{ ml: 0.5 }}>
+                    <QueueMusic />
+                  </IconButton>
+                </Badge>
               </Tooltip>
               <IconButton color="inherit" onClick={handleMenu} aria-label="user menu" sx={{ ml: 0.5 }}>
                 <Avatar alt={user?.username || user?.name || ''} src={user?.thumbnailUrl || user?.imageUrl || ''} />

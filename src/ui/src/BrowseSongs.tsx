@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
 import api from './api';
-import { useQueueStore } from './queueStore';
 import { Song, PaginatedResponse } from './apiModels';
 import SongCard from './components/SongCard';
 

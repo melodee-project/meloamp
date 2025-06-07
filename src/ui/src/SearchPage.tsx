@@ -10,9 +10,6 @@ import { toQueueSong } from './components/toQueueSong';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
   const [search, setSearch] = useState(query || '');
-  const [type, setType] = useState<string | undefined>(undefined); // e.g. 'all', 'artist', 'album', 'song', 'playlist'
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResultData | null>(null);
   const [error, setError] = useState('');
@@ -32,9 +29,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     searchTimeout.current = setTimeout(() => {
       const searchRequest: any = {
         query: search,
-        type: type || 'data',
-        page,
-        pageSize,
+        type: 'data',
+        page: 1,
+        pageSize: 20,
       };
       api.post<SearchResultData>('/search', searchRequest)
         .then((res) => {
@@ -49,7 +46,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     return () => {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
-  }, [search, type, page, pageSize]);
+  }, [search]);
 
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>

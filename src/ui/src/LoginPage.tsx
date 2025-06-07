@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, TextField, Alert } from '@mui/material';
-import api, { setJwt, setApiBaseUrl, authenticate } from './api';
+import { setJwt, setApiBaseUrl, authenticate } from './api';
 import { LoginRequest, LoginResponse } from './apiModels';
 import logo from './logo.svg';
 
