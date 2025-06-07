@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, InputAdornment, IconButton, CircularProgress, Button, ListItem, ListItemText } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import api from './api';
-import { useQueueStore } from './queueStore';
 import { SearchResultData, Song, Artist, Album, Playlist } from './apiModels';
 import ArtistCard from './components/ArtistCard';
 import AlbumCard from './components/AlbumCard';
 import { useTranslation } from 'react-i18next';
 import SongCard from './components/SongCard';
+import { useLocation } from 'react-router-dom';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
   const [search, setSearch] = useState(query || '');
@@ -24,6 +24,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const pageSize = 10;
 
   const { t } = useTranslation();
+  const location = useLocation();
 
   // Debounced search effect
   useEffect(() => {
@@ -67,6 +68,13 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     setPlaylistPage(1);
   }, [search]);
 
+  // Close the search modal/overlay if the route changes away from /search
+  useEffect(() => {
+    if (onClose && location.pathname !== '/search') {
+      onClose();
+    }
+  }, [location.pathname, onClose]);
+
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
       <TextField
@@ -94,9 +102,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.artists', 'Artists')}</Typography>
               {((results.data.totalArtists ?? results.data.artists.length) > pageSize) && (
-                <Typography variant="body2" sx={{ mb: 1 }}>{t('songs.viewing', {
-                  start: (artistPage - 1) * pageSize + 1,
-                  end: Math.min(artistPage * pageSize, results.data.totalArtists ?? results.data.artists.length),
+                <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
+                  from: (artistPage - 1) * pageSize + 1,
+                  to: Math.min(artistPage * pageSize, results.data.totalArtists ?? results.data.artists.length),
                   total: results.data.totalArtists ?? results.data.artists.length
                 })}</Typography>
               )}
@@ -120,9 +128,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.albums', 'Albums')}</Typography>
               {((results.data.totalAlbums ?? results.data.albums.length) > pageSize) && (
-                <Typography variant="body2" sx={{ mb: 1 }}>{t('songs.viewing', {
-                  start: (albumPage - 1) * pageSize + 1,
-                  end: Math.min(albumPage * pageSize, results.data.totalAlbums ?? results.data.albums.length),
+                <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
+                  from: (albumPage - 1) * pageSize + 1,
+                  to: Math.min(albumPage * pageSize, results.data.totalAlbums ?? results.data.albums.length),
                   total: results.data.totalAlbums ?? results.data.albums.length
                 })}</Typography>
               )}
@@ -146,15 +154,15 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.songs', 'Songs')}</Typography>
               {((results.data.totalSongs ?? results.data.songs.length) > pageSize) && (
-                <Typography variant="body2" sx={{ mb: 1 }}>{t('songs.viewing', {
-                  start: (songPage - 1) * pageSize + 1,
-                  end: Math.min(songPage * pageSize, results.data.totalSongs ?? results.data.songs.length),
+                <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
+                  from: (songPage - 1) * pageSize + 1,
+                  to: Math.min(songPage * pageSize, results.data.totalSongs ?? results.data.songs.length),
                   total: results.data.totalSongs ?? results.data.songs.length
                 })}</Typography>
               )}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
                 {results.data.songs.map((s: Song) => (
-                  <Box key={s.id} sx={{ flex: '1 1 250px', maxWidth: 350, minWidth: 220, display: 'flex', justifyContent: 'center' }}>
+                  <Box key={s.id} sx={{ width: 300, minWidth: 300, maxWidth: 300, display: 'flex', justifyContent: 'center' }}>
                     <SongCard song={s} />
                   </Box>
                 ))}
@@ -172,9 +180,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.playlists', 'Playlists')}</Typography>
               {((results.data.totalPlaylists ?? results.data.playlists.length) > pageSize) && (
-                <Typography variant="body2" sx={{ mb: 1 }}>{t('songs.viewing', {
-                  start: (playlistPage - 1) * pageSize + 1,
-                  end: Math.min(playlistPage * pageSize, results.data.totalPlaylists ?? results.data.playlists.length),
+                <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
+                  from: (playlistPage - 1) * pageSize + 1,
+                  to: Math.min(playlistPage * pageSize, results.data.totalPlaylists ?? results.data.playlists.length),
                   total: results.data.totalPlaylists ?? results.data.playlists.length
                 })}</Typography>
               )}
