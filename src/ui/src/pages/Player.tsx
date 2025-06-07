@@ -167,14 +167,31 @@ export default function Player({ src }: { src: string }) {
     });
   }, [src]);
 
-  // Always set the audio src from the current queue song
+  const [shouldAutoPlayFirst, setShouldAutoPlayFirst] = useState(false);
+  const prevQueueLength = useRef(queue.length);
   useEffect(() => {
-    if (audioRef.current && queue[current]?.url) {
-      audioRef.current.src = queue[current].url;
+    if (prevQueueLength.current === 0 && queue.length > 0) {
+      setCurrent(0);
+      setShouldAutoPlayFirst(true);
     }
-    // Reset playing state on queue/current change (e.g., after refresh)
-    setPlaying(false);
-  }, [queue, current]);
+    prevQueueLength.current = queue.length;
+  }, [queue.length, setCurrent]);
+
+  // Unified effect: handle auto-play and src setting together
+  useEffect(() => {
+    if (
+      shouldAutoPlayFirst &&
+      audioRef.current &&
+      queue.length > 0 &&
+      typeof current === 'number' &&
+      queue[current]?.url
+    ) {
+      audioRef.current.src = queue[current].url;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      setShouldAutoPlayFirst(false);
+    }
+  }, [shouldAutoPlayFirst, queue, current]);
 
   // Keep audio element volume in sync with slider
   useEffect(() => {
@@ -214,6 +231,22 @@ export default function Player({ src }: { src: string }) {
     } catch {}
     // eslint-disable-next-line
   }, [eqGains]);
+
+  // Actually play when the first song is set and flagged for auto-play
+  useEffect(() => {
+    if (
+      shouldAutoPlayFirst &&
+      audioRef.current &&
+      queue.length > 0 &&
+      current === 0 &&
+      audioRef.current.src &&
+      audioRef.current.src.includes(queue[0]?.url)
+    ) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      setShouldAutoPlayFirst(false);
+    }
+  }, [shouldAutoPlayFirst, queue, current]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -266,6 +299,17 @@ export default function Player({ src }: { src: string }) {
     }
   };
 
+  // Helper to play a song at a given index
+  const playSongAtIndex = (idx: number) => {
+    setCurrent(idx);
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      }
+    }, 0);
+  };
+
   return (
     <>
       {/* Full Screen Player Dialog */}
@@ -273,7 +317,6 @@ export default function Player({ src }: { src: string }) {
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper', p: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', p: 2, justifyContent: 'space-between', minHeight: 64 }}>
             <IconButton onClick={() => setIsFullScreen(false)}><FullscreenExit /></IconButton>
-            <Typography variant="h6" sx={{ flex: 1, textAlign: 'center' }}>{t('player.nowPlaying')}</Typography>
             <Box sx={{ width: 48 }} /> {/* Spacer for symmetry */}
           </Box>
           <Box sx={{ display: 'flex', flex: 1, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', justifyContent: 'center', gap: 4, p: { xs: 1, md: 4 }, height: '80vh', minHeight: 0 }}>
@@ -366,9 +409,9 @@ export default function Player({ src }: { src: string }) {
               {/* Controls (reuse main controls) */}
               <Box sx={{ mt: 6 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <IconButton onClick={() => setCurrent(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
+                  <IconButton onClick={() => playSongAtIndex(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
                   <IconButton onClick={togglePlay}>{playing ? <Pause /> : <PlayArrow />}</IconButton>
-                  <IconButton onClick={() => setCurrent(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>
+                  <IconButton onClick={() => playSongAtIndex(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>
                   <Slider
                     value={progress}
                     min={0}
@@ -467,9 +510,9 @@ export default function Player({ src }: { src: string }) {
             </Box>
           </Box>
         )}
-        <IconButton onClick={() => setCurrent(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
+        <IconButton onClick={() => playSongAtIndex(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
         <IconButton onClick={togglePlay}>{playing ? <Pause /> : <PlayArrow />}</IconButton>
-        <IconButton onClick={() => setCurrent(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>
+        <IconButton onClick={() => playSongAtIndex(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>
         <Slider
           value={progress}
           min={0}
