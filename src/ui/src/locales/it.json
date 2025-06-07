@@ -1,19 +1,107 @@
 {
-  "dashboard": {"recentArtists": "Artisti recenti","recentAlbums": "Album recenti","yourPlaylists": "Le tue playlist"},
-  "common": {"loading": "Caricamento...","error": "Si è verificato un errore","refresh": "Aggiorna"},
-  "settings": {"title": "Impostazioni utente","theme": "Tema","language": "Lingua","recentItems": "Elementi recenti nella dashboard","highContrast": "Modalità alto contrasto","fontScale": "Scala carattere"},
-  "nav": {"dashboard": "Dashboard","artists": "Artisti","albums": "Album","playlists": "Playlist","songs": "Canzoni","queue": "Coda","settings": "Impostazioni","profile": "Profilo","logout": "Disconnetti"},
-  "player": {"nowPlaying": "In riproduzione","queue": "Coda","vol": "Vol","equalizer": "Equalizzatore","addedToFavorites": "Aggiunto ai preferiti","removedFromFavorites": "Rimosso dai preferiti","failedToUpdateFavorite": "Impossibile aggiornare il preferito","playbackFailed": "Riproduzione fallita. Fai clic su riproduci per riprovare.","now": "Ora"},
-  "songCard": {"unknownAlbum": "Album sconosciuto","unknownArtist": "Artista sconosciuto","playNext": "Riproduci dopo","favorite": "Preferito","unfavorite": "Rimuovi preferito","hate": "Non mi piace","unhate": "Rimuovi non mi piace","addLast": "Aggiungi alla fine della coda"},
-  "albumCard": {"songs": "{{count}} canzoni"},
-  "artistCard": {"albums": "{{count}} album","songs": "{{count}} canzoni"},
-  "playlistCard": {"songCount": "{{count}} canzoni"},
-  "playlistManager": {"title": "Playlist","viewing": "Visualizzazione da {{from}} a {{to}} di {{total}}"},
-  "search": {"placeholder": "Cerca artisti, album, canzoni...","error": "Si è verificato un errore: {{error}}","addToQueue": "Aggiungi alla coda","song": "Canzone","playlist": "Playlist"},
-  "queue": {"title": "Coda","clear": "Svuota coda","shuffle": "Mescola","save": "Salva coda","playAll": "Riproduci tutto","unknownArtist": "Artista sconosciuto"},
-  "login": {"email": "Email","password": "Password","login": "Accedi","loggingIn": "Accesso in corso...","error": "Accesso fallito. Controlla le tue credenziali."},
-  "statistic": {"songsPlayed": "Canzoni riprodotte","artistsLiked": "Artisti preferiti","albumsLiked": "Album preferiti"},
-  "albumDetail": {"artist": "Artista","releaseYear": "Anno di uscita","tracks": "Tracce"},
-  "artistDetail": {"albums": "Album","songs": "Canzoni"},
-  "playlistDetail": {"createdBy": "Creato da","tracks": "Tracce"}
+  "dashboard": {
+    "recentArtists": "Artisti recenti",
+    "recentAlbums": "Album recenti",
+    "yourPlaylists": "Le tue playlist"
+  },
+  "common": {
+    "loading": "Caricamento...",
+    "error": "Si è verificato un errore",
+    "refresh": "Aggiorna",
+    "close": "Chiudi",
+    "viewing": "Visualizzazione da {{from}} a {{to}} di {{total}}"
+  },
+  "settings": {
+    "title": "Impostazioni utente",
+    "theme": "Tema",
+    "language": "Lingua",
+    "recentItems": "Elementi recenti nella dashboard",
+    "highContrast": "Modalità alto contrasto",
+    "fontScale": "Scala carattere"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "artists": "Artisti",
+    "albums": "Album",
+    "playlists": "Playlist",
+    "songs": "Canzoni",
+    "queue": "Coda",
+    "settings": "Impostazioni",
+    "profile": "Profilo",
+    "logout": "Disconnetti"
+  },
+  "player": {
+    "nowPlaying": "In riproduzione",
+    "queue": "Coda",
+    "vol": "Vol",
+    "equalizer": "Equalizzatore",
+    "addedToFavorites": "Aggiunto ai preferiti",
+    "removedFromFavorites": "Rimosso dai preferiti",
+    "failedToUpdateFavorite": "Impossibile aggiornare il preferito",
+    "playbackFailed": "Riproduzione fallita. Fai clic su riproduci per riprovare.",
+    "now": "Ora"
+  },
+  "songCard": {
+    "unknownAlbum": "Album sconosciuto",
+    "unknownArtist": "Artista sconosciuto",
+    "playNext": "Riproduci dopo",
+    "favorite": "Preferito",
+    "unfavorite": "Rimuovi dai preferiti",
+    "hate": "Non mi piace",
+    "unhate": "Rimuovi non mi piace",
+    "addLast": "Aggiungi come ultimo in coda"
+  },
+  "albumCard": {
+    "songs": "{{count}} canzoni"
+  },
+  "artistCard": {
+    "albums": "{{count}} album",
+    "songs": "{{count}} canzoni"
+  },
+  "playlistCard": {
+    "songCount": "{{count}} canzoni"
+  },
+  "playlistManager": {
+    "title": "Playlist"
+  },
+  "search": {
+    "placeholder": "Cerca artisti, album, brani...",
+    "error": "Si è verificato un errore: {{error}}",
+    "addToQueue": "Aggiungi alla coda",
+    "song": "Canzone",
+    "playlist": "Playlist"
+  },
+  "queue": {
+    "title": "Coda",
+    "clear": "Svuota coda",
+    "shuffle": "Mescola",
+    "save": "Salva coda",
+    "playAll": "Riproduci tutto",
+    "unknownArtist": "Artista sconosciuto"
+  },
+  "login": {
+    "email": "Email",
+    "password": "Password",
+    "login": "Accedi",
+    "loggingIn": "Accesso in corso...",
+    "error": "Accesso fallito. Controlla le tue credenziali."
+  },
+  "statistic": {
+    "songsPlayed": "Canzoni riprodotte",
+    "artistsLiked": "Artisti preferiti",
+    "albumsLiked": "Album preferiti"
+  },
+  "albumDetail": {
+    "artist": "Artista",
+    "releaseYear": "Anno di uscita",
+    "tracks": "Tracce"
+  },
+  "artistDetail": {
+    "albums": "Album",
+    "songs": "Canzoni"
+  },
+  "playlistDetail": {
+    "createdBy": "Creato da",
+    "tracks": "Tracce"
+  }
 }

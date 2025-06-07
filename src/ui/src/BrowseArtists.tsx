@@ -42,7 +42,11 @@ export default function BrowseArtists() {
         sx={{ mt: 2 }}
       />
       <Typography variant="body2" sx={{ mt: 1 }}>
-        Viewing {(page - 1) * 20 + 1} to {Math.min(page * 20, total)} of {total}
+        {t('common.viewing', {
+          from: (page - 1) * 20 + 1,
+          to: Math.min(page * 20, total),
+          total
+        })}
       </Typography>
     </Box>
   );

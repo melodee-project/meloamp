@@ -8,7 +8,8 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "refresh": "Refresh",
-    "close": "Close"
+    "close": "Close",
+    "viewing": "Viewing {{from}} to {{to}} of {{total}}"
   },
   "settings": {
     "title": "User Settings",
@@ -61,8 +62,7 @@
     "songCount": "{{count}} songs"
   },
   "playlistManager": {
-    "title": "Playlists",
-    "viewing": "Viewing {{from}} to {{to}} of {{total}}"
+    "title": "Playlists"
   },
   "search": {
     "placeholder": "Search artists, albums, tracks...",

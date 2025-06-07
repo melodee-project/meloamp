@@ -1,19 +1,107 @@
 {
-  "dashboard": {"recentArtists": "Artistes récents","recentAlbums": "Albums récents","yourPlaylists": "Vos playlists"},
-  "common": {"loading": "Chargement...","error": "Une erreur s'est produite","refresh": "Rafraîchir"},
-  "settings": {"title": "Paramètres utilisateur","theme": "Thème","language": "Langue","recentItems": "Éléments récents sur le tableau de bord","highContrast": "Mode contraste élevé","fontScale": "Échelle de police"},
-  "nav": {"dashboard": "Tableau de bord","artists": "Artistes","albums": "Albums","playlists": "Playlists","songs": "Chansons","queue": "File d'attente","settings": "Paramètres","profile": "Profil","logout": "Déconnexion"},
-  "player": {"nowPlaying": "Lecture en cours","queue": "File d'attente","vol": "Vol","equalizer": "Égaliseur","addedToFavorites": "Ajouté aux favoris","removedFromFavorites": "Retiré des favoris","failedToUpdateFavorite": "Échec de la mise à jour du favori","playbackFailed": "La lecture a échoué. Cliquez sur lecture pour réessayer.","now": "Maintenant"},
-  "songCard": {"unknownAlbum": "Album inconnu","unknownArtist": "Artiste inconnu","playNext": "Lire ensuite","favorite": "Favori","unfavorite": "Retirer des favoris","hate": "Je n'aime pas","unhate": "Retirer le je n'aime pas","addLast": "Ajouter à la fin de la file"},
-  "albumCard": {"songs": "{{count}} chansons"},
-  "artistCard": {"albums": "{{count}} albums","songs": "{{count}} chansons"},
-  "playlistCard": {"songCount": "{{count}} chansons"},
-  "playlistManager": {"title": "Playlists","viewing": "Affichage de {{from}} à {{to}} sur {{total}}"},
-  "search": {"placeholder": "Rechercher artistes, albums, chansons...","error": "Une erreur s'est produite : {{error}}","addToQueue": "Ajouter à la file","song": "Chanson","playlist": "Playlist"},
-  "queue": {"title": "File d'attente","clear": "Vider la file","shuffle": "Mélanger","save": "Sauvegarder la file","playAll": "Tout lire","unknownArtist": "Artiste inconnu"},
-  "login": {"email": "E-mail","password": "Mot de passe","login": "Connexion","loggingIn": "Connexion...","error": "Échec de la connexion. Veuillez vérifier vos identifiants."},
-  "statistic": {"songsPlayed": "Chansons jouées","artistsLiked": "Artistes aimés","albumsLiked": "Albums aimés"},
-  "albumDetail": {"artist": "Artiste","releaseYear": "Année de sortie","tracks": "Pistes"},
-  "artistDetail": {"albums": "Albums","songs": "Chansons"},
-  "playlistDetail": {"createdBy": "Créé par","tracks": "Pistes"}
+  "dashboard": {
+    "recentArtists": "Artistes récents",
+    "recentAlbums": "Albums récents",
+    "yourPlaylists": "Vos playlists"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "refresh": "Rafraîchir",
+    "close": "Fermer",
+    "viewing": "Affichage de {{from}} à {{to}} sur {{total}}"
+  },
+  "settings": {
+    "title": "Paramètres utilisateur",
+    "theme": "Thème",
+    "language": "Langue",
+    "recentItems": "Éléments récents sur le tableau de bord",
+    "highContrast": "Mode contraste élevé",
+    "fontScale": "Échelle de police"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "artists": "Artistes",
+    "albums": "Albums",
+    "playlists": "Playlists",
+    "songs": "Chansons",
+    "queue": "File d'attente",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion"
+  },
+  "player": {
+    "nowPlaying": "Lecture en cours",
+    "queue": "File d'attente",
+    "vol": "Vol",
+    "equalizer": "Égaliseur",
+    "addedToFavorites": "Ajouté aux favoris",
+    "removedFromFavorites": "Retiré des favoris",
+    "failedToUpdateFavorite": "Échec de la mise à jour du favori",
+    "playbackFailed": "La lecture a échoué. Cliquez sur lecture pour réessayer.",
+    "now": "Maintenant"
+  },
+  "songCard": {
+    "unknownAlbum": "Album inconnu",
+    "unknownArtist": "Artiste inconnu",
+    "playNext": "Lire ensuite",
+    "favorite": "Favori",
+    "unfavorite": "Retirer des favoris",
+    "hate": "Détester",
+    "unhate": "Ne plus détester",
+    "addLast": "Ajouter en dernier dans la file"
+  },
+  "albumCard": {
+    "songs": "{{count}} chansons"
+  },
+  "artistCard": {
+    "albums": "{{count}} albums",
+    "songs": "{{count}} chansons"
+  },
+  "playlistCard": {
+    "songCount": "{{count}} chansons"
+  },
+  "playlistManager": {
+    "title": "Playlists"
+  },
+  "search": {
+    "placeholder": "Rechercher des artistes, albums, chansons...",
+    "error": "Une erreur s'est produite : {{error}}",
+    "addToQueue": "Ajouter à la file d'attente",
+    "song": "Chanson",
+    "playlist": "Playlist"
+  },
+  "queue": {
+    "title": "File d'attente",
+    "clear": "Vider la file",
+    "shuffle": "Mélanger",
+    "save": "Enregistrer la file",
+    "playAll": "Tout lire",
+    "unknownArtist": "Artiste inconnu"
+  },
+  "login": {
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "login": "Connexion",
+    "loggingIn": "Connexion...",
+    "error": "Échec de la connexion. Veuillez vérifier vos identifiants."
+  },
+  "statistic": {
+    "songsPlayed": "Chansons jouées",
+    "artistsLiked": "Artistes aimés",
+    "albumsLiked": "Albums aimés"
+  },
+  "albumDetail": {
+    "artist": "Artiste",
+    "releaseYear": "Année de sortie",
+    "tracks": "Pistes"
+  },
+  "artistDetail": {
+    "albums": "Albums",
+    "songs": "Chansons"
+  },
+  "playlistDetail": {
+    "createdBy": "Créé par",
+    "tracks": "Pistes"
+  }
 }

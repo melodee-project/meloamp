@@ -48,10 +48,10 @@ export default function BrowseSongs() {
         sx={{ mt: 2 }}
       />
       <Typography variant="body2" sx={{ mt: 1 }}>
-        {t('songs.viewing', {
-          start: (page - 1) * 20 + 1,
-          end: Math.min(page * 20, total),
-          total,
+        {t('common.viewing', {
+          from: (page - 1) * 20 + 1,
+          to: Math.min(page * 20, total),
+          total
         })}
       </Typography>
     </Box>
