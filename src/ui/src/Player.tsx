@@ -442,9 +442,9 @@ export default function Player({ src }: { src: string }) {
         {queue[current] && (
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, mr: 2, width: '20vw', maxWidth: '20vw', flexShrink: 0 }}>
             {queue[current].imageUrl && (
-              <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: 48, height: 48, borderRadius: 1, mr: 2, objectFit: 'cover', boxShadow: 1 }} />
+              <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: 70, height: 70, borderRadius: 1, mr: 2, objectFit: 'cover', boxShadow: 1 }} />
             )}
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{queue[current].title}</Typography>
               {queue[current].album && (
                 <Typography variant="caption" color="text.secondary">
