@@ -4,6 +4,7 @@ import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, QueueMusic, SkipN
 import { Song } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 import { useQueueStore } from '../queueStore';
+import { toQueueSong } from './toQueueSong';
 
 interface SongCardProps {
   song: Song;
@@ -18,18 +19,6 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
   const [hated, setHated] = React.useState(song.userRating === -1);
   const [hovered, setHovered] = React.useState(false);
 
-  // Helper to normalize API Song to queueStore Song
-  function toQueueSong(song: Song) {
-    return {
-      id: song.id,
-      title: song.title,
-      artist: { name: song.artist?.name || '' },
-      imageUrl: song.imageUrl || song.thumbnailUrl,
-      url: song.streamUrl || '',
-      durationMs: song.durationMs, // Ensure durationMs is included
-    };
-  }
-
   // Play now: clear queue, add song, set current
   const handlePlayNow = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,9 +28,6 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
   // Play next: insert after current
   const handlePlayNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Insert after current song in queue
-    // (Assume addToQueue can take an index, otherwise append)
-    // For now, just append
     addToQueue(toQueueSong(song));
   };
 

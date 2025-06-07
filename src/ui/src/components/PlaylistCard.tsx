@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useQueueStore } from '../queueStore';
 import { PlayArrow } from '@mui/icons-material';
+import { toQueueSong } from './toQueueSong';
 
 export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const navigate = useNavigate();
@@ -19,14 +20,7 @@ export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
       const songs: Song[] = res.data.data;
       if (songs.length === 0) return;
       // Map songs to include url property for the player
-      const queueSongs = songs.map(song => ({
-        id: song.id,
-        title: song.title,
-        durationMs: song.durationMs,
-        artist: { name: song.artist?.name || '' },
-        imageUrl: song.imageUrl || song.thumbnailUrl,
-        url: song.streamUrl || '',
-      }));
+      const queueSongs = songs.map(toQueueSong);
       playNow(queueSongs); // Play the entire playlist at once
     } catch (err) {
       // Optionally show error

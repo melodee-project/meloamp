@@ -1,9 +1,11 @@
 import { create } from 'zustand/react';
+import { Artist, Album } from './apiModels';
 
 export interface Song {
   id: string;
   title: string;
-  artist: { name: string };
+  artist: Artist; // Use full Artist object
+  album: Album; // Add album property
   imageUrl?: string;
   url?: string;
   played?: boolean; // Add played flag

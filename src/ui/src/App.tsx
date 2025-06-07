@@ -117,6 +117,21 @@ export default function App() {
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
+  // Always load user from sessionStorage on mount and when authentication changes
+  React.useEffect(() => {
+    const loadUser = () => {
+      try {
+        const storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+        setUser(storedUser);
+      } catch {
+        setUser(null);
+      }
+    };
+    loadUser();
+    window.addEventListener('storage', loadUser);
+    return () => window.removeEventListener('storage', loadUser);
+  }, [isAuthenticated]);
+
   // Replace local user variable with state
   const apiVersion = sessionStorage.getItem('apiVersion') || '';
 
