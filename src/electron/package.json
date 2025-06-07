@@ -24,10 +24,7 @@
     "linux": {
       "target": [
         "AppImage",
-        "rpm",
         "deb",
-        "snap",
-        "pacman",
         "tar.gz"
       ],
       "category": "Audio",
