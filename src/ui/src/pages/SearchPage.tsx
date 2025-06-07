@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, InputAdornment, IconButton, CircularProgress, Button, ListItem, ListItemText } from '@mui/material';
 import { Search } from '@mui/icons-material';
-import api from './api';
-import { SearchResultData, Song, Artist, Album, Playlist } from './apiModels';
-import ArtistCard from './components/ArtistCard';
-import AlbumCard from './components/AlbumCard';
+import api from '../api';
+import { SearchResultData, Song, Artist, Album, Playlist } from '../apiModels';
+import ArtistCard from '../components/ArtistCard';
+import AlbumCard from '../components/AlbumCard';
+import SongCard from '../components/SongCard';
 import { useTranslation } from 'react-i18next';
-import SongCard from './components/SongCard';
 import { useLocation } from 'react-router-dom';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {

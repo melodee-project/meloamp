@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, TextField, Alert } from '@mui/material';
-import { setJwt, setApiBaseUrl, authenticate } from './api';
-import { LoginRequest, LoginResponse } from './apiModels';
-import logo from './logo.svg';
+import { setJwt, setApiBaseUrl, authenticate } from '../api';
+import { LoginRequest, LoginResponse } from '../apiModels';
+import logo from '../logo.svg';
 import { useTranslation } from 'react-i18next';
 
 const ensureApiUrl = (url: string) => {

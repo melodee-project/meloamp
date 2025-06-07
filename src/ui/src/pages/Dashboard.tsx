@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, IconButton } from '@mui/material';
-import { Statistic, Artist, Album, Playlist, PaginatedResponse } from './apiModels';
-import { apiRequest } from './api';
-import ArtistCard from './components/ArtistCard';
-import PlaylistCard from './components/PlaylistCard';
-import StatisticCard from './components/StatisticCard';
-import AlbumCard from './components/AlbumCard';
+import { Statistic, Artist, Album, Playlist, PaginatedResponse } from '../apiModels';
+import { apiRequest } from '../api';
+import ArtistCard from '../components/ArtistCard';
+import PlaylistCard from '../components/PlaylistCard';
+import StatisticCard from '../components/StatisticCard';
+import AlbumCard from '../components/AlbumCard';
 import { ArrowBackIos, ArrowForwardIos, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 

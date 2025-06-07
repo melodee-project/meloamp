@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import api from './api';
-import { Song, PaginatedResponse } from './apiModels';
-import SongCard from './components/SongCard';
+import api from '../api';
+import { Song, PaginatedResponse } from '../apiModels';
+import SongCard from '../components/SongCard';
 
 export default function BrowseSongs() {
   const { t } = useTranslation();

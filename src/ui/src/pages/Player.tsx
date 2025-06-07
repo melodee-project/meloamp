@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder, Fullscreen, FullscreenExit } from '@mui/icons-material';
-import { useQueueStore } from './queueStore';
-import api from './api';
-import { ScrobbleRequest, ScrobbleType } from './apiModels';
+import { useQueueStore } from '../queueStore';
+import api from '../api';
+import { ScrobbleRequest, ScrobbleType } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 
 // Simple equalizer bands
