@@ -17,6 +17,9 @@ import spaceFunkTheme from './themes/spaceFunkTheme';
 import acidPopTheme from './themes/acidPopTheme';
 import fiestaTheme from './themes/fiestaTheme';
 import scarlettTheme from './themes/scarlettTheme';
+import getAuroraTheme from './themes/auroraTheme';
+import getMonoContrastTheme from './themes/monoContrastTheme';
+import getBerryTwilightTheme from './themes/berryTwilightTheme';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -31,7 +34,10 @@ const themeMap: any = {
   spaceFunk: spaceFunkTheme,
   acidPop: acidPopTheme,
   fiesta: fiestaTheme,
-  scarlett: scarlettTheme
+  scarlett: scarlettTheme,
+  aurora: (mode: 'light' | 'dark') => getAuroraTheme(mode),
+  monoContrast: (mode: 'light' | 'dark') => getMonoContrastTheme(mode),
+  berryTwilight: (mode: 'light' | 'dark') => getBerryTwilightTheme(mode)
 };
 
 const getUserSettings = () => {
@@ -43,7 +49,10 @@ const getUserSettings = () => {
 };
 
 const settings = getUserSettings();
-const theme = themeMap[settings.theme] || classicTheme;
+const baseTheme = typeof themeMap[settings.theme] === 'function'
+  ? themeMap[settings.theme](settings.mode || 'light')
+  : themeMap[settings.theme] || classicTheme;
+const theme = baseTheme;
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

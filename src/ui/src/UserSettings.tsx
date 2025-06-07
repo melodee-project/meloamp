@@ -3,6 +3,8 @@ import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, For
 
 const themes = [
   { label: 'Acid Pop', value: 'acidPop' },
+  { label: 'Aurora', value: 'aurora' },
+  { label: 'Berry Twilight', value: 'berryTwilight' },
   { label: 'Bubblegum', value: 'bubblegum' },
   { label: 'Candy', value: 'candy' },
   { label: 'Classic', value: 'classic' },
@@ -10,6 +12,7 @@ const themes = [
   { label: 'Fiesta', value: 'fiesta' },
   { label: 'Forest', value: 'forest' },
   { label: 'Modern Minimal', value: 'modernMinimal' },
+  { label: 'Mono Contrast', value: 'monoContrast' },
   { label: 'Ocean', value: 'ocean' },
   { label: 'Rainbow', value: 'rainbow' },
   { label: 'Retro Wave', value: 'retroWave' },

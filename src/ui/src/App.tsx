@@ -29,6 +29,9 @@ import DashboardWrapper from './Dashboard';
 import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
 import PlaylistDetailView from './detailViews/PlaylistDetailView';
+import getAuroraTheme from './themes/auroraTheme';
+import getMonoContrastTheme from './themes/monoContrastTheme';
+import getBerryTwilightTheme from './themes/berryTwilightTheme';
 import retroWaveTheme from './themes/retroWaveTheme';
 import spaceFunkTheme from './themes/spaceFunkTheme';
 import acidPopTheme from './themes/acidPopTheme';
@@ -45,6 +48,9 @@ const themeMap: any = {
   rainbow: rainbowTheme,
   candy: candyTheme,
   bubblegum: bubblegumTheme,
+  aurora: (mode: 'light' | 'dark') => getAuroraTheme(mode),
+  monoContrast: (mode: 'light' | 'dark') => getMonoContrastTheme(mode),
+  berryTwilight: (mode: 'light' | 'dark') => getBerryTwilightTheme(mode),
   retroWave: retroWaveTheme,
   spaceFunk: spaceFunkTheme,
   acidPop: acidPopTheme,
@@ -94,6 +100,7 @@ export default function App() {
         highContrast: false,
         fontScale: 1,
         caching: false,
+        mode: 'light', // add mode to settings
       };
     } catch {
       return {
@@ -102,6 +109,7 @@ export default function App() {
         highContrast: false,
         fontScale: 1,
         caching: false,
+        mode: 'light', // add mode to settings
       };
     }
   });
@@ -121,7 +129,18 @@ export default function App() {
   React.useEffect(() => {
     localStorage.setItem('userSettings', JSON.stringify(settings));
   }, [settings]);
-  const theme = themeMap[settings.theme] || classicTheme;
+  const baseTheme = typeof themeMap[settings.theme] === 'function'
+    ? themeMap[settings.theme](settings.mode || 'light')
+    : themeMap[settings.theme] || classicTheme;
+  const theme = React.useMemo(() => {
+    return {
+      ...baseTheme,
+      palette: {
+        ...baseTheme.palette,
+        mode: settings.mode || baseTheme.palette.mode || 'light',
+      },
+    };
+  }, [baseTheme, settings.mode]);
 
   React.useEffect(() => {
     const checkAuth = () => {
@@ -203,7 +222,7 @@ export default function App() {
           position="static"
           color="default"
           elevation={1}
-          sx={{ backgroundColor: theme => theme.palette.primary.main, color: theme => theme.palette.primary.contrastText }}
+          sx={{ backgroundColor: theme => theme.palette.background.paper, color: theme => theme.palette.text.primary }}
         >
           <Toolbar>
             <NavBar user={user} />
@@ -239,9 +258,9 @@ export default function App() {
                   </Box>
                 )}
               </Box>
-              <Tooltip title={`Switch to ${settings.theme === 'dark' ? 'classic' : 'dark'} mode`}>
-                <IconButton color="inherit" onClick={() => setSettings((s: any) => ({ ...s, theme: s.theme === 'dark' ? 'classic' : 'dark' }))} aria-label="toggle theme">
-                  {settings.theme === 'dark' ? <Brightness7 /> : <Brightness4 />}
+              <Tooltip title={`Switch to ${settings.mode === 'dark' ? 'light' : 'dark'} mode`}>
+                <IconButton color="inherit" onClick={() => setSettings((s: any) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))} aria-label="toggle mode">
+                  {settings.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
                 </IconButton>
               </Tooltip>
               {/* Queue Icon Button */}
