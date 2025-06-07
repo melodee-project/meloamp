@@ -14,6 +14,9 @@ import sunsetTheme from './themes/sunsetTheme';
 import forestTheme from './themes/forestTheme';
 import darkTheme from './themes/darkTheme';
 import modernMinimalTheme from './themes/modernMinimalTheme';
+import rainbowTheme from './themes/rainbowTheme';
+import candyTheme from './themes/candyTheme';
+import bubblegumTheme from './themes/bubblegumTheme';
 import BrowseAlbums from './BrowseAlbums';
 import PlaylistManager from './PlaylistManager';
 import BrowseArtists from './BrowseArtists';
@@ -26,6 +29,11 @@ import DashboardWrapper from './Dashboard';
 import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
 import PlaylistDetailView from './detailViews/PlaylistDetailView';
+import retroWaveTheme from './themes/retroWaveTheme';
+import spaceFunkTheme from './themes/spaceFunkTheme';
+import acidPopTheme from './themes/acidPopTheme';
+import fiestaTheme from './themes/fiestaTheme';
+import scarlettTheme from './themes/scarlettTheme';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -33,7 +41,15 @@ const themeMap: any = {
   sunset: sunsetTheme,
   forest: forestTheme,
   dark: darkTheme,
-  modernMinimal: modernMinimalTheme
+  modernMinimal: modernMinimalTheme,
+  rainbow: rainbowTheme,
+  candy: candyTheme,
+  bubblegum: bubblegumTheme,
+  retroWave: retroWaveTheme,
+  spaceFunk: spaceFunkTheme,
+  acidPop: acidPopTheme,
+  fiesta: fiestaTheme,
+  scarlett: scarlettTheme,
 };
 
 // Removed unused Dashboard function
@@ -183,7 +199,12 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <AppBar position="static" color="default" elevation={1}>
+        <AppBar
+          position="static"
+          color="default"
+          elevation={1}
+          sx={{ backgroundColor: theme => theme.palette.primary.main, color: theme => theme.palette.primary.contrastText }}
+        >
           <Toolbar>
             <NavBar user={user} />
             {/* Right: Search, Theme, User */}

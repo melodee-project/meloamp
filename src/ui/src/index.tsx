@@ -9,6 +9,14 @@ import oceanTheme from './themes/oceanTheme';
 import sunsetTheme from './themes/sunsetTheme';
 import forestTheme from './themes/forestTheme';
 import darkTheme from './themes/darkTheme';
+import rainbowTheme from './themes/rainbowTheme';
+import candyTheme from './themes/candyTheme';
+import bubblegumTheme from './themes/bubblegumTheme';
+import retroWaveTheme from './themes/retroWaveTheme';
+import spaceFunkTheme from './themes/spaceFunkTheme';
+import acidPopTheme from './themes/acidPopTheme';
+import fiestaTheme from './themes/fiestaTheme';
+import scarlettTheme from './themes/scarlettTheme';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -16,6 +24,14 @@ const themeMap: any = {
   sunset: sunsetTheme,
   forest: forestTheme,
   dark: darkTheme,
+  rainbow: rainbowTheme,
+  candy: candyTheme,
+  bubblegum: bubblegumTheme,
+  retroWave: retroWaveTheme,
+  spaceFunk: spaceFunkTheme,
+  acidPop: acidPopTheme,
+  fiesta: fiestaTheme,
+  scarlett: scarlettTheme
 };
 
 const getUserSettings = () => {

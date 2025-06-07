@@ -2,13 +2,23 @@ import React from 'react';
 import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider } from '@mui/material';
 
 const themes = [
+  { label: 'Acid Pop', value: 'acidPop' },
+  { label: 'Bubblegum', value: 'bubblegum' },
+  { label: 'Candy', value: 'candy' },
   { label: 'Classic', value: 'classic' },
-  { label: 'Dark', value: 'dark' },  
-  { label: 'Forest', value: 'forest' },  
+  { label: 'Dark', value: 'dark' },
+  { label: 'Fiesta', value: 'fiesta' },
+  { label: 'Forest', value: 'forest' },
   { label: 'Modern Minimal', value: 'modernMinimal' },
   { label: 'Ocean', value: 'ocean' },
-  { label: 'Sunset', value: 'sunset' }  
+  { label: 'Rainbow', value: 'rainbow' },
+  { label: 'Retro Wave', value: 'retroWave' },
+  { label: 'Scarlett', value: 'scarlett' },
+  { label: 'Space Funk', value: 'spaceFunk' },
+  { label: 'Sunset', value: 'sunset' }
 ];
+
+const sortedThemes = themes.slice().sort((a, b) => a.label.localeCompare(b.label));
 
 export default function UserSettings({ settings, onChange }: any) {
   return (
@@ -21,7 +31,7 @@ export default function UserSettings({ settings, onChange }: any) {
           label="Theme"
           onChange={e => onChange({ ...settings, theme: e.target.value })}
         >
-          {themes.map(t => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+          {sortedThemes.map(t => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
         </Select>
       </FormControl>
       <FormControl fullWidth sx={{ mb: 2 }}>
