@@ -20,7 +20,7 @@ import scarlettTheme from './themes/scarlettTheme';
 import getAuroraTheme from './themes/auroraTheme';
 import getMonoContrastTheme from './themes/monoContrastTheme';
 import getBerryTwilightTheme from './themes/berryTwilightTheme';
-import winAmpTheme from './themes/WinAmpTheme';
+import winAmpTheme from './themes/winAmpTheme';
 import i18n from './i18n';
 
 const themeMap: any = {
@@ -40,7 +40,7 @@ const themeMap: any = {
   aurora: (mode: 'light' | 'dark') => getAuroraTheme(mode),
   monoContrast: (mode: 'light' | 'dark') => getMonoContrastTheme(mode),
   berryTwilight: (mode: 'light' | 'dark') => getBerryTwilightTheme(mode),
-  WinAmp: winAmpTheme,
+  winAmp: winAmpTheme,
 };
 
 const getUserSettings = () => {
