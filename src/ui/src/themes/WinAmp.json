@@ -1,0 +1,28 @@
+{
+  "theme": "WinAmp",
+  "highContrast": false,
+  "fontScale": 1,
+  "caching": false,
+  "colors": {
+    "name": "WinAmp",
+    "background": "#2b2b2b",
+    "surface": "#44444a",
+    "primary": "#00ff00",
+    "primaryVariant": "#00ccff",
+    "secondary": "#ffff00",
+    "secondaryVariant": "#ff9900",
+    "error": "#ff0000",
+    "onPrimary": "#2b2b2b",
+    "onSecondary": "#2b2b2b",
+    "onBackground": "#ffffff",
+    "onSurface": "#ffffff",
+    "onError": "#ffffff",
+    "accent": "#e6c200",
+    "button": "#44444a",
+    "buttonText": "#ffffff",
+    "highlight": "#00ccff",
+    "playlistText": "#00ff00",
+    "playlistBackground": "#2b2b2b",
+    "playlistHighlight": "#44444a"
+  }
+}

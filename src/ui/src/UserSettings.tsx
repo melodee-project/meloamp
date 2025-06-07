@@ -19,7 +19,8 @@ const themes = [
   { label: 'Retro Wave', value: 'retroWave' },
   { label: 'Scarlett', value: 'scarlett' },
   { label: 'Space Funk', value: 'spaceFunk' },
-  { label: 'Sunset', value: 'sunset' }
+  { label: 'Sunset', value: 'sunset' },
+  { label: 'WinAmp', value: 'WinAmp' }
 ];
 
 const sortedThemes = themes.slice().sort((a, b) => a.label.localeCompare(b.label));

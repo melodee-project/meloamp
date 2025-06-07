@@ -37,6 +37,7 @@ import spaceFunkTheme from './themes/spaceFunkTheme';
 import acidPopTheme from './themes/acidPopTheme';
 import fiestaTheme from './themes/fiestaTheme';
 import scarlettTheme from './themes/scarlettTheme';
+import winAmpTheme from './themes/WinAmpTheme';
 import { useTranslation } from 'react-i18next';
 import { createTheme } from '@mui/material/styles';
 
@@ -58,6 +59,7 @@ const themeMap: any = {
   acidPop: acidPopTheme,
   fiesta: fiestaTheme,
   scarlett: scarlettTheme,
+  WinAmp: winAmpTheme,
 };
 
 // Removed unused Dashboard function
