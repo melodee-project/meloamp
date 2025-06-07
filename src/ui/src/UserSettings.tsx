@@ -1,5 +1,5 @@
 import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider, Button } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 const themes = [
@@ -26,6 +26,21 @@ const sortedThemes = themes.slice().sort((a, b) => a.label.localeCompare(b.label
 
 export default function UserSettings({ settings, onChange }: any) {
   const { t, i18n } = useTranslation();
+
+  const handleRestoreDefaults = () => {
+    const defaults = {
+      theme: 'berryTwilight',
+      language: 'en',
+      highContrast: false,
+      fontScale: 1,
+      caching: false,
+      mode: 'light',
+      dashboardRecentLimit: 10
+    };
+    document.documentElement.style.setProperty('--meloamp-font-scale', String(defaults.fontScale));
+    i18n.changeLanguage(defaults.language);
+    onChange(defaults);
+  };
 
   return (
     <Box sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
@@ -80,12 +95,21 @@ export default function UserSettings({ settings, onChange }: any) {
         <Typography gutterBottom>{t('settings.fontScale')}</Typography>
         <Slider
           value={settings.fontScale}
-          min={0.8}
-          max={1.5}
+          min={0.5}
+          max={1.75}
           step={0.05}
-          onChange={(_, v) => onChange({ ...settings, fontScale: v as number })}
+          onChange={(_, v) => {
+            const scale = v as number;
+            document.documentElement.style.setProperty('--meloamp-font-scale', String(scale));
+            onChange({ ...settings, fontScale: scale });
+          }}
           valueLabelDisplay="auto"
         />
+      </Box>
+      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button variant="outlined" color="secondary" onClick={handleRestoreDefaults}>
+          {t('settings.restoreDefaults', 'Restore Defaults')}
+        </Button>
       </Box>
     </Box>
   );

@@ -38,6 +38,7 @@ import acidPopTheme from './themes/acidPopTheme';
 import fiestaTheme from './themes/fiestaTheme';
 import scarlettTheme from './themes/scarlettTheme';
 import { useTranslation } from 'react-i18next';
+import { createTheme } from '@mui/material/styles';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -135,15 +136,56 @@ export default function App() {
   const baseTheme = typeof themeMap[settings.theme] === 'function'
     ? themeMap[settings.theme](settings.mode || 'light')
     : themeMap[settings.theme] || classicTheme;
-  const theme = React.useMemo(() => {
-    return {
+
+  function getHighContrastTheme(baseTheme: any) {
+    return createTheme({
       ...baseTheme,
       palette: {
         ...baseTheme.palette,
-        mode: settings.mode || baseTheme.palette.mode || 'light',
+        background: {
+          default: '#000',
+          paper: '#111',
+        },
+        text: {
+          primary: '#fff',
+          secondary: '#ff0',
+        },
+        primary: {
+          main: '#fff',
+          contrastText: '#000',
+        },
+        secondary: {
+          main: '#ff0',
+          contrastText: '#000',
+        },
+        divider: '#fff',
+        error: { main: '#ff1744' },
+        warning: { main: '#ffd600' },
+        info: { main: '#00eaff' },
+        success: { main: '#76ff03' },
       },
-    };
-  }, [baseTheme, settings.mode]);
+      components: {
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              color: '#000',
+              backgroundColor: '#fff',
+              border: '2px solid #ff0',
+              fontWeight: 700,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  const theme = React.useMemo(() => (
+    settings.highContrast ? getHighContrastTheme(baseTheme) : baseTheme
+  ), [settings.highContrast, baseTheme]);
+
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--meloamp-font-scale', String(settings.fontScale || 1));
+  }, [settings.fontScale]);
 
   React.useEffect(() => {
     const checkAuth = () => {
