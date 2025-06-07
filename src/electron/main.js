@@ -8,11 +8,28 @@ const SERVER_PORT = 3001;
 function startStaticServer() {
   if (staticServer) return;
   const server = express();
-  const buildPath = path.join(__dirname, '../ui/build');
-  // Serve static files
+  // Use the correct path for production (packaged) and development
+  const isPackaged = app.isPackaged;
+  let buildPath;
+  if (isPackaged) {
+    // Try both possible locations for build output in asar
+    const try1 = path.join(process.resourcesPath, 'build');
+    const try2 = path.join(process.resourcesPath, 'app', 'build');
+    const fs = require('fs');
+    if (fs.existsSync(path.join(try1, 'index.html'))) {
+      buildPath = try1;
+    } else if (fs.existsSync(path.join(try2, 'index.html'))) {
+      buildPath = try2;
+    } else {
+      console.error('Could not find React build output in packaged app!');
+      buildPath = try1; // fallback, will error
+    }
+  } else {
+    buildPath = path.join(__dirname, '../ui/build');
+  }
+
   server.use(express.static(buildPath));
 
-  // Only serve index.html for non-API routes
   server.get(/^\/(?!api).*/, (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
@@ -36,16 +53,11 @@ function createWindow() {
   // Hide the default menu bar
   win.setMenu(null);
 
-  // Open DevTools for debugging
-  win.webContents.openDevTools();
-
   // Load the React build output via HTTP server
   win.loadURL('http://localhost:' + SERVER_PORT);
 }
 
 app.whenReady().then(createWindow);
-
-app.UseCors(bb => bb.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

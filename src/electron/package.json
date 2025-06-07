@@ -35,6 +35,14 @@
       "output": "dist",
       "buildResources": "build",
       "app": "."
-    }
+    },
+    "files": [
+      "**/*",
+      {
+        "from": "../ui/build",
+        "to": "build",
+        "filter": ["**/*"]
+      }
+    ]
   }
 }

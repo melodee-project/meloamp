@@ -54,6 +54,10 @@ cd ../electron
 npm install
 npm start
 ```
+When running the AppImage on Fedora you might need to tell it which GTK to use 
+```
+./meloamp*.AppImage --gtk-version=3
+```
 
 ### Build for Linux (Production)
 
