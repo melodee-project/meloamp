@@ -133,6 +133,15 @@ export interface Statistic {
   sortOrder?: number;
 }
 
+export interface ServerInfo {
+  name: string;
+  description: string;
+  version: string;
+  majorVersion: number;
+  minorVersion: number;
+  patchVersion: number;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;

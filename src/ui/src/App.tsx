@@ -220,7 +220,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   }, [isAuthenticated]);
 
   // Replace local user variable with state
-  const apiVersion = sessionStorage.getItem('apiVersion') || '';
+  const apiVersion = localStorage.getItem('apiVersion') || '';
 
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
@@ -335,8 +335,11 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
               <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />{t('nav.settings')}</MenuItem>
               <MenuItem component={Link} to="/profile" onClick={handleClose}><AccountCircle sx={{ mr: 1 }} />{t('nav.profile')}</MenuItem>
               <MenuItem onClick={() => { handleClose(); handleLogout(); }}><Logout sx={{ mr: 1 }} />{t('nav.logout')}</MenuItem>
+              <MenuItem divider disabled style={{ margin: '4px 0', padding: 0, minHeight: 0, height: 0, background: 'transparent' }}>
+                <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', width: '100%' }} />
+              </MenuItem>
               <MenuItem disabled><Info sx={{ mr: 1 }} />MeloAmp {user?.version || 'v0.1.0'}</MenuItem>
-              <MenuItem disabled><Info sx={{ mr: 1 }} />API {apiVersion}</MenuItem>
+              <MenuItem disabled><Info sx={{ mr: 1 }} />API v{apiVersion}</MenuItem>
             </Menu>
           </Box>
         </Toolbar>
