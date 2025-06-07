@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import api from './api';
 import { Album, PaginatedResponse } from './apiModels';
 import AlbumCard from './components/AlbumCard';
 
 export default function BrowseAlbums() {
+  const { t } = useTranslation();
   const [albums, setAlbums] = useState<Album[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -23,7 +25,7 @@ export default function BrowseAlbums() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
-      <Typography variant="h5" gutterBottom>Browse Albums</Typography>
+      <Typography variant="h5" gutterBottom>{t('nav.albums')}</Typography>
       {loading ? <CircularProgress /> : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
           {albums.map((album) => (

@@ -4,6 +4,7 @@ import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, Favorite
 import { useQueueStore } from './queueStore';
 import api from './api';
 import { ScrobbleRequest, ScrobbleType } from './apiModels';
+import { useTranslation } from 'react-i18next';
 
 // Simple equalizer bands
 const EQ_BANDS = [60, 170, 350, 1000, 3500, 10000];
@@ -26,6 +27,7 @@ export default function Player({ src }: { src: string }) {
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
+  const { t } = useTranslation();
 
   // Equalizer setup
   const eqNodes = useRef<any[]>([]);
@@ -229,7 +231,7 @@ export default function Player({ src }: { src: string }) {
           setPlaying(true);
         }).catch(() => {
           setPlaying(false);
-          setSnackbar('Playback failed. Click play to try again.');
+          setSnackbar(t('player.playbackFailed'));
         });
       } else {
         setPlaying(true);
@@ -251,14 +253,14 @@ export default function Player({ src }: { src: string }) {
       if (!favorite) {
         await api.post(`/songs/starred/${songId}/true`);
         setFavorite(true);
-        setSnackbar('Added to favorites');
+        setSnackbar(t('player.addedToFavorites'));
       } else {
         await api.post(`/songs/starred/${songId}/false`);
         setFavorite(false);
-        setSnackbar('Removed from favorites');
+        setSnackbar(t('player.removedFromFavorites'));
       }
     } catch (err) {
-      setSnackbar('Failed to update favorite');
+      setSnackbar(t('player.failedToUpdateFavorite'));
     } finally {
       setFavLoading(false);
     }
@@ -271,7 +273,7 @@ export default function Player({ src }: { src: string }) {
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper', p: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', p: 2, justifyContent: 'space-between', minHeight: 64 }}>
             <IconButton onClick={() => setIsFullScreen(false)}><FullscreenExit /></IconButton>
-            <Typography variant="h6" sx={{ flex: 1, textAlign: 'center' }}>Now Playing</Typography>
+            <Typography variant="h6" sx={{ flex: 1, textAlign: 'center' }}>{t('player.nowPlaying')}</Typography>
             <Box sx={{ width: 48 }} /> {/* Spacer for symmetry */}
           </Box>
           <Box sx={{ display: 'flex', flex: 1, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', justifyContent: 'center', gap: 4, p: { xs: 1, md: 4 }, height: '80vh', minHeight: 0 }}>
@@ -379,7 +381,7 @@ export default function Player({ src }: { src: string }) {
                   />
                   {/* Volume slider */}
                   <Box sx={{ width: 120, mx: 2, display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="caption" sx={{ mr: 1 }}>Vol</Typography>
+                    <Typography variant="caption" sx={{ mr: 1 }}>{t('player.vol')}</Typography>
                     <Slider
                       value={volume * 100}
                       min={0}
@@ -402,7 +404,7 @@ export default function Player({ src }: { src: string }) {
                 </Box>
                 <Popover open={!!eqAnchor} anchorEl={eqAnchor} onClose={handleEqClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
                   <Box sx={{ p: 2, width: 300 }}>
-                    <Typography variant="subtitle2">Equalizer</Typography>
+                    <Typography variant="subtitle2">{t('player.equalizer')}</Typography>
                     {EQ_BANDS.map((freq, i) => (
                       <Box key={freq} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Typography sx={{ width: 50 }}>{freq}Hz</Typography>
@@ -423,13 +425,13 @@ export default function Player({ src }: { src: string }) {
             </Box>
             {/* Queue List */}
             <Box sx={{ flex: 1, minWidth: 200, maxWidth: 400, bgcolor: 'background.default', borderRadius: 2, p: 2, boxShadow: 1, height: '80vh', maxHeight: '80vh', alignSelf: 'center', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>Queue</Typography>
+              <Typography variant="h6" sx={{ mb: 2 }}>{t('player.queue')}</Typography>
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 {queue.map((song: any, idx: number) => (
                   <Box key={song.id} sx={{ display: 'flex', alignItems: 'center', mb: 1, bgcolor: idx === current ? 'primary.light' : 'transparent', borderRadius: 1, p: 1, cursor: 'pointer' }} onClick={() => setCurrent(idx)}>
                     {song.imageUrl && <Box component="img" src={song.imageUrl} alt={song.title} sx={{ width: 32, height: 32, borderRadius: 1, mr: 1, objectFit: 'cover' }} />}
                     <Typography variant="body2" noWrap sx={{ flex: 1 }}>{song.title}</Typography>
-                    {idx === current && <Typography variant="caption" color="primary">Now</Typography>}
+                    {idx === current && <Typography variant="caption" color="primary">{t('player.now')}</Typography>}
                   </Box>
                 ))}
               </Box>
@@ -480,7 +482,7 @@ export default function Player({ src }: { src: string }) {
         />
         {/* Volume slider */}
         <Box sx={{ width: 120, mx: 2, display: 'flex', alignItems: 'center' }}>
-          <Typography variant="caption" sx={{ mr: 1 }}>Vol</Typography>
+          <Typography variant="caption" sx={{ mr: 1 }}>{t('player.vol')}</Typography>
           <Slider
             value={volume * 100}
             min={0}

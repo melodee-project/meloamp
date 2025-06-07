@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import api from './api';
 import { Song, PaginatedResponse } from './apiModels';
 import SongCard from './components/SongCard';
 
 export default function BrowseSongs() {
+  const { t } = useTranslation();
   const [songs, setSongs] = useState<Song[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -25,7 +27,7 @@ export default function BrowseSongs() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
-      <Typography variant="h5" gutterBottom>Browse Songs</Typography>
+      <Typography variant="h5" gutterBottom>{t('nav.songs')}</Typography>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
           <CircularProgress />
@@ -46,7 +48,11 @@ export default function BrowseSongs() {
         sx={{ mt: 2 }}
       />
       <Typography variant="body2" sx={{ mt: 1 }}>
-        Viewing {(page - 1) * 20 + 1} to {Math.min(page * 20, total)} of {total}
+        {t('songs.viewing', {
+          start: (page - 1) * 20 + 1,
+          end: Math.min(page * 20, total),
+          total,
+        })}
       </Typography>
     </Box>
   );

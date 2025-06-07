@@ -5,6 +5,7 @@ import { Song } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from './toQueueSong';
+import { useTranslation } from 'react-i18next';
 
 interface SongCardProps {
   song: Song;
@@ -12,6 +13,7 @@ interface SongCardProps {
 
 const SongCardComponent = function SongCard({ song }: SongCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   // Use stable selectors for each store value/action
   const playNow = useQueueStore(state => state.playNow);
   const addToQueue = useQueueStore(state => state.addToQueue);
@@ -93,32 +95,32 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
           {song.album?.releaseYear || '----'}
           ]{' '}
           <Box component="span" sx={{ color: 'primary.main', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); navigate(`/albums/${song.album?.id}`); }}>
-            {song.album?.name || 'Unknown Album'}
+            {song.album?.name || t('songCard.unknownAlbum')}
           </Box>
         </Typography>
         <Typography variant="body2" color="text.secondary" noWrap>
           <Box component="span" sx={{ color: 'primary.main', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); navigate(`/artists/${song.artist?.id}`); }}>
-            {song.artist?.name || 'Unknown Artist'}
+            {song.artist?.name || t('songCard.unknownArtist')}
           </Box>
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {song.durationFormatted} | #{song.songNumber}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-          <Tooltip title="Play Next">
+          <Tooltip title={t('songCard.playNext')}>
             <IconButton size="small" onClick={handlePlayNext}><SkipNext /></IconButton>
           </Tooltip>
-          <Tooltip title={favorite ? 'Unfavorite' : 'Favorite'}>
+          <Tooltip title={favorite ? t('songCard.unfavorite') : t('songCard.favorite')}>
             <IconButton size="small" color={favorite ? 'primary' : 'default'} onClick={handleToggleFavorite}>
               {favorite ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
           </Tooltip>
-          <Tooltip title={hated ? 'Unhate' : 'Hate'}>
+          <Tooltip title={hated ? t('songCard.unhate') : t('songCard.hate')}>
             <IconButton size="small" color={hated ? 'error' : 'default'} onClick={handleToggleHated}>
               {hated ? <ThumbDown /> : <ThumbDownOffAlt />}
             </IconButton>
           </Tooltip>
-          <Tooltip title="Add as Last in Queue">
+          <Tooltip title={t('songCard.addLast')}>
             <IconButton size="small" onClick={handleAddLast}><QueueMusic /></IconButton>
           </Tooltip>
         </Stack>

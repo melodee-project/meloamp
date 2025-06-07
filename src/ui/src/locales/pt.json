@@ -1,0 +1,19 @@
+{
+  "dashboard": {"recentArtists": "Artistas recentes","recentAlbums": "Álbuns recentes","yourPlaylists": "Suas playlists"},
+  "common": {"loading": "Carregando...","error": "Ocorreu um erro","refresh": "Atualizar"},
+  "settings": {"title": "Configurações do usuário","theme": "Tema","language": "Idioma","recentItems": "Itens recentes no painel","highContrast": "Modo de alto contraste","fontScale": "Escala de fonte"},
+  "nav": {"dashboard": "Painel","artists": "Artistas","albums": "Álbuns","playlists": "Playlists","songs": "Músicas","queue": "Fila","settings": "Configurações","profile": "Perfil","logout": "Sair"},
+  "player": {"nowPlaying": "Tocando agora","queue": "Fila","vol": "Vol","equalizer": "Equalizador","addedToFavorites": "Adicionado aos favoritos","removedFromFavorites": "Removido dos favoritos","failedToUpdateFavorite": "Falha ao atualizar favorito","playbackFailed": "Falha na reprodução. Clique em tocar para tentar novamente.","now": "Agora"},
+  "songCard": {"unknownAlbum": "Álbum desconhecido","unknownArtist": "Artista desconhecido","playNext": "Tocar próximo","favorite": "Favorito","unfavorite": "Remover favorito","hate": "Não gosto","unhate": "Remover não gosto","addLast": "Adicionar ao final da fila"},
+  "albumCard": {"songs": "{{count}} músicas"},
+  "artistCard": {"albums": "{{count}} álbuns","songs": "{{count}} músicas"},
+  "playlistCard": {"songCount": "{{count}} músicas"},
+  "playlistManager": {"title": "Playlists","viewing": "Exibindo {{from}} a {{to}} de {{total}}"},
+  "search": {"placeholder": "Buscar artistas, álbuns, músicas...","error": "Ocorreu um erro: {{error}}","addToQueue": "Adicionar à fila","song": "Música","playlist": "Playlist"},
+  "queue": {"title": "Fila","clear": "Limpar fila","shuffle": "Embaralhar","save": "Salvar fila","playAll": "Tocar tudo","unknownArtist": "Artista desconhecido"},
+  "login": {"email": "E-mail","password": "Senha","login": "Entrar","loggingIn": "Entrando...","error": "Falha no login. Verifique suas credenciais."},
+  "statistic": {"songsPlayed": "Músicas tocadas","artistsLiked": "Artistas curtidos","albumsLiked": "Álbuns curtidos"},
+  "albumDetail": {"artist": "Artista","releaseYear": "Ano de lançamento","tracks": "Faixas"},
+  "artistDetail": {"albums": "Álbuns","songs": "Músicas"},
+  "playlistDetail": {"createdBy": "Criado por","tracks": "Faixas"}
+}

@@ -6,11 +6,13 @@ import api from '../api';
 import { useQueueStore } from '../queueStore';
 import { PlayArrow } from '@mui/icons-material';
 import { toQueueSong } from './toQueueSong';
+import { useTranslation } from 'react-i18next';
 
 export default function AlbumCard({ album }: { album: Album }) {
   const navigate = useNavigate();
   const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
+  const { t } = useTranslation();
 
   // Handler for clicking the album image
   const handlePlayAlbum = async (e: React.MouseEvent) => {
@@ -83,7 +85,7 @@ export default function AlbumCard({ album }: { album: Album }) {
           {album.name}
         </Typography>
         <Typography variant="body2">{album.artist.name}</Typography>
-        <Typography variant="body2">{album.releaseYear} | {album.songCount} | {album.durationFormatted}</Typography>
+        <Typography variant="body2">{album.releaseYear} | {t('albumCard.songs', { count: album.songCount })} | {album.durationFormatted}</Typography>
       </CardContent>
     </Card>    
   );

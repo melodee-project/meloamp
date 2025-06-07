@@ -1,0 +1,19 @@
+{
+  "dashboard": {"recentArtists": "最近のアーティスト","recentAlbums": "最近のアルバム","yourPlaylists": "あなたのプレイリスト"},
+  "common": {"loading": "読み込み中...","error": "エラーが発生しました","refresh": "更新"},
+  "settings": {"title": "ユーザー設定","theme": "テーマ","language": "言語","recentItems": "ダッシュボードの最近の項目","highContrast": "ハイコントラストモード","fontScale": "フォントサイズ"},
+  "nav": {"dashboard": "ダッシュボード","artists": "アーティスト","albums": "アルバム","playlists": "プレイリスト","songs": "曲","queue": "キュー","settings": "設定","profile": "プロフィール","logout": "ログアウト"},
+  "player": {"nowPlaying": "再生中","queue": "キュー","vol": "音量","equalizer": "イコライザー","addedToFavorites": "お気に入りに追加しました","removedFromFavorites": "お気に入りから削除しました","failedToUpdateFavorite": "お気に入りの更新に失敗しました","playbackFailed": "再生に失敗しました。再生ボタンをクリックして再試行してください。","now": "今"},
+  "songCard": {"unknownAlbum": "不明なアルバム","unknownArtist": "不明なアーティスト","playNext": "次を再生","favorite": "お気に入り","unfavorite": "お気に入り解除","hate": "嫌い","unhate": "嫌いを解除","addLast": "最後に追加"},
+  "albumCard": {"songs": "{{count}}曲"},
+  "artistCard": {"albums": "{{count}}アルバム","songs": "{{count}}曲"},
+  "playlistCard": {"songCount": "{{count}}曲"},
+  "playlistManager": {"title": "プレイリスト","viewing": "{{from}}から{{to}}件目 / 全{{total}}件"},
+  "search": {"placeholder": "アーティスト、アルバム、曲を検索...","error": "エラーが発生しました: {{error}}","addToQueue": "キューに追加","song": "曲","playlist": "プレイリスト"},
+  "queue": {"title": "キュー","clear": "キューをクリア","shuffle": "シャッフル","save": "キューを保存","playAll": "すべて再生","unknownArtist": "不明なアーティスト"},
+  "login": {"email": "メールアドレス","password": "パスワード","login": "ログイン","loggingIn": "ログイン中...","error": "ログインに失敗しました。認証情報を確認してください。"},
+  "statistic": {"songsPlayed": "再生した曲数","artistsLiked": "お気に入りアーティスト","albumsLiked": "お気に入りアルバム"},
+  "albumDetail": {"artist": "アーティスト","releaseYear": "リリース年","tracks": "トラック"},
+  "artistDetail": {"albums": "アルバム","songs": "曲"},
+  "playlistDetail": {"createdBy": "作成者","tracks": "トラック"}
+}

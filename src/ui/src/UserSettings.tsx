@@ -1,5 +1,6 @@
 import React from 'react';
 import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const themes = [
   { label: 'Acid Pop', value: 'acidPop' },
@@ -24,34 +25,48 @@ const themes = [
 const sortedThemes = themes.slice().sort((a, b) => a.label.localeCompare(b.label));
 
 export default function UserSettings({ settings, onChange }: any) {
+  const { t, i18n } = useTranslation();
+
   return (
     <Box sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
-      <Typography variant="h5" gutterBottom>User Settings</Typography>
+      <Typography variant="h5" gutterBottom>{t('settings.title')}</Typography>
       <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Theme</InputLabel>
+        <InputLabel>{t('settings.theme')}</InputLabel>
         <Select
           value={settings.theme}
-          label="Theme"
+          label={t('settings.theme')}
           onChange={e => onChange({ ...settings, theme: e.target.value })}
         >
-          {sortedThemes.map(t => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+          {sortedThemes.map(tObj => <MenuItem key={tObj.value} value={tObj.value}>{tObj.label}</MenuItem>)}
         </Select>
       </FormControl>
       <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Language</InputLabel>
+        <InputLabel>{t('settings.language')}</InputLabel>
         <Select
           value={settings.language}
-          label="Language"
-          onChange={e => onChange({ ...settings, language: e.target.value })}
+          label={t('settings.language')}
+          onChange={e => {
+            const lang = e.target.value;
+            i18n.changeLanguage(lang); // Immediately apply language
+            onChange({ ...settings, language: lang });
+          }}
         >
           <MenuItem value="en">English</MenuItem>
+          <MenuItem value="es">Español</MenuItem>
+          <MenuItem value="fr">Français</MenuItem>
+          <MenuItem value="de">Deutsch</MenuItem>
+          <MenuItem value="pt">Português</MenuItem>
+          <MenuItem value="it">Italiano</MenuItem>
+          <MenuItem value="ja">日本語</MenuItem>
+          <MenuItem value="zh-CN">简体中文</MenuItem>
+          <MenuItem value="ru">Русский</MenuItem>
         </Select>
       </FormControl>
       <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Recent Items on Dashboard</InputLabel>
+        <InputLabel>{t('settings.recentItems')}</InputLabel>
         <Select
           value={settings.dashboardRecentLimit || 10}
-          label="Recent Items on Dashboard"
+          label={t('settings.recentItems')}
           onChange={e => onChange({ ...settings, dashboardRecentLimit: Number(e.target.value) })}
         >
           {[5, 10, 15, 20, 25].map(val => <MenuItem key={val} value={val}>{val}</MenuItem>)}
@@ -59,10 +74,10 @@ export default function UserSettings({ settings, onChange }: any) {
       </FormControl>
       <FormControlLabel
         control={<Switch checked={settings.highContrast} onChange={e => onChange({ ...settings, highContrast: e.target.checked })} />}
-        label="High Contrast Mode"
+        label={t('settings.highContrast')}
       />
       <Box sx={{ mt: 2 }}>
-        <Typography gutterBottom>Font Scale</Typography>
+        <Typography gutterBottom>{t('settings.fontScale')}</Typography>
         <Slider
           value={settings.fontScale}
           min={0.8}
@@ -72,10 +87,6 @@ export default function UserSettings({ settings, onChange }: any) {
           valueLabelDisplay="auto"
         />
       </Box>
-      <FormControlLabel
-        control={<Switch checked={settings.caching} onChange={e => onChange({ ...settings, caching: e.target.checked })} />}
-        label="Enable Caching"
-      />
     </Box>
   );
 }

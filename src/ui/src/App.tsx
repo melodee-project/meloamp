@@ -37,6 +37,7 @@ import spaceFunkTheme from './themes/spaceFunkTheme';
 import acidPopTheme from './themes/acidPopTheme';
 import fiestaTheme from './themes/fiestaTheme';
 import scarlettTheme from './themes/scarlettTheme';
+import { useTranslation } from 'react-i18next';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -71,6 +72,7 @@ function ProfilePage() { return <div>Profile Page</div>; }
 // Navigation bar component with active highlighting
 function NavBar({ user }: { user: any }) {
   const location = useLocation();
+  const { t } = useTranslation();
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
       <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
@@ -78,11 +80,11 @@ function NavBar({ user }: { user: any }) {
         <Typography variant="h6" noWrap>MeloAmp</Typography>
       </Link>
       <Box sx={{ ml: 4, display: 'flex', gap: 2 }}>
-        <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/">Dashboard</Button>
-        <Button color={location.pathname === '/artists' ? 'primary' : 'inherit'} component={Link} to="/artists">Artists</Button>
-        <Button color={location.pathname === '/albums' ? 'primary' : 'inherit'} component={Link} to="/albums">Albums</Button>
-        <Button color={location.pathname === '/playlists' ? 'primary' : 'inherit'} component={Link} to="/playlists">Playlists</Button>
-        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs">Songs</Button>        
+        <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/">{t('nav.dashboard')}</Button>
+        <Button color={location.pathname === '/artists' ? 'primary' : 'inherit'} component={Link} to="/artists">{t('nav.artists')}</Button>
+        <Button color={location.pathname === '/albums' ? 'primary' : 'inherit'} component={Link} to="/albums">{t('nav.albums')}</Button>
+        <Button color={location.pathname === '/playlists' ? 'primary' : 'inherit'} component={Link} to="/playlists">{t('nav.playlists')}</Button>
+        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs">{t('nav.songs')}</Button>        
       </Box>
     </Box>
   );
@@ -125,6 +127,7 @@ export default function App() {
   const [searchActive, setSearchActive] = React.useState(false);
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const { t, i18n } = useTranslation();
 
   React.useEffect(() => {
     localStorage.setItem('userSettings', JSON.stringify(settings));
@@ -264,7 +267,7 @@ export default function App() {
                 </IconButton>
               </Tooltip>
               {/* Queue Icon Button */}
-              <Tooltip title="Queue">
+              <Tooltip title={t('nav.queue')}>
                 <Badge badgeContent={queue.filter((song: any) => !song.played).length} color="primary">
                   <IconButton color="inherit" component={Link} to="/queue" aria-label="queue" sx={{ ml: 0.5 }}>
                     <QueueMusic />
@@ -276,9 +279,9 @@ export default function App() {
                 <Typography variant="body2" sx={{ ml: 1 }}>{user?.username || user?.name || ''}</Typography>
               </IconButton>
               <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-                <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />Settings</MenuItem>
-                <MenuItem component={Link} to="/profile" onClick={handleClose}><AccountCircle sx={{ mr: 1 }} />Profile</MenuItem>
-                <MenuItem onClick={() => { handleClose(); handleLogout(); }}><Logout sx={{ mr: 1 }} />Log out</MenuItem>
+                <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />{t('nav.settings')}</MenuItem>
+                <MenuItem component={Link} to="/profile" onClick={handleClose}><AccountCircle sx={{ mr: 1 }} />{t('nav.profile')}</MenuItem>
+                <MenuItem onClick={() => { handleClose(); handleLogout(); }}><Logout sx={{ mr: 1 }} />{t('nav.logout')}</MenuItem>
                 <MenuItem disabled><Info sx={{ mr: 1 }} />MeloAmp {user?.version || 'v0.1.0'}</MenuItem>
                 <MenuItem disabled><Info sx={{ mr: 1 }} />API {apiVersion}</MenuItem>
               </Menu>

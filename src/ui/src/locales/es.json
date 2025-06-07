@@ -1,0 +1,19 @@
+{
+  "dashboard": {"recentArtists": "Artistas recientes","recentAlbums": "Álbumes recientes","yourPlaylists": "Tus listas de reproducción"},
+  "common": {"loading": "Cargando...","error": "Ocurrió un error","refresh": "Actualizar"},
+  "settings": {"title": "Configuración de usuario","theme": "Tema","language": "Idioma","recentItems": "Elementos recientes en el panel","highContrast": "Modo de alto contraste","fontScale": "Escala de fuente"},
+  "nav": {"dashboard": "Panel","artists": "Artistas","albums": "Álbumes","playlists": "Listas","songs": "Canciones","queue": "Cola","settings": "Configuración","profile": "Perfil","logout": "Cerrar sesión"},
+  "player": {"nowPlaying": "Reproduciendo ahora","queue": "Cola","vol": "Vol","equalizer": "Ecualizador","addedToFavorites": "Añadido a favoritos","removedFromFavorites": "Eliminado de favoritos","failedToUpdateFavorite": "No se pudo actualizar favorito","playbackFailed": "La reproducción falló. Haz clic en reproducir para intentar de nuevo.","now": "Ahora"},
+  "songCard": {"unknownAlbum": "Álbum desconocido","unknownArtist": "Artista desconocido","playNext": "Reproducir siguiente","favorite": "Favorito","unfavorite": "Quitar favorito","hate": "No me gusta","unhate": "Quitar no me gusta","addLast": "Agregar al final de la cola"},
+  "albumCard": {"songs": "{{count}} canciones"},
+  "artistCard": {"albums": "{{count}} álbumes","songs": "{{count}} canciones"},
+  "playlistCard": {"songCount": "{{count}} canciones"},
+  "playlistManager": {"title": "Listas de reproducción","viewing": "Viendo {{from}} a {{to}} de {{total}}"},
+  "search": {"placeholder": "Buscar artistas, álbumes, canciones...","error": "Ocurrió un error: {{error}}","addToQueue": "Agregar a la cola","song": "Canción","playlist": "Lista"},
+  "queue": {"title": "Cola","clear": "Limpiar cola","shuffle": "Aleatorio","save": "Guardar cola","playAll": "Reproducir todo","unknownArtist": "Artista desconocido"},
+  "login": {"email": "Correo electrónico","password": "Contraseña","login": "Iniciar sesión","loggingIn": "Iniciando sesión...","error": "Error de inicio de sesión. Verifica tus credenciales."},
+  "statistic": {"songsPlayed": "Canciones reproducidas","artistsLiked": "Artistas favoritos","albumsLiked": "Álbumes favoritos"},
+  "albumDetail": {"artist": "Artista","releaseYear": "Año de lanzamiento","tracks": "Pistas"},
+  "artistDetail": {"albums": "Álbumes","songs": "Canciones"},
+  "playlistDetail": {"createdBy": "Creado por","tracks": "Pistas"}
+}

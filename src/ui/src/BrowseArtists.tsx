@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import api from './api';
 import { Artist, PaginatedResponse } from './apiModels';
 import ArtistCard from './components/ArtistCard';
 
 export default function BrowseArtists() {
+  const { t } = useTranslation();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -22,8 +24,8 @@ export default function BrowseArtists() {
   }, [page]);
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', mt: 4 }}>
-      <Typography variant="h5" gutterBottom>Browse Artists</Typography>
+    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+      <Typography variant="h5" gutterBottom>{t('nav.artists')}</Typography>
       {loading ? <CircularProgress /> : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
           {artists.map((artist) => (

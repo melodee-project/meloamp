@@ -7,6 +7,7 @@ import { SearchResultData, Song, Artist, Album, Playlist } from './apiModels';
 import ArtistCard from './components/ArtistCard';
 import AlbumCard from './components/AlbumCard';
 import { toQueueSong } from './components/toQueueSong';
+import { useTranslation } from 'react-i18next';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
   const [search, setSearch] = useState(query || '');
@@ -16,6 +17,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
   const addToQueue = useQueueStore((state: any) => state.addToQueue);
+  const { t } = useTranslation();
 
   // Debounced search effect
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <TextField
         fullWidth
-        placeholder="Search artists, albums, tracks..."
+        placeholder={t('search.placeholder')}
         value={search}
         onChange={e => setSearch(e.target.value)}
         InputProps={{
@@ -65,9 +67,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           ),
         }}
       />
-      {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>Close</Button>}
+      {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>{t('common.close')}</Button>}
       {loading && <CircularProgress sx={{ mt: 2 }} />}
-      {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
+      {error && <Typography color="error" sx={{ mt: 2 }}>{t('search.error', { error })}</Typography>}
       {results && (
         <List>
           {/* Artists as cards */}
@@ -85,15 +87,15 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           {/* Songs as list items */}
           {results.data.songs?.map((s: Song) => (
             <ListItem key={s.id} secondaryAction={
-              <Button variant="outlined" size="small" onClick={() => addToQueue(toQueueSong(s))}>Add to Queue</Button>
+              <Button variant="outlined" size="small" onClick={() => addToQueue(toQueueSong(s))}>{t('search.addToQueue')}</Button>
             }>
-              <ListItemText primary={s.title} secondary="Song" />
+              <ListItemText primary={s.title} secondary={t('search.song')}/>
             </ListItem>
           ))}
           {/* Playlists as list items */}
           {results.data.playlists?.map((p: Playlist) => (
             <ListItem key={p.id}>
-              <ListItemText primary={p.name} secondary="Playlist" />
+              <ListItemText primary={p.name} secondary={t('search.playlist')}/>
             </ListItem>
           ))}
         </List>

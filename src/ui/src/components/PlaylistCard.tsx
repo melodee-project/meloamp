@@ -6,11 +6,13 @@ import api from '../api';
 import { useQueueStore } from '../queueStore';
 import { PlayArrow } from '@mui/icons-material';
 import { toQueueSong } from './toQueueSong';
+import { useTranslation } from 'react-i18next';
 
 export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const navigate = useNavigate();
   const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
+  const { t } = useTranslation();
 
   // Handler for clicking the playlist image
   const handlePlayPlaylist = async (e: React.MouseEvent) => {
@@ -64,7 +66,7 @@ export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
       </Box>
       <CardContent sx={{ width: '100%', textAlign: 'center' }}>
         <Typography variant="h6">{playlist.name}</Typography>
-        <Typography variant="body2">{playlist.songCount} | {playlist.durationFormatted }</Typography>
+        <Typography variant="body2">{t('playlistCard.songCount', { count: playlist.songCount })} | {playlist.durationFormatted}</Typography>
       </CardContent>
     </Card>
   );

@@ -4,6 +4,8 @@
 
 **MeloAmp** is a modern, cross-platform streaming client for the [Melodee](https://melodee.org) music API. Built with React, Material-UI, and Electron, MeloAmp delivers a beautiful, responsive, and customizable music experience for Linux, Windows, and macOS.
 
+> It Really Whips the Llama's A**
+
 ---
 
 ## Features

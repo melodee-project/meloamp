@@ -1,0 +1,19 @@
+{
+  "dashboard": {"recentArtists": "最近的艺术家","recentAlbums": "最近的专辑","yourPlaylists": "你的播放列表"},
+  "common": {"loading": "加载中...","error": "发生错误","refresh": "刷新"},
+  "settings": {"title": "用户设置","theme": "主题","language": "语言","recentItems": "仪表板上的最近项目","highContrast": "高对比度模式","fontScale": "字体缩放"},
+  "nav": {"dashboard": "仪表板","artists": "艺术家","albums": "专辑","playlists": "播放列表","songs": "歌曲","queue": "队列","settings": "设置","profile": "个人资料","logout": "退出登录"},
+  "player": {"nowPlaying": "正在播放","queue": "队列","vol": "音量","equalizer": "均衡器","addedToFavorites": "已添加到收藏夹","removedFromFavorites": "已从收藏夹移除","failedToUpdateFavorite": "收藏夹更新失败","playbackFailed": "播放失败。点击播放重试。","now": "现在"},
+  "songCard": {"unknownAlbum": "未知专辑","unknownArtist": "未知艺术家","playNext": "下一首播放","favorite": "收藏","unfavorite": "取消收藏","hate": "不喜欢","unhate": "取消不喜欢","addLast": "添加到队列末尾"},
+  "albumCard": {"songs": "{{count}} 首歌"},
+  "artistCard": {"albums": "{{count}} 张专辑","songs": "{{count}} 首歌"},
+  "playlistCard": {"songCount": "{{count}} 首歌"},
+  "playlistManager": {"title": "播放列表","viewing": "显示第 {{from}} 到 {{to}} 条，共 {{total}} 条"},
+  "search": {"placeholder": "搜索艺术家、专辑、歌曲...","error": "发生错误: {{error}}","addToQueue": "添加到队列","song": "歌曲","playlist": "播放列表"},
+  "queue": {"title": "队列","clear": "清空队列","shuffle": "随机播放","save": "保存队列","playAll": "全部播放","unknownArtist": "未知艺术家"},
+  "login": {"email": "电子邮件","password": "密码","login": "登录","loggingIn": "登录中...","error": "登录失败。请检查您的凭据。"},
+  "statistic": {"songsPlayed": "已播放歌曲","artistsLiked": "喜欢的艺术家","albumsLiked": "喜欢的专辑"},
+  "albumDetail": {"artist": "艺术家","releaseYear": "发行年份","tracks": "曲目"},
+  "artistDetail": {"albums": "专辑","songs": "歌曲"},
+  "playlistDetail": {"createdBy": "创建者","tracks": "曲目"}
+}

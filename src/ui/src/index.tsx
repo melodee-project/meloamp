@@ -20,6 +20,7 @@ import scarlettTheme from './themes/scarlettTheme';
 import getAuroraTheme from './themes/auroraTheme';
 import getMonoContrastTheme from './themes/monoContrastTheme';
 import getBerryTwilightTheme from './themes/berryTwilightTheme';
+import './i18n';
 
 const themeMap: any = {
   classic: classicTheme,

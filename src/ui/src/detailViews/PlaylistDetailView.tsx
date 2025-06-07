@@ -3,12 +3,14 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia } from '@mui/material';
 import { apiRequest } from '../api';
 import { Playlist } from '../apiModels';
+import { useTranslation } from 'react-i18next';
 
 export default function PlaylistDetailView() {
   const { id } = useParams<{ id: string }>();
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLoading(true);
@@ -33,9 +35,9 @@ export default function PlaylistDetailView() {
           alt={playlist.name}
         />
         <CardContent sx={{ width: '100%', textAlign: 'center' }}>
-          <Typography variant="h5">{playlist.name}</Typography>
-          <Typography variant="body2">Owner: {playlist.owner.username}</Typography>
-          <Typography variant="body2">Songs: {playlist.songCount}</Typography>
+          <Typography variant="h4">{playlist.name}</Typography>
+          <Typography variant="subtitle1">{t('playlistDetail.createdBy')}: {playlist.owner?.username || playlist.owner?.email}</Typography>
+          <Typography variant="h6" sx={{ mt: 3 }}>{t('playlistDetail.tracks')}</Typography>
           <Typography variant="body2">{playlist.description}</Typography>
         </CardContent>
       </Box>

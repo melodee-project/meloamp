@@ -1,0 +1,19 @@
+{
+  "dashboard": {"recentArtists": "Недавние исполнители","recentAlbums": "Недавние альбомы","yourPlaylists": "Ваши плейлисты"},
+  "common": {"loading": "Загрузка...","error": "Произошла ошибка","refresh": "Обновить"},
+  "settings": {"title": "Настройки пользователя","theme": "Тема","language": "Язык","recentItems": "Недавние элементы на панели","highContrast": "Режим высокого контраста","fontScale": "Масштаб шрифта"},
+  "nav": {"dashboard": "Главная","artists": "Исполнители","albums": "Альбомы","playlists": "Плейлисты","songs": "Песни","queue": "Очередь","settings": "Настройки","profile": "Профиль","logout": "Выйти"},
+  "player": {"nowPlaying": "Сейчас играет","queue": "Очередь","vol": "Громк.","equalizer": "Эквалайзер","addedToFavorites": "Добавлено в избранное","removedFromFavorites": "Удалено из избранного","failedToUpdateFavorite": "Не удалось обновить избранное","playbackFailed": "Не удалось воспроизвести. Нажмите воспроизвести, чтобы попробовать снова.","now": "Сейчас"},
+  "songCard": {"unknownAlbum": "Неизвестный альбом","unknownArtist": "Неизвестный исполнитель","playNext": "Играть следующим","favorite": "В избранное","unfavorite": "Убрать из избранного","hate": "Не нравится","unhate": "Убрать не нравится","addLast": "Добавить в конец очереди"},
+  "albumCard": {"songs": "{{count}} песен"},
+  "artistCard": {"albums": "{{count}} альбомов","songs": "{{count}} песен"},
+  "playlistCard": {"songCount": "{{count}} песен"},
+  "playlistManager": {"title": "Плейлисты","viewing": "Показано с {{from}} по {{to}} из {{total}}"},
+  "search": {"placeholder": "Поиск исполнителей, альбомов, песен...","error": "Произошла ошибка: {{error}}","addToQueue": "Добавить в очередь","song": "Песня","playlist": "Плейлист"},
+  "queue": {"title": "Очередь","clear": "Очистить очередь","shuffle": "Перемешать","save": "Сохранить очередь","playAll": "Воспроизвести всё","unknownArtist": "Неизвестный исполнитель"},
+  "login": {"email": "Электронная почта","password": "Пароль","login": "Войти","loggingIn": "Вход...","error": "Ошибка входа. Проверьте свои данные."},
+  "statistic": {"songsPlayed": "Прослушано песен","artistsLiked": "Любимые исполнители","albumsLiked": "Любимые альбомы"},
+  "albumDetail": {"artist": "Исполнитель","releaseYear": "Год выпуска","tracks": "Треки"},
+  "artistDetail": {"albums": "Альбомы","songs": "Песни"},
+  "playlistDetail": {"createdBy": "Создатель","tracks": "Треки"}
+}

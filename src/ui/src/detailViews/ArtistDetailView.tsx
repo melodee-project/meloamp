@@ -3,12 +3,14 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia } from '@mui/material';
 import { apiRequest } from '../api';
 import { Artist } from '../apiModels';
+import { useTranslation } from 'react-i18next';
 
 export default function ArtistDetailView() {
   const { id } = useParams<{ id: string }>();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLoading(true);
@@ -33,9 +35,9 @@ export default function ArtistDetailView() {
           alt={artist.name}
         />
         <CardContent sx={{ width: '100%', textAlign: 'center' }}>
-          <Typography variant="h5">{artist.name}</Typography>
-          <Typography variant="body2">Albums: {artist.albumCount}</Typography>
-          <Typography variant="body2">Songs: {artist.songCount}</Typography>
+          <Typography variant="h4">{artist.name}</Typography>
+          <Typography variant="subtitle1">{t('artistDetail.albums')}: {artist.albumCount}</Typography>
+          <Typography variant="subtitle1">{t('artistDetail.songs')}: {artist.songCount}</Typography>
           {artist.biography && <Typography variant="body2" sx={{ mt: 2 }}>{artist.biography}</Typography>}
         </CardContent>
       </Box>

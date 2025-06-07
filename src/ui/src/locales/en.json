@@ -1,0 +1,106 @@
+{
+  "dashboard": {
+    "recentArtists": "Recent Artists",
+    "recentAlbums": "Recent Albums",
+    "yourPlaylists": "Your Playlists"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "refresh": "Refresh"
+  },
+  "settings": {
+    "title": "User Settings",
+    "theme": "Theme",
+    "language": "Language",
+    "recentItems": "Recent Items on Dashboard",
+    "highContrast": "High Contrast Mode",
+    "fontScale": "Font Scale"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "artists": "Artists",
+    "albums": "Albums",
+    "playlists": "Playlists",
+    "songs": "Songs",
+    "queue": "Queue",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Log out"
+  },
+  "player": {
+    "nowPlaying": "Now Playing",
+    "queue": "Queue",
+    "vol": "Vol",
+    "equalizer": "Equalizer",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "failedToUpdateFavorite": "Failed to update favorite",
+    "playbackFailed": "Playback failed. Click play to try again.",
+    "now": "Now"
+  },
+  "songCard": {
+    "unknownAlbum": "Unknown Album",
+    "unknownArtist": "Unknown Artist",
+    "playNext": "Play Next",
+    "favorite": "Favorite",
+    "unfavorite": "Unfavorite",
+    "hate": "Hate",
+    "unhate": "Unhate",
+    "addLast": "Add as Last in Queue"
+  },
+  "albumCard": {
+    "songs": "{{count}} songs"
+  },
+  "artistCard": {
+    "albums": "{{count}} albums",
+    "songs": "{{count}} songs"
+  },
+  "playlistCard": {
+    "songCount": "{{count}} songs"
+  },
+  "playlistManager": {
+    "title": "Playlists",
+    "viewing": "Viewing {{from}} to {{to}} of {{total}}"
+  },
+  "search": {
+    "placeholder": "Search artists, albums, tracks...",
+    "error": "An error occurred: {{error}}",
+    "addToQueue": "Add to Queue",
+    "song": "Song",
+    "playlist": "Playlist"
+  },
+  "queue": {
+    "title": "Queue",
+    "clear": "Clear Queue",
+    "shuffle": "Shuffle",
+    "save": "Save Queue",
+    "playAll": "Play All",
+    "unknownArtist": "Unknown Artist"
+  },
+  "login": {
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "loggingIn": "Logging in...",
+    "error": "Login failed. Please check your credentials."
+  },
+  "statistic": {
+    "songsPlayed": "Songs Played",
+    "artistsLiked": "Artists Liked",
+    "albumsLiked": "Albums Liked"
+  },
+  "albumDetail": {
+    "artist": "Artist",
+    "releaseYear": "Release Year",
+    "tracks": "Tracks"
+  },
+  "artistDetail": {
+    "albums": "Albums",
+    "songs": "Songs"
+  },
+  "playlistDetail": {
+    "createdBy": "Created by",
+    "tracks": "Tracks"
+  }
+}

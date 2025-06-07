@@ -7,11 +7,13 @@ import PlaylistCard from './components/PlaylistCard';
 import StatisticCard from './components/StatisticCard';
 import AlbumCard from './components/AlbumCard';
 import { ArrowBackIos, ArrowForwardIos, Refresh } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 // Playlist Card
 // ...moved to components/PlaylistCard.tsx...
 
 function Dashboard({ recentLimit }: { recentLimit?: number }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Statistic[] | null>(null);
   const [recentArtists, setRecentArtists] = useState<Artist[]>([]);
   const [recentAlbums, setRecentAlbums] = useState<Album[]>([]);
@@ -51,7 +53,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
   }, [recentLimit]);
 
   if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>;
-  if (error) return <Box sx={{ p: 4, textAlign: 'center', color: 'error.main' }}>{error}</Box>;
+  if (error) return <Box sx={{ p: 4, textAlign: 'center', color: 'error.main' }}>{t('common.error')}</Box>;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -60,7 +62,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
           {stats && stats.map((s, i) => <StatisticCard key={i} stat={s} />)}
         </Box>
         <IconButton
-          aria-label="Refresh dashboard"
+          aria-label={t('common.refresh')}
           onClick={fetchDashboardData}
           sx={{ ml: 2, animation: loading ? 'spin 1s linear infinite' : 'none' }}
           disabled={loading}
@@ -74,7 +76,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
           }} />
         </IconButton>
       </Box>
-      <Typography variant="h5" gutterBottom>Recent Artists</Typography>
+      <Typography variant="h5" gutterBottom>{t('dashboard.recentArtists')}</Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start', mb: 3 }}>
         {recentArtists.map(a => (
           <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
@@ -82,7 +84,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
           </Box>
         ))}
       </Box>
-      <Typography variant="h5" gutterBottom>Recent Albums</Typography>
+      <Typography variant="h5" gutterBottom>{t('dashboard.recentAlbums')}</Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start', mb: 3 }}>
         {recentAlbums.map(a => (
           <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
@@ -90,7 +92,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
           </Box>
         ))}
       </Box>
-      <Typography variant="h5" gutterBottom>Your Playlists</Typography>
+      <Typography variant="h5" gutterBottom>{t('dashboard.yourPlaylists')}</Typography>
       <Box sx={{ width: '100%' }}>
         <PlaylistScroller playlists={playlists} />
       </Box>

@@ -4,6 +4,7 @@ import { Delete, DragIndicator, Shuffle, Save } from '@mui/icons-material';
 import { useQueueStore, QueueState } from './queueStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import './QueueView.css'; // <-- Add this import for custom CSS
+import { useTranslation } from 'react-i18next';
 
 export default function QueueView() {
   const queue = useQueueStore((state: QueueState) => state.queue);
@@ -13,6 +14,8 @@ export default function QueueView() {
   // Get playing state from Player (global store or context)
   const [playing, setPlaying] = React.useState(false);
   const [playerCurrent, setPlayerCurrent] = React.useState<number>(-1);
+  const { t } = useTranslation();
+
   React.useEffect(() => {
     // Listen for playing state and current index from Player via window event
     function handlePlayerState(e: any) {
@@ -69,14 +72,15 @@ export default function QueueView() {
 
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
-      <Typography variant="h6">Playback Queue</Typography>
+      <Typography variant="h4" sx={{ mb: 2 }}>{t('queue.title')}</Typography>
       <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
         {queue.length} song{queue.length === 1 ? '' : 's'}
         {queue.length > 0 ? ` • ${formatMs(totalDuration)}` : ''}
       </Typography>
-      <Button onClick={shuffleQueue} startIcon={<Shuffle />}>Shuffle</Button>
-      <Button onClick={handleSaveAsPlaylist} startIcon={<Save />} sx={{ ml: 1 }}>Save as Playlist</Button>
-      <Button onClick={clearQueue} sx={{ ml: 1 }}>Clear</Button>
+      <Button onClick={clearQueue} color="error" sx={{ mr: 2 }}>{t('queue.clear')}</Button>
+      <Button onClick={shuffleQueue} sx={{ mr: 2 }}>{t('queue.shuffle')}</Button>
+      <Button onClick={handleSaveAsPlaylist} sx={{ mr: 2 }}>{t('queue.save')}</Button>
+      <Button onClick={() => {}} color="primary">{t('queue.playAll')}</Button>
       {queue.length === 0 ? (
         <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary', fontSize: 24 }}>
           No Songs
@@ -122,7 +126,7 @@ export default function QueueView() {
                         </ListItemAvatar>
                         <ListItemText 
                           primary={song.title} 
-                          secondary={song.artist?.name} 
+                          secondary={song.artist?.name || t('queue.unknownArtist')} 
                           primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
                         />
                       </ListItem>

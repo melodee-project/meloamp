@@ -3,12 +3,14 @@ import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia } from '@mui/material';
 import { apiRequest } from '../api';
 import { Album } from '../apiModels';
+import { useTranslation } from 'react-i18next';
 
 export default function AlbumDetailView() {
   const { id } = useParams<{ id: string }>();
   const [album, setAlbum] = useState<Album | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLoading(true);
@@ -33,11 +35,12 @@ export default function AlbumDetailView() {
           alt={album.name}
         />
         <CardContent sx={{ width: '100%', textAlign: 'center' }}>
-          <Typography variant="h5">{album.name}</Typography>
-          <Typography variant="body2">Artist: {album.artist.name}</Typography>
-          <Typography variant="body2">Year: {album.releaseYear}</Typography>
-          <Typography variant="body2">Songs: {album.songCount}</Typography>
-          <Typography variant="body2">Duration: {album.durationFormatted}</Typography>
+          <Typography variant="h4">{album.name}</Typography>
+          <Typography variant="subtitle1">{t('albumDetail.artist')}: {album.artist?.name}</Typography>
+          <Typography variant="subtitle2">{t('albumDetail.releaseYear')}: {album.releaseYear}</Typography>
+          <Typography variant="h6" sx={{ mt: 3 }}>{t('albumDetail.tracks')}</Typography>
+          <Typography variant="body2">{album.songCount} {t('common.songs')}</Typography>
+          <Typography variant="body2">{t('albumDetail.duration')}: {album.durationFormatted}</Typography>
         </CardContent>
       </Box>
     </Card>

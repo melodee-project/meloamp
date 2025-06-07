@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import api from './api';
 import { Playlist, PaginatedResponse } from './apiModels';
 import PlaylistCard from './components/PlaylistCard';
@@ -9,6 +10,7 @@ export default function PlaylistManager() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLoading(true);
@@ -23,7 +25,7 @@ export default function PlaylistManager() {
 
   return (
     <Box sx={{ maxWidth: 1000, mx: 'auto', mt: 4 }}>
-      <Typography variant="h5" gutterBottom>Playlists</Typography>
+      <Typography variant="h5" gutterBottom>{t('playlistManager.title')}</Typography>
       {loading ? <CircularProgress /> : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
           {playlists.map((playlist) => (
@@ -40,7 +42,7 @@ export default function PlaylistManager() {
         sx={{ mt: 2 }}
       />
       <Typography variant="body2" sx={{ mt: 1 }}>
-        Viewing {(page - 1) * 20 + 1} to {Math.min(page * 20, total)} of {total}
+        {t('playlistManager.viewing', { from: (page - 1) * 20 + 1, to: Math.min(page * 20, total), total })}
       </Typography>
     </Box>
   );

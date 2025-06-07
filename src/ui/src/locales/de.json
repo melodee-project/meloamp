@@ -1,0 +1,19 @@
+{
+  "dashboard": {"recentArtists": "Kürzlich gehörte Künstler","recentAlbums": "Kürzlich gehörte Alben","yourPlaylists": "Deine Playlists"},
+  "common": {"loading": "Lädt...","error": "Ein Fehler ist aufgetreten","refresh": "Aktualisieren"},
+  "settings": {"title": "Benutzereinstellungen","theme": "Thema","language": "Sprache","recentItems": "Letzte Elemente im Dashboard","highContrast": "Hoher Kontrastmodus","fontScale": "Schriftgröße"},
+  "nav": {"dashboard": "Dashboard","artists": "Künstler","albums": "Alben","playlists": "Playlists","songs": "Lieder","queue": "Warteschlange","settings": "Einstellungen","profile": "Profil","logout": "Abmelden"},
+  "player": {"nowPlaying": "Jetzt läuft","queue": "Warteschlange","vol": "Lautst.","equalizer": "Equalizer","addedToFavorites": "Zu Favoriten hinzugefügt","removedFromFavorites": "Aus Favoriten entfernt","failedToUpdateFavorite": "Favorit konnte nicht aktualisiert werden","playbackFailed": "Wiedergabe fehlgeschlagen. Klicke auf Wiedergabe, um es erneut zu versuchen.","now": "Jetzt"},
+  "songCard": {"unknownAlbum": "Unbekanntes Album","unknownArtist": "Unbekannter Künstler","playNext": "Als nächstes abspielen","favorite": "Favorit","unfavorite": "Favorit entfernen","hate": "Nicht mögen","unhate": "Nicht mögen entfernen","addLast": "Als letztes in die Warteschlange"},
+  "albumCard": {"songs": "{{count}} Lieder"},
+  "artistCard": {"albums": "{{count}} Alben","songs": "{{count}} Lieder"},
+  "playlistCard": {"songCount": "{{count}} Lieder"},
+  "playlistManager": {"title": "Playlists","viewing": "Zeige {{from}} bis {{to}} von {{total}}"},
+  "search": {"placeholder": "Künstler, Alben, Lieder suchen...","error": "Ein Fehler ist aufgetreten: {{error}}","addToQueue": "Zur Warteschlange hinzufügen","song": "Lied","playlist": "Playlist"},
+  "queue": {"title": "Warteschlange","clear": "Warteschlange leeren","shuffle": "Mischen","save": "Warteschlange speichern","playAll": "Alle abspielen","unknownArtist": "Unbekannter Künstler"},
+  "login": {"email": "E-Mail","password": "Passwort","login": "Anmelden","loggingIn": "Anmeldung...","error": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten."},
+  "statistic": {"songsPlayed": "Gespielte Lieder","artistsLiked": "Beliebte Künstler","albumsLiked": "Beliebte Alben"},
+  "albumDetail": {"artist": "Künstler","releaseYear": "Erscheinungsjahr","tracks": "Titel"},
+  "artistDetail": {"albums": "Alben","songs": "Lieder"},
+  "playlistDetail": {"createdBy": "Erstellt von","tracks": "Titel"}
+}
