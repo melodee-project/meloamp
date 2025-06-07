@@ -275,19 +275,21 @@ export default function App() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ position: 'relative', mr: 2 }}>
                 <InputBase
-                  placeholder="Search…"
+                  placeholder={t('search.placeholder')}
                   inputProps={{ 'aria-label': 'search', sx: { '::placeholder': { color: 'text.secondary', opacity: 1 } } }}
                   startAdornment={<Search sx={{ mr: 1 }} />}
                   sx={{
-                    color: theme => theme.palette.mode === 'dark' ? theme.palette.grey[100] : 'inherit',
-                    background: '#f1f1f1',
+                    color: theme => theme.palette.text.primary,
+                    background: theme => theme.palette.background.paper,
                     borderRadius: 1,
                     pl: 1,
                     pr: 1,
                     height: 36,
-                    width: 180,
+                    width: 280,
+                    border: theme => `1.5px solid ${theme.palette.divider}`,
+                    boxShadow: theme => theme.palette.mode === 'dark' ? '0 0 0 1px #333' : '0 0 0 1px #ccc',
                     'input::placeholder': {
-                      color: theme => theme.palette.mode === 'dark' ? theme.palette.grey[400] : theme.palette.grey[600],
+                      color: theme => theme.palette.text.secondary,
                       opacity: 1,
                     },
                   }}

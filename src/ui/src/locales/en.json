@@ -7,7 +7,8 @@
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "close": "Close"
   },
   "settings": {
     "title": "User Settings",

@@ -1,6 +1,6 @@
 {
   "dashboard": {"recentArtists": "Artistas recientes","recentAlbums": "Álbumes recientes","yourPlaylists": "Tus listas de reproducción"},
-  "common": {"loading": "Cargando...","error": "Ocurrió un error","refresh": "Actualizar"},
+  "common": {"loading": "Cargando...","error": "Ocurrió un error","refresh": "Actualizar","close": "Cerrar"},
   "settings": {"title": "Configuración de usuario","theme": "Tema","language": "Idioma","recentItems": "Elementos recientes en el panel","highContrast": "Modo de alto contraste","fontScale": "Escala de fuente"},
   "nav": {"dashboard": "Panel","artists": "Artistas","albums": "Álbumes","playlists": "Listas","songs": "Canciones","queue": "Cola","settings": "Configuración","profile": "Perfil","logout": "Cerrar sesión"},
   "player": {"nowPlaying": "Reproduciendo ahora","queue": "Cola","vol": "Vol","equalizer": "Ecualizador","addedToFavorites": "Añadido a favoritos","removedFromFavorites": "Eliminado de favoritos","failedToUpdateFavorite": "No se pudo actualizar favorito","playbackFailed": "La reproducción falló. Haz clic en reproducir para intentar de nuevo.","now": "Ahora"},

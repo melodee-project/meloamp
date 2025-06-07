@@ -8,6 +8,7 @@ import ArtistCard from './components/ArtistCard';
 import AlbumCard from './components/AlbumCard';
 import { toQueueSong } from './components/toQueueSong';
 import { useTranslation } from 'react-i18next';
+import SongCard from './components/SongCard';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
   const [search, setSearch] = useState(query || '');
@@ -67,7 +68,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           ),
         }}
       />
-      {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>{t('common.close')}</Button>}
+      {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>{t('common.close', 'Close')}</Button>}
       {loading && <CircularProgress sx={{ mt: 2 }} />}
       {error && <Typography color="error" sx={{ mt: 2 }}>{t('search.error', { error })}</Typography>}
       {results && (
@@ -86,10 +87,8 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           ))}
           {/* Songs as list items */}
           {results.data.songs?.map((s: Song) => (
-            <ListItem key={s.id} secondaryAction={
-              <Button variant="outlined" size="small" onClick={() => addToQueue(toQueueSong(s))}>{t('search.addToQueue')}</Button>
-            }>
-              <ListItemText primary={s.title} secondary={t('search.song')}/>
+            <ListItem key={s.id} disableGutters sx={{ display: 'flex', justifyContent: 'center' }}>
+              <SongCard song={s} />
             </ListItem>
           ))}
           {/* Playlists as list items */}
