@@ -16,9 +16,10 @@ cd "$(dirname "$0")/.."
 
 # If you are using a Fedora-based system, you may need to install the following packages:
 # sudo dnf install libxcrypt-compat
-# sudo dnf install rpm-build fakeroot
+# sudo dnf install rpm-build rpmdevtools fakeroot
 # sudo dnf install gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
 # sudo dnf install rpm-build fakeroot gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
+# sudo dnf install xz
 
 # If you are using an Arch-based system, you may need to install the following packages:
 # sudo pacman -S rpm fakeroot
