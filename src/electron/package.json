@@ -2,6 +2,13 @@
   "name": "meloamp",
   "version": "1.0.0",
   "main": "main.js",
+  "files": [
+    "main.js",
+    "preload.js",
+    "build/**/*",
+    "node_modules/**/*",
+    "package.json"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -28,20 +35,18 @@
         "tar.gz"
       ],
       "category": "Audio",
-      "icon": "../../graphics/logo.png",
+      "icon": "resources/logo.png",
       "executableName": "meloamp"
     },
     "directories": {
       "output": "dist",
-      "buildResources": "build",
+      "buildResources": "resources",
       "app": "."
     },
-    "files": [
-      "**/*",
+    "extraResources": [
       {
-        "from": "../ui/build",
-        "to": "build",
-        "filter": ["**/*"]
+        "from": "build",
+        "to": "build"
       }
     ]
   }

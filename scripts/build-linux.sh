@@ -1,17 +1,12 @@
 #!/usr/bin/env zsh
 # build-linux.sh - Build MeloAmp Electron App for Linux platforms only
 # Usage: ./scripts/build-linux.sh
-set -e
+set -euo pipefail
 
-# 1. Build React UI
-print '\n[1/4] Building React UI...'
-cd ../src/ui
-rm -rf node_modules package-lock.json yarn.lock
-npm cache clean --force
-npm install -g yarn
-yarn install --check-files --verbose
-yarn build
+# Change to the project root directory (the parent of scripts/)
+cd "$(dirname "$0")/.."
 
+# Build notes;
 # If you are using a Debian-based system, you may also need to install the following packages:
 # sudo apt-get update
 # sudo apt-get install rpm fakeroot
@@ -30,19 +25,42 @@ yarn build
 # sudo pacman -S libxcrypt-compat
 # sudo pacman -S rpm fakeroot libxcrypt-compat
 
-# 2. Install Electron dependencies
-print '\n[2/4] Installing Electron dependencies...'
-cd ../electron
-rm -rf node_modules package-lock.json yarn.lock
-npm cache clean --force
+
+# Warn if running as root
+if [[ $EUID -eq 0 ]]; then
+  echo "[ERROR] Do not run this script as root or with sudo."
+  exit 1
+fi
+
+# 1. Build React UI
+echo '\n[1/5] Building React UI...'
+cd src/ui
+yarn install --check-files --verbose
+yarn build
+cd ../..
+
+# 2. Copy React build output to Electron app directory
+echo '\n[2/5] Copying React build output to Electron app...'
+rm -rf src/electron/build
+cp -r src/ui/build src/electron/build
+# Remove build from .gitignore temporarily for packaging
+if grep -q '^src/electron/build/' .gitignore; then
+  sed -i.bak '/^src\/electron\/build\//d' .gitignore
+fi
+
+# 3. Install Electron dependencies
+echo '\n[3/5] Installing Electron dependencies...'
+cd src/electron
 yarn install --check-files --verbose
 
-# 3. Ensure electron-builder is installed
-print '\n[3/4] Installing electron-builder...'
-yarn add --dev electron-builder
-
 # 4. Build Electron App for Linux only
-print '\n[4/4] Building Electron App for Linux (AppImage, deb, tar.gz)...'
-npx electron-builder --linux AppImage deb tar.gz
+echo '\n[4/5] Building Electron App for Linux (AppImage, deb, tar.gz)...'
+yarn run electron-builder --linux AppImage deb tar.gz
 
-print '\nBuild complete! Find your packages in src/electron/dist/'
+# Restore .gitignore if backup exists
+echo '\n[post-build] Restoring .gitignore ignore rules...'
+if [ -f .gitignore.bak ]; then
+  mv .gitignore.bak .gitignore
+fi
+
+echo '\n[5/5] Build complete! Find your packages in src/electron/dist/'
