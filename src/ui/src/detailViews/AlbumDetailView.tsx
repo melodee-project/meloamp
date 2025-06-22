@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem, ListItemText, ListItemAvatar, Avatar } from '@mui/material';
-import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt } from '@mui/icons-material';
+import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import api from '../api';
 import { Album, Song } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 import ArtistCard from '../components/ArtistCard';
+import { useQueueStore } from '../queueStore';
 
 export default function AlbumDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,8 @@ export default function AlbumDetailView() {
   const [favorite, setFavorite] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const { t } = useTranslation();
+  const setQueue = useQueueStore((state: any) => state.setQueue);
+  const setCurrent = useQueueStore((state: any) => state.setCurrent);
 
   useEffect(() => {
     setLoading(true);
@@ -54,6 +57,12 @@ export default function AlbumDetailView() {
     setFavLoading(false);
   };
 
+  const handlePlayAlbum = () => {
+    if (!album || !(album as any).songs || (album as any).songs.length === 0) return;
+    setQueue((album as any).songs);
+    setCurrent(0);
+  };
+
   if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>;
   if (error) return <Box sx={{ p: 4, textAlign: 'center', color: 'error.main' }}>{error}</Box>;
   if (!album) return null;
@@ -64,10 +73,10 @@ export default function AlbumDetailView() {
       maxWidth: 1200, m: 'auto', mt: 4, p: { xs: 1, sm: 3 }, bgcolor: 'background.default', boxShadow: 4 }}>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
         {/* Left: Album image and artist card */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 240, flex: '0 0 240px', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 340, flex: '0 0 340px', gap: 2 }}>
           <CardMedia
             component="img"
-            sx={{ width: 200, height: 200, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
+            sx={{ width: 320, height: 320, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
             image={album.imageUrl || album.thumbnailUrl}
             alt={album.name}
           />
@@ -81,6 +90,13 @@ export default function AlbumDetailView() {
         <CardContent sx={{ flex: 1, width: '100%', pt: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="h4" sx={{ flex: 1, fontWeight: 700, minWidth: 0, pr: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{album.name}</Typography>
+            <Tooltip title={t('albumDetail.playAlbum', 'Play Album')}>
+              <span>
+                <IconButton onClick={handlePlayAlbum} color="success">
+                  <PlayArrow />
+                </IconButton>
+              </span>
+            </Tooltip>
             <Tooltip title={favorite ? t('common.unfavorite') : t('common.favorite')}>
               <span>
                 <IconButton onClick={handleFavorite} disabled={favLoading} color={favorite ? 'primary' : 'default'}>
