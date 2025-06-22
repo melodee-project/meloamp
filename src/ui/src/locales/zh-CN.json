@@ -9,7 +9,13 @@
     "error": "发生错误",
     "refresh": "刷新",
     "close": "关闭",
-    "viewing": "显示第 {{from}} 到 {{to}} 条，共 {{total}} 条"
+    "viewing": "显示第 {{from}} 到 {{to}} 条，共 {{total}} 条",
+    "created": "创建时间",
+    "updated": "更新时间",
+    "favorite": "收藏",
+    "unfavorite": "取消收藏",
+    "dislike": "不喜欢",
+    "undislike": "取消不喜欢"
   },
   "settings": {
     "title": "用户设置",
@@ -94,7 +100,9 @@
   "albumDetail": {
     "artist": "艺术家",
     "releaseYear": "发行年份",
-    "tracks": "曲目"
+    "tracks": "曲目",
+    "duration": "时长",
+    "noTracks": "未找到曲目"
   },
   "artistDetail": {
     "albums": "专辑",

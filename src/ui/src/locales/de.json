@@ -8,7 +8,13 @@
     "loading": "Lädt...",
     "error": "Ein Fehler ist aufgetreten",
     "refresh": "Aktualisieren",
-    "viewing": "Zeige {{from}} bis {{to}} von {{total}}"
+    "viewing": "Zeige {{from}} bis {{to}} von {{total}}",
+    "created": "Erstellt",
+    "updated": "Aktualisiert",
+    "favorite": "Favorit",
+    "unfavorite": "Favorit entfernen",
+    "dislike": "Nicht mögen",
+    "undislike": "Nicht mehr nicht mögen"
   },
   "settings": {
     "title": "Benutzereinstellungen",
@@ -93,7 +99,9 @@
   "albumDetail": {
     "artist": "Künstler",
     "releaseYear": "Erscheinungsjahr",
-    "tracks": "Titel"
+    "tracks": "Titel",
+    "duration": "Dauer",
+    "noTracks": "Keine Titel gefunden"
   },
   "artistDetail": {
     "albums": "Alben",

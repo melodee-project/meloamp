@@ -9,7 +9,13 @@
     "error": "Произошла ошибка",
     "refresh": "Обновить",
     "close": "Закрыть",
-    "viewing": "Показано с {{from}} по {{to}} из {{total}}"
+    "viewing": "Показано с {{from}} по {{to}} из {{total}}",
+    "created": "Создано",
+    "updated": "Обновлено",
+    "favorite": "Избранное",
+    "unfavorite": "Убрать из избранного",
+    "dislike": "Не нравится",
+    "undislike": "Убрать не нравится"
   },
   "settings": {
     "title": "Настройки пользователя",
@@ -94,7 +100,9 @@
   "albumDetail": {
     "artist": "Исполнитель",
     "releaseYear": "Год выпуска",
-    "tracks": "Треки"
+    "tracks": "Треки",
+    "duration": "Длительность",
+    "noTracks": "Треки не найдены"
   },
   "artistDetail": {
     "albums": "Альбомы",

@@ -285,7 +285,7 @@ export default function Player({ src }: { src: string }) {
           <Box sx={{ display: 'flex', flex: 1, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', justifyContent: 'center', gap: 4, p: { xs: 1, md: 4 }, height: '80vh', minHeight: 0 }}>
             {/* Large Artwork */}
             {queue[current]?.imageUrl && (
-              <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: { s: '50vw', md: '70vh' }, height: { xs: '50vw', md: '70vh' }, maxHeight: '70vh', borderRadius: 2, objectFit: 'cover', boxShadow: 3, alignSelf: 'center' }} />
+              <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: { xs: '60vw', md: '70vh' }, height: { xs: '60vw', md: '70vh' }, maxHeight: '70vh', borderRadius: 4, objectFit: 'cover', boxShadow: 6, alignSelf: 'center' }} />
             )}
             {/* Song Info and Controls */}
             <Box sx={{
@@ -302,13 +302,13 @@ export default function Player({ src }: { src: string }) {
               minHeight: 0,
             }}>
               <Typography
-                variant="h3"
+                variant="h2"
                 sx={{
-                  fontWeight: 600,
-                  fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+                  fontWeight: 700,
+                  fontSize: { xs: '2.2rem', sm: '2.8rem', md: '3.2rem' },
                   textAlign: 'center',
-                  mb: 1.5,
-                  lineHeight: 1.2,
+                  mb: 2,
+                  lineHeight: 1.1,
                   wordBreak: 'break-word',
                   maxWidth: { xs: '98vw', md: '90vw', lg: '70vw' },
                   whiteSpace: 'normal',
@@ -317,74 +317,86 @@ export default function Player({ src }: { src: string }) {
               >
                 {queue[current]?.title}
               </Typography>
-              {queue[current].album && (
-                <Typography
-                  variant="subtitle1"
-                  color="text.secondary"
-                  sx={{
-                    mb: 0.5,
-                    textAlign: 'center',
-                    fontWeight: 500,
-                    fontSize: { xs: '1rem', sm: '1.2rem', md: '1.3rem' },
-                  }}
-                >
+              <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', alignItems: 'center', mb: 2, minHeight: 60 }}>
+                {queue[current].album && (
                   <Box
-                    component="span"
-                    sx={{
-                      cursor: 'pointer',
-                      color: 'primary.main',
-                      textDecoration: 'underline',
-                      fontWeight: 600,
-                      fontSize: 'inherit',
-                    }}
                     onClick={() => window.location.assign(`/albums/${queue[current].album.id}`)}
-                  >
-                    {queue[current].album.releaseYear ? `${queue[current].album.releaseYear} • ` : ''}{queue[current].album.name}
-                  </Box>
-                </Typography>
-              )}
-              {queue[current].artist && (
-                <Typography
-                  variant="subtitle1"
-                  color="text.secondary"
-                  sx={{
-                    mb: 2,
-                    textAlign: 'center',
-                    fontWeight: 500,
-                    fontSize: { xs: '1rem', sm: '1.2rem', md: '1.3rem' },
-                  }}
-                >
-                  <Box
-                    component="span"
                     sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'background.default',
+                      borderRadius: 2,
+                      boxShadow: 2,
+                      px: 2,
+                      py: 1,
                       cursor: 'pointer',
-                      color: 'primary.main',
-                      textDecoration: 'underline',
-                      fontWeight: 600,
-                      fontSize: 'inherit',
+                      minWidth: 0,
+                      maxWidth: 260,
+                      height: 60,
+                      transition: 'box-shadow 0.2s',
+                      '&:hover': { boxShadow: 6 },
                     }}
-                    onClick={() => window.location.assign(`/artists/${queue[current].artist.id}`)}
                   >
-                    {queue[current].artist.name}
+                    {queue[current].album.imageUrl && (
+                      <Box component="img" src={queue[current].album.imageUrl} alt={queue[current].album.name} sx={{ width: 40, height: 40, borderRadius: 1, mr: 1, objectFit: 'cover', boxShadow: 1 }} />
+                    )}
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 180 }}>{queue[current].album.name}</Typography>
+                      {queue[current].album.releaseYear && (
+                        <Typography variant="caption" color="text.secondary">{queue[current].album.releaseYear}</Typography>
+                      )}
+                    </Box>
                   </Box>
-                </Typography>
-              )}
-              {/* Controls (reuse main controls) */}
-              <Box sx={{ mt: 6 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <IconButton onClick={() => playSongAtIndex(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
-                  <IconButton onClick={togglePlay}>{playing ? <Pause /> : <PlayArrow />}</IconButton>
-                  <IconButton onClick={() => playSongAtIndex(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>
-                  <Slider
-                    value={progress}
-                    min={0}
-                    max={duration}
-                    onChange={(_, v) => {
-                      if (audioRef.current) audioRef.current.currentTime = Number(v);
-                      setProgress(Number(v));
+                )}
+                {queue[current].artist && (
+                  <Box
+                    onClick={() => window.location.assign(`/artists/${queue[current].artist.id}`)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'background.default',
+                      borderRadius: 2,
+                      boxShadow: 2,
+                      px: 2,
+                      py: 1,
+                      cursor: 'pointer',
+                      minWidth: 0,
+                      maxWidth: 220,
+                      height: 60,
+                      transition: 'box-shadow 0.2s',
+                      '&:hover': { boxShadow: 6 },
                     }}
-                    sx={{ mx: 2, flex: 1 }}
-                  />
+                  >
+                    {queue[current].artist.imageUrl && (
+                      <Box component="img" src={queue[current].artist.imageUrl} alt={queue[current].artist.name} sx={{ width: 36, height: 40, borderRadius: '50%', mr: 1, objectFit: 'cover', boxShadow: 1 }} />
+                    )}
+                    <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 140 }}>{queue[current].artist.name}</Typography>
+                  </Box>
+                )}
+              </Box>
+              {/* Playback Progress Indicator */}
+              <Box sx={{ width: '100%', maxWidth: 420, mx: 'auto', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ minWidth: 40, textAlign: 'right' }}>{formatTime(progress)}</Typography>
+                <Slider
+                  value={progress}
+                  min={0}
+                  max={duration}
+                  onChange={(_, v) => {
+                    if (audioRef.current) audioRef.current.currentTime = Number(v);
+                    setProgress(Number(v));
+                  }}
+                  sx={{ flex: 1, mx: 2 }}
+                />
+                <Typography variant="caption" sx={{ minWidth: 40, textAlign: 'left' }}>{formatTime(duration)}</Typography>
+              </Box>
+              {/* Controls (reuse main controls) */}
+              <Box sx={{ mt: 4 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <IconButton onClick={() => playSongAtIndex(Math.max(current - 1, 0))} sx={{ mx: 1, fontSize: 32 }}><SkipPrevious fontSize="large" /></IconButton>
+                  <IconButton onClick={togglePlay} sx={{ mx: 2, fontSize: 40 }}>{playing ? <Pause fontSize="large" /> : <PlayArrow fontSize="large" />}</IconButton>
+                  <IconButton onClick={() => playSongAtIndex(Math.min(current + 1, queue.length - 1))} sx={{ mx: 1, fontSize: 32 }}><SkipNext fontSize="large" /></IconButton>
                   {/* Volume slider */}
                   <Box sx={{ width: 120, mx: 2, display: 'flex', alignItems: 'center' }}>
                     <Typography variant="caption" sx={{ mr: 1 }}>{t('player.vol')}</Typography>
@@ -429,8 +441,8 @@ export default function Player({ src }: { src: string }) {
                 </Popover>
               </Box>
             </Box>
-            {/* Queue List */}
-            <Box sx={{ flex: 1, minWidth: 200, maxWidth: 400, bgcolor: 'background.default', borderRadius: 2, p: 2, boxShadow: 1, height: '80vh', maxHeight: '80vh', alignSelf: 'center', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {/* Right: Queue List */}
+            <Box sx={{ flex: 1, minWidth: 200, maxWidth: 400, bgcolor: 'background.default', borderRadius: 2, p: 2, boxShadow: 1, height: { xs: '60vh', md: '70vh' }, maxHeight: { xs: '60vh', md: '70vh' }, alignSelf: 'center', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('player.queue')}</Typography>
               <Box sx={{ flex: 1, overflow: 'auto' }}>
                 {queue.map((song: any, idx: number) => (

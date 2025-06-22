@@ -9,7 +9,13 @@
     "error": "An error occurred",
     "refresh": "Refresh",
     "close": "Close",
-    "viewing": "Viewing {{from}} to {{to}} of {{total}}"
+    "viewing": "Viewing {{from}} to {{to}} of {{total}}",
+    "created": "Created",
+    "updated": "Updated",
+    "favorite": "Favorite",
+    "unfavorite": "Unfavorite",
+    "dislike": "Dislike",
+    "undislike": "Remove Dislike"
   },
   "settings": {
     "title": "User Settings",
@@ -94,7 +100,9 @@
   "albumDetail": {
     "artist": "Artist",
     "releaseYear": "Release Year",
-    "tracks": "Tracks"
+    "tracks": "Tracks",
+    "duration": "Duration",
+    "noTracks": "No tracks found"
   },
   "artistDetail": {
     "albums": "Albums",

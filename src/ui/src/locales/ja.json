@@ -9,7 +9,13 @@
     "error": "エラーが発生しました",
     "refresh": "更新",
     "close": "閉じる",
-    "viewing": "{{total}} 件中 {{from}} から {{to}} を表示"
+    "viewing": "{{total}} 件中 {{from}} から {{to}} を表示",
+    "created": "作成日",
+    "updated": "更新日",
+    "favorite": "お気に入り",
+    "unfavorite": "お気に入り解除",
+    "dislike": "嫌い",
+    "undislike": "嫌いを解除"
   },
   "settings": {
     "title": "ユーザー設定",
@@ -94,7 +100,9 @@
   "albumDetail": {
     "artist": "アーティスト",
     "releaseYear": "リリース年",
-    "tracks": "トラック"
+    "tracks": "トラック",
+    "duration": "再生時間",
+    "noTracks": "トラックが見つかりません"
   },
   "artistDetail": {
     "albums": "アルバム",
