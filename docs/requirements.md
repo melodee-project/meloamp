@@ -156,7 +156,6 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Authentication: Login/logout flow with JWT, error handling for auth failures.
 - [x] Music Search: Query API for artists, albums, tracks.
 - [x] Browsing: Browse by genre, artist, album, playlist.
-- [x] Streaming Playback: Gapless playback, audio visualization (future enhancement).
 - [x] Playlists: Create, edit, and manage playlists.
 - [x] Responsive UI: Works on all common desktop resolutions.
 - [x] Settings: Theme selection, light/dark mode toggle, logout, etc.
@@ -198,7 +197,6 @@ To ensure a consistent and accessible user experience, the following feedback pa
 - [x] Playback control will be a persist control that always appears at the bottom of the application when there are song in the playback queue
 - [x] Show playback status and progress bar
 - [x] Implement crossfade between tracks
-- [x] Support gapless playback for albums
 - [x] Implement equalizer functionality
 - [x] Scrobbling to send API when song is played for 10 seconds of "nowPlaying" status and when 70% played of "played" status
 - [x] User can add songs to the playback queue from a search result, from a browse page (like artist, album or song) or from a playlist

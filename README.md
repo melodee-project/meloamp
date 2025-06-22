@@ -18,7 +18,7 @@
 - 🌈 **Modern UI** with multiple color themes (light/dark/classic/ocean/forest/sunset)
 - 🔒 **JWT authentication**
 - 📦 **Cross-platform builds** (AppImage, DEB, RPM, Snap, Pacman, tar.gz)
-- ⚡ **Gapless playback**, crossfade, and scrobbling
+- ⚡ **Scrobbling**, scrobbling of play and play complete activity
 - 🖥️ **Electron desktop app** with native menus and notifications
 - 🛠️ **Accessible** and keyboard-friendly
 
