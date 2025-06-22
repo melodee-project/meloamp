@@ -100,9 +100,8 @@ export default function QueueView() {
                           <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
                         }
                         className={
-                          idx === playerCurrent && playing
-                            ? 'rainbow-border-playing'
-                            : song.played
+                          // Remove rainbow-border-playing class
+                          song.played
                             ? 'played-song'
                             : 'unplayed-song'
                         }

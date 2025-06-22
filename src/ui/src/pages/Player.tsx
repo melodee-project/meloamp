@@ -14,7 +14,6 @@ export default function Player({ src }: { src: string }) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [crossfadeActive, setCrossfadeActive] = useState(false);
   const [eqAnchor, setEqAnchor] = useState<null | HTMLElement>(null);
   const [eqGains, setEqGains] = useState<number[]>(Array(EQ_BANDS.length).fill(0));
   const [scrobbled, setScrobbled] = useState(false);
@@ -83,44 +82,6 @@ export default function Player({ src }: { src: string }) {
     };
     // eslint-disable-next-line
   }, [src, eqGains]);
-
-  // Crossfade logic (simple fade out/in)
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (!queue[current + 1]) return;
-    if (duration - progress < 3 && !crossfadeActive && playing) {
-      setCrossfadeActive(true);
-      // Fade out current
-      const fadeOut = setInterval(() => {
-        if (audioRef.current && audioRef.current.volume > 0.05) {
-          audioRef.current.volume -= 0.05;
-        } else if (audioRef.current) {
-          audioRef.current.volume = 0;
-          clearInterval(fadeOut);
-          setCurrent(current + 1);
-          setTimeout(() => {
-            if (audioRef.current) {
-              audioRef.current.volume = 1;
-              audioRef.current.play();
-            }
-            setCrossfadeActive(false);
-          }, 200);
-        }
-      }, 100);
-      return () => clearInterval(fadeOut);
-    }
-  }, [progress, duration, current, queue, setCurrent, playing, crossfadeActive]);
-
-  // Gapless playback: auto play next track
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (progress >= duration - 0.1 && playing && queue[current + 1]) {
-      setCurrent(current + 1);
-      setTimeout(() => {
-        if (audioRef.current) audioRef.current.play();
-      }, 100);
-    }
-  }, [progress, duration, playing, queue, current, setCurrent]);
 
   // Scrobbling logic
   useEffect(() => {
@@ -301,6 +262,8 @@ export default function Player({ src }: { src: string }) {
 
   // Helper to play a song at a given index
   const playSongAtIndex = (idx: number) => {
+    // log idx and que length
+    console.log(`Playing song at index ${idx} of queue length ${queue.length}`);
     setCurrent(idx);
     setTimeout(() => {
       if (audioRef.current) {
@@ -552,6 +515,13 @@ export default function Player({ src }: { src: string }) {
           crossOrigin="anonymous"
           onTimeUpdate={e => setProgress((e.target as HTMLAudioElement).currentTime)}
           onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
+          onEnded={() => {
+            if (current < queue.length - 1) {
+              playSongAtIndex(current + 1);
+            } else {
+              setPlaying(false);
+            }
+          }}
           style={{ display: 'none' }}
         />
         <Typography variant="caption">
