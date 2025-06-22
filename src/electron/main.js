@@ -55,6 +55,9 @@ function createWindow() {
 
   // Load the React build output via HTTP server
   win.loadURL('http://localhost:' + SERVER_PORT);
+
+  // Open DevTools for debugging
+  win.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);

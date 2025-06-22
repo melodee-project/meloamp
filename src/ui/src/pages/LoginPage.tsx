@@ -10,8 +10,11 @@ const MIN_SERVER_MINOR = 1;
 
 const ensureApiUrl = (url: string) => {
   let u = url.trim();
-  if (!u.endsWith('/api/v1')) {
-    u = u.replace(/\/+$/, '') + '/api/v1';
+  // Remove any trailing slashes for consistency
+  u = u.replace(/\/+$/, '');
+  // Only append /api/v1 if not already present at the end
+  if (!u.match(/\/api\/v1$/)) {
+    u += '/api/v1';
   }
   return u;
 };
@@ -46,6 +49,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [serverCheck, setServerCheck] = useState<{ checked: boolean; supported: boolean; error?: string }>({ checked: false, supported: true });
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -65,12 +69,14 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setDebugInfo(null);
     try {
       const apiUrl = ensureApiUrl(serverUrl);
       // Check server version before login
       const versionCheck = await checkServerVersion(apiUrl);
       if (!versionCheck.supported) {
         setError(versionCheck.error || 'Server version not supported');
+        setDebugInfo({ versionCheck });
         setLoading(false);
         return;
       }
@@ -81,16 +87,17 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       const token = loginData.token;
       if (!token) throw new Error('Invalid response from authentication');
       setJwt(token);
-      // Save user object and serverVersion in localStorage
       sessionStorage.setItem('user', JSON.stringify(loginData.user));
       if (loginData.serverVersion !== undefined && loginData.serverVersion !== null) {
         localStorage.setItem('apiVersion', loginData.serverVersion.toString());
       } else {
         localStorage.removeItem('apiVersion');
       }
+      setDebugInfo({ loginData, res });
       onLogin();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Login failed');
+      setDebugInfo({ error: err, errorData: err.response?.data });
     } finally {
       setLoading(false);
     }
@@ -137,6 +144,11 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
           required
         />
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+        {debugInfo && (
+          <Box sx={{ mt: 2, p: 1, bgcolor: '#f5f5f5', fontSize: 12, borderRadius: 1, overflow: 'auto', maxHeight: 200 }}>
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </Box>
+        )}
         <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }} disabled={loading}>
           {loading ? (t('login.loggingIn') || 'Logging in...') : (t('login.login') || 'Login')}
         </Button>
