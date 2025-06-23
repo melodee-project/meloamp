@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "electron-packager": "^17.1.2",
     "react-refresh": "^0.17.0"
   }
 }
