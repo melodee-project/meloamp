@@ -94,8 +94,11 @@ export default function AlbumDetailView() {
     <Card sx={{   
       width: { xs: '100%', sm: '90%', md: '80%', lg: '60%' },
       maxWidth: 1200, m: 'auto', mt: 4, p: { xs: 1, sm: 3 }, bgcolor: 'background.default', boxShadow: 4 }}>
-      {/* Album name full width at the top */}
-      <Box sx={{ width: '100%', mb: 3 }}>
+      {/* Album name and artist at the top */}
+      <Box sx={{ width: '100%', mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+        {album.artist && (
+          <MiniArtistCard artist={album.artist} />
+        )}
         <Typography
           variant="h4"
           sx={{
@@ -107,26 +110,21 @@ export default function AlbumDetailView() {
             wordBreak: 'break-word',
             width: '100%',
             textAlign: 'center',
+            flex: 1
           }}
         >
           {album.name}
         </Typography>
       </Box>
-      {/* Main content row: image, artist, actions */}
+      {/* Main content row: image, actions, meta */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: '100%', gap: 4 }}>
-        {/* Left: Album image and artist card */}
+        {/* Left: Album image */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 220, flex: '0 0 220px', gap: 2 }}>
           <CardMedia
             component="img"
             sx={{ width: 200, height: 200, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
             image={album.imageUrl || album.thumbnailUrl}
-            alt={album.name}
           />
-          {album.artist && (
-            <Box sx={{ width: '100%', mt: 2, display: 'flex', justifyContent: 'center' }}>
-              <MiniArtistCard artist={album.artist} />
-            </Box>
-          )}
         </Box>
         {/* Right: actions and album meta */}
         <CardContent sx={{ flex: 1, width: '100%', pt: 0 }}>
