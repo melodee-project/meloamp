@@ -327,9 +327,20 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
                 </IconButton>
               </Badge>
             </Tooltip>
-            <IconButton color="inherit" onClick={handleMenu} aria-label="user menu" sx={{ ml: 0.5 }}>
-              <Avatar alt={user?.username || user?.name || ''} src={user?.thumbnailUrl || user?.imageUrl || ''} />
-              <Typography variant="body2" sx={{ ml: 1 }}>{user?.username || user?.name || ''}</Typography>
+            <IconButton
+                color="inherit"
+                onClick={handleMenu}
+                aria-label="user menu"
+                sx={{ ml: 0.5, borderRadius: 1 }} // Less rounded
+            >
+              <Avatar
+                  alt={user?.username || user?.name || ''}
+                  src={user?.thumbnailUrl || user?.imageUrl || ''}
+                  sx={{ borderRadius: 1, width: 32, height: 32 }} // Square avatar
+              />
+              <Typography variant="body2" sx={{ ml: 1 }}>
+                {user?.username || user?.name || ''}
+              </Typography>
             </IconButton>
             <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
               <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />{t('nav.settings')}</MenuItem>

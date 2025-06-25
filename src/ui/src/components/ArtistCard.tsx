@@ -22,8 +22,12 @@ export default function ArtistCard({ artist }: { artist: Artist }) {
       </Box>
       <CardContent sx={{ width: '100%', textAlign: 'center' }}>
         <Typography variant="h6">{artist.name}</Typography>
-        <Typography variant="body2">{t('artistCard.albums', { count: artist.albumCount })}</Typography>
-        <Typography variant="body2">{t('artistCard.songs', { count: artist.songCount })}</Typography>
+        {artist.albumCount > 0 && (
+          <Typography variant="body2">{t('artistCard.albums', { count: artist.albumCount })}</Typography>
+        )}
+        {artist.songCount > 0 &&
+          <Typography variant="body2">{t('artistCard.songs', { count: artist.songCount })}</Typography>
+        }
       </CardContent>
     </Card>
   );

@@ -100,9 +100,9 @@
   "albumDetail": {
     "artist": "アーティスト",
     "releaseYear": "リリース年",
-    "tracks": "トラック",
+    "tracks": "曲",
     "duration": "再生時間",
-    "noTracks": "トラックが見つかりません"
+    "noTracks": "曲が見つかりません"
   },
   "artistDetail": {
     "albums": "アルバム",
@@ -110,6 +110,6 @@
   },
   "playlistDetail": {
     "createdBy": "作成者",
-    "tracks": "トラック"
+    "tracks": "曲"
   }
 }

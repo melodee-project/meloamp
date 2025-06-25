@@ -8,6 +8,7 @@ import { Album, Song } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 import ArtistCard from '../components/ArtistCard';
 import { useQueueStore } from '../queueStore';
+import SongCard from '../components/SongCard';
 
 export default function AlbumDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,8 @@ export default function AlbumDetailView() {
   const [favLoading, setFavLoading] = useState(false);
   const [favorite, setFavorite] = useState(false);
   const [disliked, setDisliked] = useState(false);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [songsLoading, setSongsLoading] = useState(true);
   const { t } = useTranslation();
   const setQueue = useQueueStore((state: any) => state.setQueue);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
@@ -26,13 +29,22 @@ export default function AlbumDetailView() {
     setError(null);
     apiRequest(`/albums/${id}`)
       .then(res => {
-        const albumData = res.data as Album & { userStarred?: boolean; userDisliked?: boolean; songs?: Song[] };
+        const albumData = res.data as Album & { userStarred?: boolean; userDisliked?: boolean };
         setAlbum(albumData);
         setFavorite(albumData.userStarred ?? false);
         setDisliked(albumData.userDisliked ?? false);
       })
       .catch(err => setError(err?.response?.data?.message || err?.message || 'Failed to load album.'))
       .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    setSongsLoading(true);
+    apiRequest(`/albums/${id}/songs`)
+      .then(res => setSongs(res.data as Song[]))
+      .catch(() => setSongs([]))
+      .finally(() => setSongsLoading(false));
   }, [id]);
 
   const handleFavorite = async () => {
@@ -58,8 +70,8 @@ export default function AlbumDetailView() {
   };
 
   const handlePlayAlbum = () => {
-    if (!album || !(album as any).songs || (album as any).songs.length === 0) return;
-    setQueue((album as any).songs);
+    if (!songs || songs.length === 0) return;
+    setQueue(songs);
     setCurrent(0);
   };
 
@@ -71,12 +83,31 @@ export default function AlbumDetailView() {
     <Card sx={{   
       width: { xs: '100%', sm: '90%', md: '80%', lg: '60%' },
       maxWidth: 1200, m: 'auto', mt: 4, p: { xs: 1, sm: 3 }, bgcolor: 'background.default', boxShadow: 4 }}>
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+      {/* Album name full width at the top */}
+      <Box sx={{ width: '100%', mb: 3 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            minWidth: 0,
+            textOverflow: 'ellipsis',
+            overflow: 'hidden',
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            width: '100%',
+            textAlign: 'center',
+          }}
+        >
+          {album.name}
+        </Typography>
+      </Box>
+      {/* Main content row: image, artist, actions */}
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: '100%', gap: 4 }}>
         {/* Left: Album image and artist card */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 340, flex: '0 0 340px', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 220, flex: '0 0 220px', gap: 2 }}>
           <CardMedia
             component="img"
-            sx={{ width: 320, height: 320, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
+            sx={{ width: 200, height: 200, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
             image={album.imageUrl || album.thumbnailUrl}
             alt={album.name}
           />
@@ -88,8 +119,7 @@ export default function AlbumDetailView() {
         </Box>
         {/* Right: Album meta and actions */}
         <CardContent sx={{ flex: 1, width: '100%', pt: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h4" sx={{ flex: 1, fontWeight: 700, minWidth: 0, pr: 2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{album.name}</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1, minWidth: 0 }}>
             <Tooltip title={t('albumDetail.playAlbum', 'Play Album')}>
               <span>
                 <IconButton onClick={handlePlayAlbum} color="success">
@@ -134,17 +164,13 @@ export default function AlbumDetailView() {
       {/* Song List */}
       <Box sx={{ mt: 4, bgcolor: 'background.paper', borderRadius: 2, p: 2, boxShadow: 1 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>{t('albumDetail.tracks')}</Typography>
-        {Array.isArray((album as any).songs) && (album as any).songs.length > 0 ? (
-          <List dense>
-            {(album as any).songs.map((song: Song, idx: number) => (
-              <ListItem key={song.id} divider>
-                <ListItemAvatar>
-                  <Avatar variant="rounded" src={song.imageUrl || album.thumbnailUrl} alt={song.title} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={<Typography variant="body1">{idx + 1}. {song.title}</Typography>}
-                  secondary={song.durationFormatted}
-                />
+        {songsLoading ? (
+          <Typography variant="body2" color="text.secondary">{t('albumDetail.loadingTracks', 'Loading songs...')}</Typography>
+        ) : songs.length > 0 ? (
+          <List disablePadding>
+            {songs.map((song: Song, idx: number) => (
+              <ListItem key={song.id} disableGutters disablePadding>
+                <SongCard song={song} />
               </ListItem>
             ))}
           </List>

@@ -100,9 +100,9 @@
   "albumDetail": {
     "artist": "Исполнитель",
     "releaseYear": "Год выпуска",
-    "tracks": "Треки",
+    "tracks": "Песни",
     "duration": "Длительность",
-    "noTracks": "Треки не найдены"
+    "noTracks": "Песни не найдены"
   },
   "artistDetail": {
     "albums": "Альбомы",
@@ -110,6 +110,6 @@
   },
   "playlistDetail": {
     "createdBy": "Создано",
-    "tracks": "Треки"
+    "tracks": "Песни"
   }
 }

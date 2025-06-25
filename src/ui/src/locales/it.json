@@ -100,9 +100,9 @@
   "albumDetail": {
     "artist": "Artista",
     "releaseYear": "Anno di uscita",
-    "tracks": "Tracce",
+    "tracks": "Canzoni",
     "duration": "Durata",
-    "noTracks": "Nessuna traccia trovata"
+    "noTracks": "Nessuna canzone trovata"
   },
   "artistDetail": {
     "albums": "Album",
@@ -110,6 +110,6 @@
   },
   "playlistDetail": {
     "createdBy": "Creato da",
-    "tracks": "Tracce"
+    "tracks": "Canzoni"
   }
 }

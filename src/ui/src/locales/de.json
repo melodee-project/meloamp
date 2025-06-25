@@ -99,9 +99,9 @@
   "albumDetail": {
     "artist": "Künstler",
     "releaseYear": "Erscheinungsjahr",
-    "tracks": "Titel",
+    "tracks": "Lieder",
     "duration": "Dauer",
-    "noTracks": "Keine Titel gefunden"
+    "noTracks": "Keine Lieder gefunden"
   },
   "artistDetail": {
     "albums": "Alben",
@@ -109,6 +109,6 @@
   },
   "playlistDetail": {
     "createdBy": "Erstellt von",
-    "tracks": "Titel"
+    "tracks": "Lieder"
   }
 }

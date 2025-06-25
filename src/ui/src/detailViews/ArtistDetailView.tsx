@@ -111,7 +111,7 @@ export default function ArtistDetailView() {
             )}
             {artist.biography && <Typography variant="body2" sx={{ mt: 2 }}>{artist.biography}</Typography>}
             <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'text.secondary' }}>
-              {t('common.createdAt', { date: new Date(artist.createdAt).toLocaleDateString() })} | {t('common.updatedAt', { date: new Date(artist.updatedAt).toLocaleDateString() })}
+              {t('common.created')}: {artist.createdAt && !isNaN(new Date(artist.createdAt).getTime()) ? new Date(artist.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '---'} | {t('common.updated')}: {artist.updatedAt && !isNaN(new Date(artist.updatedAt).getTime()) ? new Date(artist.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '---'}
             </Typography>
           </CardContent>
         </Box>

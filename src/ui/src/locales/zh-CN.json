@@ -100,9 +100,9 @@
   "albumDetail": {
     "artist": "艺术家",
     "releaseYear": "发行年份",
-    "tracks": "曲目",
+    "tracks": "歌曲",
     "duration": "时长",
-    "noTracks": "未找到曲目"
+    "noTracks": "未找到歌曲"
   },
   "artistDetail": {
     "albums": "专辑",
@@ -110,6 +110,6 @@
   },
   "playlistDetail": {
     "createdBy": "创建者",
-    "tracks": "曲目"
+    "tracks": "歌曲"
   }
 }
