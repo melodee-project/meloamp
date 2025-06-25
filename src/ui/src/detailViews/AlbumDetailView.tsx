@@ -4,7 +4,7 @@ import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconBu
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import api from '../api';
-import { Album, Song } from '../apiModels';
+import { Album, Song, PaginatedResponse } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 import ArtistCard from '../components/ArtistCard';
 import { useQueueStore } from '../queueStore';
@@ -41,10 +41,21 @@ export default function AlbumDetailView() {
   useEffect(() => {
     if (!id) return;
     setSongsLoading(true);
+    console.log('[AlbumDetailView] Fetching songs for album id:', id);
     apiRequest(`/albums/${id}/songs`)
-      .then(res => setSongs(res.data as Song[]))
-      .catch(() => setSongs([]))
-      .finally(() => setSongsLoading(false));
+      .then(res => {
+        console.log('[AlbumDetailView] Songs API response:', res.data);
+        const response = res.data as PaginatedResponse<Song>;
+        setSongs(response.data);
+      })
+      .catch((err) => {
+        console.error('[AlbumDetailView] Error fetching songs:', err);
+        setSongs([])
+      })
+      .finally(() => {
+        setSongsLoading(false);
+        console.log('[AlbumDetailView] Songs loading finished. songs:', songs);
+      });
   }, [id]);
 
   const handleFavorite = async () => {
@@ -169,8 +180,10 @@ export default function AlbumDetailView() {
         ) : songs.length > 0 ? (
           <List disablePadding>
             {songs.map((song: Song, idx: number) => (
-              <ListItem key={song.id} disableGutters disablePadding>
-                <SongCard song={song} />
+              <ListItem key={song.id} disableGutters disablePadding sx={{ width: '100%', px: 0 }}>
+                <Box sx={{ width: '100%' }}>
+                  <SongCard song={song} displaySongNumber={true} maxWidth={'100%'} />
+                </Box>
               </ListItem>
             ))}
           </List>

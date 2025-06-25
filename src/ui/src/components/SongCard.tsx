@@ -9,9 +9,11 @@ import { useTranslation } from 'react-i18next';
 
 interface SongCardProps {
   song: Song;
+  maxWidth?: number | string;
+  displaySongNumber?: boolean;
 }
 
-const SongCardComponent = function SongCard({ song }: SongCardProps) {
+const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongNumber = false }: SongCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   // Use stable selectors for each store value/action
@@ -54,13 +56,22 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
   };
 
   return (
-    <Card sx={{ minWidth: 250, maxWidth: 345, m: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', p: 1 }}>
+    <Card sx={{
+      minWidth: 250,
+      maxWidth,
+      m: 1,
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      p: 1,
+    }}>
       <Box
         sx={{ width: 64, height: 64, mr: 2, position: 'relative', cursor: 'pointer' }}
         onClick={handlePlayNow}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
+
         <CardMedia
           component="img"
           sx={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 1, filter: hovered ? 'brightness(0.7)' : 'brightness(0.95)', transition: 'filter 0.2s' }}
@@ -89,7 +100,26 @@ const SongCardComponent = function SongCard({ song }: SongCardProps) {
         )}
       </Box>
       <CardContent sx={{ flex: 1, p: 0 }}>
-        <Typography variant="subtitle1" noWrap>{song.title}</Typography>
+        <Typography variant="subtitle1" noWrap>
+          {displaySongNumber && (
+            <Box component="span" sx={{
+              fontWeight: 700,
+              mr: 1,
+              color: 'background.paper',
+              bgcolor: 'secondary.main',
+              px: 1.2,
+              borderRadius: 2,
+              boxShadow: 2,
+              letterSpacing: 1,
+              fontSize: '0.95em',
+              display: 'inline-block',
+              lineHeight: 1.2,
+            }}>
+              {song.songNumber}
+            </Box>
+          )}
+          {song.title}
+        </Typography>
         <Typography variant="body2" color="text.secondary" noWrap>
           [
           {song.album?.releaseYear || '----'}
