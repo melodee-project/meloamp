@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem, ListItemText, ListItemAvatar, Avatar } from '@mui/material';
+import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem } from '@mui/material';
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import api from '../api';
 import { Album, Song, PaginatedResponse } from '../apiModels';
 import { useTranslation } from 'react-i18next';
-import ArtistCard from '../components/ArtistCard';
+import MiniArtistCard from '../components/MiniArtistCard';
 import { useQueueStore } from '../queueStore';
-import SongCard from '../components/SongCard';
+import MiniSongCard from '../components/MiniSongCard';
 
 export default function AlbumDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -123,12 +123,12 @@ export default function AlbumDetailView() {
             alt={album.name}
           />
           {album.artist && (
-            <Box sx={{ width: '100%', mt: 2 }}>
-              <ArtistCard artist={album.artist} />
+            <Box sx={{ width: '100%', mt: 2, display: 'flex', justifyContent: 'center' }}>
+              <MiniArtistCard artist={album.artist} />
             </Box>
           )}
         </Box>
-        {/* Right: Album meta and actions */}
+        {/* Right: actions and album meta */}
         <CardContent sx={{ flex: 1, width: '100%', pt: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1, minWidth: 0 }}>
             <Tooltip title={t('albumDetail.playAlbum', 'Play Album')}>
@@ -181,9 +181,7 @@ export default function AlbumDetailView() {
           <List disablePadding>
             {songs.map((song: Song, idx: number) => (
               <ListItem key={song.id} disableGutters disablePadding sx={{ width: '100%', px: 0 }}>
-                <Box sx={{ width: '100%' }}>
-                  <SongCard song={song} displaySongNumber={true} maxWidth={'100%'} />
-                </Box>
+                <MiniSongCard song={song} />
               </ListItem>
             ))}
           </List>
