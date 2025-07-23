@@ -22,7 +22,8 @@
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mpris-service": "^2.1.2"
   },
   "build": {
     "productName": "MeloAmp",

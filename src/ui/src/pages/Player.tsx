@@ -273,6 +273,48 @@ export default function Player({ src }: { src: string }) {
     }, 0);
   };
 
+  // Send playback info to Electron for MPRIS integration
+  useEffect(() => {
+    if (!window.meloampAPI || !queue[current]) return;
+    const info = {
+      trackId: queue[current]?.id?.toString() || undefined,
+      length: Math.floor(duration * 1000000), // microseconds
+      artUrl: queue[current]?.artwork || '',
+      title: queue[current]?.title || '',
+      album: queue[current]?.album || '',
+      artist: queue[current]?.artist || '',
+      status: playing ? 'Playing' : 'Paused',
+    };
+    window.meloampAPI.sendPlaybackInfo(info);
+  }, [current, duration, playing, queue]);
+
+  // Listen for MPRIS control events from Electron
+  useEffect(() => {
+
+    if (!window.electron || !window.electron.ipcRenderer) return;
+    const handler = (_event: any, command: string) => {
+      if (command === 'play' && !playing) {
+        audioRef.current?.play();
+        setPlaying(true);
+      } else if (command === 'pause' && playing) {
+        audioRef.current?.pause();
+        setPlaying(false);
+      } else if (command === 'next') {
+        if (current < queue.length - 1) setCurrent(current + 1);
+      } else if (command === 'previous') {
+        if (current > 0) setCurrent(current - 1);
+      }
+    };
+
+    if (window.electron && window.electron.ipcRenderer) {
+      window.electron.ipcRenderer.on('meloamp-mpris-control', handler);
+      return () => {
+        window.electron && window.electron.ipcRenderer && window.electron.ipcRenderer.removeListener('meloamp-mpris-control', handler);
+      };
+    }
+    return;
+  }, [playing, current, queue.length, setCurrent]);
+
   return (
     <>
       {/* Full Screen Player Dialog */}
