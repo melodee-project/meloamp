@@ -6,6 +6,8 @@ const mpris = require('mpris-service');
 let staticServer;
 const SERVER_PORT = 3001;
 let mprisPlayer;
+let currentPosition = 0;
+let lastPositionUpdate = Date.now();
 
 function startStaticServer() {
   if (staticServer) return;
@@ -54,20 +56,37 @@ function setupMpris(win) {
     mprisPlayer = mpris({
       name: 'meloamp',
       identity: 'MeloAmp',
-      supportedUriSchemes: ['file', 'http'],
-      supportedMimeTypes: ['audio/mpeg', 'audio/flac', 'audio/mp3'],
-      supportedInterfaces: ['player']
+      supportedUriSchemes: ['file', 'http', 'https'],
+      supportedMimeTypes: ['audio/mpeg', 'audio/flac', 'audio/mp3', 'audio/wav', 'audio/ogg'],
+      supportedInterfaces: ['player'],
+      canRaise: true,
+      canQuit: true,
+      canControl: true,
+      canPlay: true,
+      canPause: true,
+      canSeek: true,
+      canGoPrevious: true,
+      canGoNext: true
     });
+
+    // Set up event handlers
     mprisPlayer.on('play', () => win.webContents.send('meloamp-mpris-control', 'play'));
     mprisPlayer.on('pause', () => win.webContents.send('meloamp-mpris-control', 'pause'));
     mprisPlayer.on('next', () => win.webContents.send('meloamp-mpris-control', 'next'));
     mprisPlayer.on('previous', () => win.webContents.send('meloamp-mpris-control', 'previous'));
+    mprisPlayer.on('stop', () => win.webContents.send('meloamp-mpris-control', 'stop'));
+    mprisPlayer.on('seek', (offset) => win.webContents.send('meloamp-mpris-control', 'seek', offset));
+    mprisPlayer.on('position', (position) => win.webContents.send('meloamp-mpris-control', 'position', position));
+
+    // Set initial properties
+    mprisPlayer.playbackStatus = 'Stopped';
 
     // Listen for D-Bus errors and clean up
     mprisPlayer.on('error', (err) => {
       console.error('MPRIS D-Bus error:', err);
       mprisPlayer = null;
       ipcMain.removeAllListeners('meloamp-playback-info');
+      ipcMain.removeAllListeners('meloamp-position-update');
     });
   } catch (err) {
     console.error('Failed to set up MPRIS:', err);
@@ -99,11 +118,44 @@ function createWindow() {
   }
 }
 
+// Helper function to convert image URL to proper format for MPRIS
+function formatArtUrl(url) {
+  if (!url) return '';
+  
+  // If it's already a file:// URL, return as is
+  if (url.startsWith('file://')) return url;
+  
+  // If it's an HTTP/HTTPS URL, we need to handle it properly
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    // For remote images, MPRIS spec recommends local caching
+    // For now, return the URL as is - some implementations support this
+    return url;
+  }
+  
+  // If it's a local path, convert to file:// URL
+  if (path.isAbsolute(url)) {
+    return 'file://' + url;
+  }
+  
+  return url;
+}
+
+// Helper function to generate proper MPRIS track ID
+function generateTrackId(trackId) {
+  if (!trackId) return '/org/mpris/MediaPlayer2/track/0';
+  
+  // Ensure track ID follows D-Bus object path rules
+  const sanitized = String(trackId).replace(/[^a-zA-Z0-9_]/g, '_');
+  return `/org/mpris/MediaPlayer2/track/${sanitized}`;
+}
+
 // IPC: Receive playback info from renderer and update MPRIS
 ipcMain.on('meloamp-playback-info', (event, info) => {
   if (!mprisPlayer || mprisPlayer.closed) return;
+  
   // Extract correct metadata fields for MPRIS
   const albumName = typeof info.album === 'object' && info.album?.name ? info.album.name : (info.album || '');
+  
   // Always convert artist to array of strings
   let artistNames = [];
   if (Array.isArray(info.artist)) {
@@ -113,41 +165,71 @@ ipcMain.on('meloamp-playback-info', (event, info) => {
   } else if (typeof info.artist === 'string') {
     artistNames = [info.artist];
   }
+  
   // Prefer album image, fallback to song or artist image
   let artUrl = '';
   if (info.album && typeof info.album === 'object' && info.album.imageUrl) {
-    artUrl = info.album.imageUrl;
+    artUrl = formatArtUrl(info.album.imageUrl);
   } else if (info.artUrl) {
-    artUrl = info.artUrl;
+    artUrl = formatArtUrl(info.artUrl);
   } else if (Array.isArray(info.artist) && info.artist[0]?.imageUrl) {
-    artUrl = info.artist[0].imageUrl;
+    artUrl = formatArtUrl(info.artist[0].imageUrl);
   }
+  
+  const trackId = generateTrackId(info.trackId);
+  const lengthMicroseconds = (info.length || 0) * 1000000; // Convert to microseconds
+  
   // Log the metadata being sent to MPRIS for debugging
   console.log('Sending MPRIS metadata:', {
-    'mpris:trackid': info.trackId || '/org/mpris/MediaPlayer2/track/0',
-    'mpris:length': info.length || 0,
+    'mpris:trackid': trackId,
+    'mpris:length': lengthMicroseconds,
     'mpris:artUrl': artUrl,
     'xesam:title': info.title || '',
     'xesam:album': albumName,
     'xesam:artist': artistNames,
     status: info.status || 'Stopped'
   });
+  
   try {
     mprisPlayer.metadata = {
-      'mpris:trackid': info.trackId || '/org/mpris/MediaPlayer2/track/0',
-      'mpris:length': info.length || 0,
+      'mpris:trackid': trackId,
+      'mpris:length': lengthMicroseconds,
       'mpris:artUrl': artUrl,
       'xesam:title': info.title || '',
       'xesam:album': albumName,
       'xesam:artist': artistNames,
     };
-    if (mprisPlayer) mprisPlayer.playbackStatus = info.status || 'Stopped';
+    
+    if (mprisPlayer) {
+      mprisPlayer.playbackStatus = info.status || 'Stopped';
+      
+      // Update position if provided
+      if (typeof info.position === 'number') {
+        currentPosition = Math.floor(info.position * 1000000); // Convert to microseconds
+        lastPositionUpdate = Date.now();
+        mprisPlayer.position = currentPosition;
+      }
+    }
   } catch (err) {
     console.error('Error updating MPRIS properties:', err);
     if (mprisPlayer && mprisPlayer.closed) {
       mprisPlayer = null;
       ipcMain.removeAllListeners('meloamp-playback-info');
+      ipcMain.removeAllListeners('meloamp-position-update');
     }
+  }
+});
+
+// IPC: Handle position updates for MPRIS
+ipcMain.on('meloamp-position-update', (event, position) => {
+  if (!mprisPlayer || mprisPlayer.closed) return;
+  
+  try {
+    currentPosition = Math.floor(position * 1000000); // Convert to microseconds
+    lastPositionUpdate = Date.now();
+    mprisPlayer.position = currentPosition;
+  } catch (err) {
+    console.error('Error updating MPRIS position:', err);
   }
 });
 

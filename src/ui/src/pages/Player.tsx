@@ -278,42 +278,87 @@ export default function Player({ src }: { src: string }) {
     if (!window.meloampAPI || !queue[current]) return;
     const info = {
       trackId: queue[current]?.id?.toString() || undefined,
-      length: Math.floor(duration * 1000000), // microseconds
+      length: duration, // duration in seconds
       artUrl: queue[current]?.artwork || '',
       title: queue[current]?.title || '',
       album: queue[current]?.album || '',
       artist: queue[current]?.artist || '',
-      status: playing ? 'Playing' : 'Paused',
+      status: playing ? 'Playing' : (duration > 0 ? 'Paused' : 'Stopped'),
+      position: audioRef.current?.currentTime || 0
     };
     window.meloampAPI.sendPlaybackInfo(info);
   }, [current, duration, playing, queue]);
 
+  // Send position updates for MPRIS during playback
+  useEffect(() => {
+    if (!window.meloampAPI || !playing || !audioRef.current) return;
+    
+    const updatePosition = () => {
+      if (audioRef.current && window.meloampAPI) {
+        window.meloampAPI.sendPosition(audioRef.current.currentTime);
+      }
+    };
+    
+    const interval = setInterval(updatePosition, 1000); // Update every second
+    return () => clearInterval(interval);
+  }, [playing]);
+
   // Listen for MPRIS control events from Electron
   useEffect(() => {
-
     if (!window.electron || !window.electron.ipcRenderer) return;
-    const handler = (_event: any, command: string) => {
-      if (command === 'play' && !playing) {
-        audioRef.current?.play();
-        setPlaying(true);
-      } else if (command === 'pause' && playing) {
-        audioRef.current?.pause();
-        setPlaying(false);
-      } else if (command === 'next') {
-        if (current < queue.length - 1) setCurrent(current + 1);
-      } else if (command === 'previous') {
-        if (current > 0) setCurrent(current - 1);
+    
+    const handler = (_event: any, command: string, ...args: any[]) => {
+      switch (command) {
+        case 'play':
+          if (!playing && audioRef.current) {
+            audioRef.current.play().then(() => setPlaying(true)).catch(console.error);
+          }
+          break;
+        case 'pause':
+          if (playing && audioRef.current) {
+            audioRef.current.pause();
+            setPlaying(false);
+          }
+          break;
+        case 'stop':
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            setPlaying(false);
+          }
+          break;
+        case 'next':
+          if (current < queue.length - 1) {
+            setCurrent(current + 1);
+          }
+          break;
+        case 'previous':
+          if (current > 0) {
+            setCurrent(current - 1);
+          }
+          break;
+        case 'seek':
+          if (audioRef.current && args[0] !== undefined) {
+            const offsetSeconds = args[0] / 1000000; // Convert from microseconds
+            audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + offsetSeconds));
+          }
+          break;
+        case 'position':
+          if (audioRef.current && args[0] !== undefined) {
+            const positionSeconds = args[0] / 1000000; // Convert from microseconds
+            audioRef.current.currentTime = Math.max(0, Math.min(duration, positionSeconds));
+          }
+          break;
       }
     };
 
-    if (window.electron && window.electron.ipcRenderer) {
-      window.electron.ipcRenderer.on('meloamp-mpris-control', handler);
-      return () => {
-        window.electron && window.electron.ipcRenderer && window.electron.ipcRenderer.removeListener('meloamp-mpris-control', handler);
-      };
-    }
-    return;
-  }, [playing, current, queue.length, setCurrent]);
+    window.electron.ipcRenderer.on('meloamp-mpris-control', handler);
+    return () => {
+      if (window.electron && window.electron.ipcRenderer) {
+        window.electron.ipcRenderer.removeListener('meloamp-mpris-control', handler);
+      }
+    };
+  }, [playing, current, queue.length, setCurrent, duration]);
 
   return (
     <>
