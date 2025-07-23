@@ -62,7 +62,7 @@ function setupMpris(win) {
     mprisPlayer = mpris({
       name: 'MeloAmp',
       identity: 'MeloAmp',
-      supportedUriSchemes: ['file', 'http', 'https'],
+      supportedUriSchemes: ['http', 'https'],
       supportedMimeTypes: ['audio/mpeg', 'audio/flac', 'audio/mp3', 'audio/wav', 'audio/ogg'],
       supportedInterfaces: ['player'],
       canRaise: true,

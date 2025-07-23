@@ -23,11 +23,12 @@
   },
   "dependencies": {
     "express": "^5.1.0",
+    "got": "^11.8.6",
     "mpris-service": "^2.1.2"
   },
   "build": {
     "productName": "MeloAmp",
-    "executableName": "meloamp",
+    "executableName": "MeloAmp",
     "artifactName": "${name}-${version}.${ext}",
     "linux": {
       "target": [
@@ -37,7 +38,7 @@
       ],
       "category": "Audio",
       "icon": "resources/logo.png",
-      "executableName": "meloamp"
+      "executableName": "MeloAmp"
     },
     "directories": {
       "output": "dist",
