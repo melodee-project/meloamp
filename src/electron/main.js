@@ -3,6 +3,12 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const express = require('express');
 const mpris = require('mpris-service');
+const fs = require('fs');
+const crypto = require('crypto');
+const stream = require('stream');
+const { promisify } = require('util');
+const got = require('got');
+
 let staticServer;
 const SERVER_PORT = 3001;
 let mprisPlayer;
@@ -54,7 +60,7 @@ function setupMpris(win) {
   }
   try {
     mprisPlayer = mpris({
-      name: 'meloamp',
+      name: 'MeloAmp',
       identity: 'MeloAmp',
       supportedUriSchemes: ['file', 'http', 'https'],
       supportedMimeTypes: ['audio/mpeg', 'audio/flac', 'audio/mp3', 'audio/wav', 'audio/ogg'],
@@ -75,8 +81,8 @@ function setupMpris(win) {
     mprisPlayer.on('next', () => win.webContents.send('meloamp-mpris-control', 'next'));
     mprisPlayer.on('previous', () => win.webContents.send('meloamp-mpris-control', 'previous'));
     mprisPlayer.on('stop', () => win.webContents.send('meloamp-mpris-control', 'stop'));
-    mprisPlayer.on('seek', (offset) => win.webContents.send('meloamp-mpris-control', 'seek', offset));
-    mprisPlayer.on('position', (position) => win.webContents.send('meloamp-mpris-control', 'position', position));
+    mprisPlayer.on('seek', (offset) => win.webContents.send('meloamp-mpris-control', 'seek', offset / 1000000)); // Convert to seconds
+    mprisPlayer.on('position', (event) => win.webContents.send('meloamp-mpris-control', 'position', event.position / 1000000)); // Convert to seconds
 
     // Set initial properties
     mprisPlayer.playbackStatus = 'Stopped';
@@ -118,6 +124,37 @@ function createWindow() {
   }
 }
 
+// Helper function to cache remote album art
+async function cacheArtUrl(url) {
+  if (!url || !url.startsWith('http')) {
+    return formatArtUrl(url);
+  }
+
+  const cacheDir = path.join(app.getPath('cache'), 'meloamp-art');
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+
+  const hash = crypto.createHash('sha256').update(url).digest('hex');
+  const extension = path.extname(new URL(url).pathname) || '.jpg';
+  const cachedArtPath = path.join(cacheDir, hash + extension);
+
+  if (!fs.existsSync(cachedArtPath)) {
+    try {
+      const pipelineAsync = promisify(stream.pipeline);
+      await pipelineAsync(
+        got.stream(url),
+        fs.createWriteStream(cachedArtPath)
+      );
+    } catch (error) {
+      console.error(`Failed to download and cache album art from ${url}:`, error);
+      return ''; // Return empty string if download fails
+    }
+  }
+
+  return formatArtUrl(cachedArtPath);
+}
+
 // Helper function to convert image URL to proper format for MPRIS
 function formatArtUrl(url) {
   if (!url) return '';
@@ -128,7 +165,7 @@ function formatArtUrl(url) {
   // If it's an HTTP/HTTPS URL, we need to handle it properly
   if (url.startsWith('http://') || url.startsWith('https://')) {
     // For remote images, MPRIS spec recommends local caching
-    // For now, return the URL as is - some implementations support this
+    // This is now handled by cacheArtUrl, but we'll leave this for safety
     return url;
   }
   
@@ -150,7 +187,7 @@ function generateTrackId(trackId) {
 }
 
 // IPC: Receive playback info from renderer and update MPRIS
-ipcMain.on('meloamp-playback-info', (event, info) => {
+ipcMain.on('meloamp-playback-info', async (event, info) => {
   if (!mprisPlayer || mprisPlayer.closed) return;
   
   // Extract correct metadata fields for MPRIS
@@ -167,15 +204,16 @@ ipcMain.on('meloamp-playback-info', (event, info) => {
   }
   
   // Prefer album image, fallback to song or artist image
-  let artUrl = '';
+  let artUrlRaw = '';
   if (info.album && typeof info.album === 'object' && info.album.imageUrl) {
-    artUrl = formatArtUrl(info.album.imageUrl);
+    artUrlRaw = info.album.imageUrl;
   } else if (info.artUrl) {
-    artUrl = formatArtUrl(info.artUrl);
+    artUrlRaw = info.artUrl;
   } else if (Array.isArray(info.artist) && info.artist[0]?.imageUrl) {
-    artUrl = formatArtUrl(info.artist[0].imageUrl);
+    artUrlRaw = info.artist[0].imageUrl;
   }
   
+  const artUrl = await cacheArtUrl(artUrlRaw);
   const trackId = generateTrackId(info.trackId);
   const lengthMicroseconds = (info.length || 0) * 1000000; // Convert to microseconds
   
