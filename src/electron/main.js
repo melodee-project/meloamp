@@ -57,7 +57,7 @@ function createWindow() {
   win.loadURL('http://localhost:' + SERVER_PORT);
 
   // Open DevTools for debugging
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
