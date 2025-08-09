@@ -56,8 +56,19 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       const q = [...state.queue];
       const [item] = q.splice(from, 1);
       q.splice(to, 0, item);
-      persist(q, state.current);
-      return { queue: q };
+
+      // Adjust current index based on item movement
+      let newCurrent = state.current;
+      if (from === state.current) {
+        newCurrent = to; // moved current item
+      } else if (from < state.current && to >= state.current) {
+        newCurrent -= 1; // item before current moved after
+      } else if (from > state.current && to <= state.current) {
+        newCurrent += 1; // item after current moved before
+      }
+
+      persist(q, newCurrent);
+      return { queue: q, current: newCurrent };
     }),
     clearQueue: () => set((state: QueueState) => {
       persist([], 0);
