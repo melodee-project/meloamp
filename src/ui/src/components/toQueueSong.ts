@@ -36,6 +36,8 @@ export function toQueueSong(song: ApiSong) {
     album: song.album ? { ...song.album } : EMPTY_ALBUM,
     imageUrl: song.imageUrl || song.thumbnailUrl,
     url: song.streamUrl || '',
-    durationMs: song.durationMs,
+  durationMs: song.durationMs,
+  userStarred: song.userStarred ?? false,
+  userRating: song.userRating ?? 0,
   };
 }

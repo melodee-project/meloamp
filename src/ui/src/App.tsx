@@ -7,7 +7,7 @@ import './App.css';
 import Badge from '@mui/material/Badge';
 import UserSettings from './pages/UserSettings';
 import LoginPage from './pages/LoginPage';
-import { clearJwt } from './api';
+import { clearJwt, apiRequest } from './api';
 import classicTheme from './themes/classicTheme';
 import oceanTheme from './themes/oceanTheme';
 import sunsetTheme from './themes/sunsetTheme';
@@ -205,17 +205,38 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
 
   // Always load user from sessionStorage on mount and when authentication changes
   React.useEffect(() => {
-    const loadUser = () => {
+    const loadUser = async () => {
       try {
         const storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
-        setUser(storedUser);
+        if (storedUser) {
+          setUser(storedUser);
+          return;
+        }
+        // If there's a JWT but no session user, attempt to fetch the profile from the API
+        if (localStorage.getItem('jwt')) {
+          try {
+            const res: any = await apiRequest('/users/me');
+            // apiRequest returns an object with `data`
+            const userFromApi = res && res.data ? res.data : null;
+            if (userFromApi) {
+              sessionStorage.setItem('user', JSON.stringify(userFromApi));
+              setUser(userFromApi);
+              return;
+            }
+          } catch (e) {
+            // If fetching the profile fails, clear stored user state but keep jwt handling to other logic
+            console.error('Failed to fetch user profile', e);
+          }
+        }
+        setUser(null);
       } catch {
         setUser(null);
       }
     };
     loadUser();
-    window.addEventListener('storage', loadUser);
-    return () => window.removeEventListener('storage', loadUser);
+    const storageHandler = () => { loadUser(); };
+    window.addEventListener('storage', storageHandler);
+    return () => window.removeEventListener('storage', storageHandler);
   }, [isAuthenticated]);
 
   // Replace local user variable with state

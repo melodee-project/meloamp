@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog } from '@mui/material';
+import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog, Rating } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder, Fullscreen, FullscreenExit } from '@mui/icons-material';
 import { useQueueStore } from '../queueStore';
 import api from '../api';
@@ -21,11 +21,14 @@ export default function Player({ src }: { src: string }) {
   const [volume, setVolume] = useState(1);
   const [favorite, setFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
+  const [rating, setRating] = useState<number>(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
+  const updateSong = useQueueStore((state: any) => state.updateSong);
   const { t } = useTranslation();
 
   // Equalizer setup
@@ -87,26 +90,48 @@ export default function Player({ src }: { src: string }) {
   useEffect(() => {
     if (!audioRef.current) return;
     if (!queue[current]) return;
+    
+    console.log(`Scrobble check: progress=${progress.toFixed(2)}s, duration=${duration.toFixed(2)}s, scrobbled=${scrobbled}, scrobbledPlayed=${scrobbledPlayed}`);
+    
     const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
       songId: queue[current].id,
       playerName: 'MeloAmp',
       timestamp: Date.now(),
-      playbackDuration: Math.floor(progress),
+      playbackDuration: Math.floor(progress * 1000), // Convert seconds to milliseconds
     };
     // Only scrobble NOW_PLAYING once
     if (!scrobbled && progress > 10) {
-      api.post('/scrobble', {
+      const nowPlayingScrobble = {
         ...baseScrobble,
         scrobbleType: ScrobbleType.NOW_PLAYING,
-      } as ScrobbleRequest);
+      } as ScrobbleRequest;
+      
+      console.log('Sending NOW_PLAYING scrobble:', nowPlayingScrobble);
+      api.post('/scrobble', nowPlayingScrobble)
+        .then(() => {
+          console.log('NOW_PLAYING scrobble sent successfully');
+        })
+        .catch((error) => {
+          console.error('Failed to send NOW_PLAYING scrobble:', error);
+        });
       setScrobbled(true);
     }
     // Only scrobble PLAYED once
-    if (!scrobbledPlayed && progress > duration * 0.7) {
-      api.post('/scrobble', {
+    const playedThreshold = duration * 0.7;
+    if (!scrobbledPlayed && progress > playedThreshold) {
+      const playedScrobble = {
         ...baseScrobble,
         scrobbleType: ScrobbleType.PLAYED,
-      } as ScrobbleRequest);
+      } as ScrobbleRequest;
+      
+      console.log(`Sending PLAYED scrobble (progress: ${progress.toFixed(2)}s > threshold: ${playedThreshold.toFixed(2)}s):`, playedScrobble);
+      api.post('/scrobble', playedScrobble)
+        .then(() => {
+          console.log('PLAYED scrobble sent successfully');
+        })
+        .catch((error) => {
+          console.error('Failed to send PLAYED scrobble:', error);
+        });
       setScrobbledPlayed(true);
     }
   }, [progress, duration, queue, current, scrobbled, scrobbledPlayed]);
@@ -165,7 +190,12 @@ export default function Player({ src }: { src: string }) {
 
   // Update favorite state when song changes
   useEffect(() => {
-    setFavorite(queue[current]?.userStarred ?? false);
+  // Keep favorite and rating in sync with the active queue item.
+  // Normalize rating to 0..5 (map negative ratings like -1 to 0 for the star control).
+  setFavorite(queue[current]?.userStarred ?? false);
+  const rawRating = queue[current]?.userRating;
+  const normalized = typeof rawRating === 'number' && rawRating > 0 ? Math.min(5, Math.max(0, rawRating)) : 0;
+  setRating(normalized);
   }, [current, queue]);
 
   // Load initial EQ from userSettings if present
@@ -257,6 +287,28 @@ export default function Player({ src }: { src: string }) {
       setSnackbar(t('player.failedToUpdateFavorite'));
     } finally {
       setFavLoading(false);
+    }
+  };
+
+  const handleSetRating = async (newRating: number | null) => {
+    if (!queue[current]) return;
+    // treat null as 0 (remove rating)
+    const r = newRating === null ? 0 : newRating;
+    const songId = queue[current].id;
+    setRatingLoading(true);
+    try {
+      // endpoint follows existing convention for songs; send rating (0-5)
+      await api.post(`/songs/setrating/${songId}/${r}`);
+      setRating(r);
+      // persist change in queue store so rating persists locally
+      try {
+        if (typeof updateSong === 'function') updateSong(current, { userRating: r });
+      } catch {}
+      setSnackbar(r === 0 ? t('player.ratingRemoved') : t('player.ratingSaved'));
+    } catch (err) {
+      setSnackbar(t('player.failedToUpdateRating'));
+    } finally {
+      setRatingLoading(false);
     }
   };
 
@@ -503,9 +555,20 @@ export default function Player({ src }: { src: string }) {
                     />
                   </Box>
                   <IconButton onClick={handleEqOpen}><Equalizer /></IconButton>
-                  <IconButton onClick={handleToggleFavorite} disabled={favLoading} sx={{ ml: 1 }}>
-                    {favLoading ? <CircularProgress size={24} /> : favorite ? <Favorite color="primary" /> : <FavoriteBorder />}
-                  </IconButton>
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                    {ratingLoading ? <CircularProgress size={24} sx={{ mr: 1 }} /> : (
+                      <Rating
+                        name="song-rating-fullscreen"
+                        value={rating}
+                        max={5}
+                        onChange={(_, v) => handleSetRating(v)}
+                        size="large"
+                      />
+                    )}
+                    <IconButton onClick={handleToggleFavorite} disabled={favLoading} sx={{ ml: 1 }}>
+                      {favLoading ? <CircularProgress size={24} /> : favorite ? <Favorite color="primary" /> : <FavoriteBorder />}
+                    </IconButton>
+                  </Box>
                 </Box>
                 <Popover open={!!eqAnchor} anchorEl={eqAnchor} onClose={handleEqClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
                   <Box sx={{ p: 2, width: 300 }}>

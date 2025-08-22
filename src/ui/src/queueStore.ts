@@ -10,6 +10,7 @@ export interface Song {
   url?: string;
   played?: boolean; // Add played flag
   durationMs: number; // Required for queue duration calculations
+  userRating?: number; // optional per-user rating (0-5, -1 for dislike in some places)
 }
 
 export interface QueueState {
@@ -20,6 +21,8 @@ export interface QueueState {
   reorderQueue: (from: number, to: number) => void;
   clearQueue: () => void;
   setCurrent: (index: number) => void;
+  updateSong: (index: number, patch: Partial<Song>) => void;
+  setQueue: (songs: Song[]) => void;
   playNow: (songs: Song | Song[]) => void;
 }
 
@@ -46,6 +49,11 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       persist(newQueue, state.current);
       return { queue: newQueue };
     }),
+    setQueue: (songs: Song[]) => set((state: QueueState) => {
+      const newQueue = songs;
+      persist(newQueue, 0);
+      return { queue: newQueue, current: 0 };
+    }),
     removeFromQueue: (index: number) => set((state: QueueState) => {
       const newQueue = state.queue.filter((_: Song, i: number) => i !== index);
       const newCurrent = Math.max(0, Math.min(state.current, newQueue.length - 1));
@@ -62,6 +70,14 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
     clearQueue: () => set((state: QueueState) => {
       persist([], 0);
       return { queue: [], current: 0 };
+    }),
+    updateSong: (index: number, patch: Partial<Song>) => set((state: QueueState) => {
+      const q = [...state.queue];
+      if (q[index]) {
+        q[index] = { ...q[index], ...patch };
+      }
+      persist(q, state.current);
+      return { queue: q };
     }),
     setCurrent: (index: number) => set((state: QueueState) => {
       // Mark previous as played if moving forward

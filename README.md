@@ -59,6 +59,63 @@ When running the AppImage on Fedora you might need to tell it which GTK to use
 ./meloamp*.AppImage --gtk-version=3
 ```
 
+### Run the UI locally (development / debug)
+
+If you want to iterate on UI changes quickly and test them in a browser before packaging into Electron, run the React development server and open the app at http://localhost:3000. This is the fastest feedback loop for UI changes.
+
+1) Start the UI dev server
+
+For fish shell (copy-paste as-is):
+
+```fish
+cd src/ui
+npm install
+npm start
+```
+
+Or using a single-line env (works in most shells):
+
+```sh
+REACT_APP_API_URL=http://your-melodee-api:4000 npm start
+```
+
+Notes:
+- The UI dev server serves the React app at http://localhost:3000 by default.
+- The frontend `api` module will use `localStorage.serverUrl` if set, otherwise `process.env.REACT_APP_API_URL` (so you can point the UI at a remote Melodee API while developing).
+
+2) Point the UI to an API and authenticate
+
+- To change the API URL from the browser console (useful when not restarting the dev server):
+
+```js
+localStorage.setItem('serverUrl', 'http://your-melodee-api:4000/api/v1');
+location.reload();
+```
+
+- To set a JWT for authenticated flows (in browser console):
+
+```js
+localStorage.setItem('jwt', '<your-jwt-token>');
+location.reload();
+```
+
+3) Test in Electron (optional)
+
+Once you are happy with the UI changes in the browser, build the UI and run Electron so the desktop app serves the local build:
+
+```fish
+cd src/ui
+npm run build
+cd ../electron
+npm install
+npm start
+```
+
+This matches the production flow used by the packaged app: Electron serves the static build output from `src/ui/build`.
+
+Advanced: If you prefer to run Electron that directly loads the React dev server (hot-reload inside Electron), you can modify `src/electron/main.js` to conditionally load `http://localhost:3000` when present (this is an advanced workflow and requires editing the Electron main process).
+
+
 ### Build for Linux (Production)
 
 ```sh

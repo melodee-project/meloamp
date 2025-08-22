@@ -1,6 +1,12 @@
 #!/usr/bin/env zsh
 # build-linux.sh - Build MeloAmp Electron App for Linux platforms only
 # Usage: ./scripts/build-linux.sh
+
+# ---
+# NOTE: As this build script process bundles the entire Electron app, it may take some time to complete.
+# NOTE: It is not unusual for this process to take up to 5 minutes.
+# --  
+
 set -euo pipefail
 
 # Change to the project root directory (the parent of scripts/)

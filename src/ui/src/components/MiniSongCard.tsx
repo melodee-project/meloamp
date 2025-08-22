@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Box, IconButton, Tooltip, Stack } from '@mui/material';
+import { Card, Typography, Box, IconButton, Tooltip, Stack, Rating } from '@mui/material';
 import { Song } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, QueueMusic, SkipNext } from '@mui/icons-material';
@@ -122,6 +122,10 @@ const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
             {favorite ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
           </IconButton>
         </Tooltip>
+        {/* Display user rating as small read-only stars (0..5). Negative ratings are treated as 0 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', px: 0.5 }}>
+          <Rating value={song.userRating && song.userRating > 0 ? Math.min(5, song.userRating) : 0} size="small" readOnly />
+        </Box>
         <Tooltip title={hated ? t('songCard.unhate') : t('songCard.hate')}>
           <IconButton size="small" color={hated ? 'error' : 'default'} onClick={handleToggleHated}>
             {hated ? <ThumbDown fontSize="small" /> : <ThumbDownOffAlt fontSize="small" />}
