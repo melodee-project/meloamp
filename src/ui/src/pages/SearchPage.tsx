@@ -7,10 +7,13 @@ import ArtistCard from '../components/ArtistCard';
 import AlbumCard from '../components/AlbumCard';
 import SongCard from '../components/SongCard';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
-  const [search, setSearch] = useState(query || '');
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const paramQ = searchParams.get('q') || undefined;
+  const [search, setSearch] = useState(() => query ?? paramQ ?? '');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResultData | null>(null);
   const [error, setError] = useState('');
@@ -26,19 +29,37 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const { t } = useTranslation();
   const location = useLocation();
 
-  // Sync search state when query prop changes
+  // Track previous prop and URL param so we don't clobber user edits.
+  const prevPropRef = React.useRef<string | undefined>(query);
+  const prevParamRef = React.useRef<string | undefined>(paramQ);
+
+  // Effect: when prop changes, decide whether to apply it (don't overwrite user's edits)
   useEffect(() => {
-    console.log('[SearchPage] Query prop effect - query:', query, 'current search:', search);
-    if (query !== undefined && query !== search) {
-      console.log('[SearchPage] Query prop changed, updating search from', search, 'to', query);
-      setSearch(query);
+    const prev = prevPropRef.current;
+    if (query === prev) return;
+    const incoming = query ?? '';
+    // Apply only if user hasn't edited since last prop (search equals previous prop or is empty)
+    if (search === prev || search === '') {
+      setSearch(incoming);
     }
-  }, [query, search]);
+    prevPropRef.current = query;
+  }, [query]);
+
+  // Effect: when URL param changes (back/forward or external), decide whether to apply it
+  useEffect(() => {
+    const prev = prevParamRef.current;
+    if (paramQ === prev) return;
+    const incoming = paramQ ?? '';
+    if (search === prev || search === '') {
+      setSearch(incoming);
+    }
+    prevParamRef.current = paramQ;
+  }, [paramQ]);
 
   // Debounced search effect
   useEffect(() => {
     console.log('[SearchPage] Search effect triggered, search:', search);
-    if (!search) {
+  if (!search) {
       console.log('[SearchPage] Search is empty, clearing results');
       setResults(null);
       return;
@@ -62,6 +83,13 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           console.log('[SearchPage] Search response:', res.data);
           setResults(res.data);
           setLoading(false);
+          // Update URL to reflect current search (replace to avoid history spam)
+          try {
+            const target = search ? `${location.pathname}?q=${encodeURIComponent(search)}` : location.pathname;
+            navigate(target, { replace: true });
+          } catch (e) {
+            // ignore navigation errors
+          }
         })
         .catch((error) => {
           console.error('[SearchPage] Search error:', error);
@@ -85,7 +113,8 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
-      <TextField
+      <Box sx={{ position: 'relative' }}>
+        <TextField
         fullWidth
         placeholder={t('search.placeholder')}
         value={search}
@@ -103,6 +132,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           ),
         }}
       />
+  </Box>
       {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>{t('common.close', 'Close')}</Button>}
       {loading && <CircularProgress sx={{ mt: 2 }} />}
       {error && <Typography color="error" sx={{ mt: 2 }}>{t('search.error', { error })}</Typography>}
