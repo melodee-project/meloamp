@@ -177,7 +177,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     }
   });
   const [searchValue, setSearchValue] = React.useState('');
-  const [searchActive, setSearchActive] = React.useState(false);
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -250,14 +249,12 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);
     setSearchLoading(true);
-    setSearchActive(false);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
       // If not already on /search, navigate there
       if (location.pathname !== '/search') {
         navigate('/search');
       }
-      setSearchActive(true);
       setSearchLoading(false);
     }, 200);
   };
@@ -265,7 +262,9 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
-      setSearchActive(true);
+      if (location.pathname !== '/search') {
+        navigate('/search');
+      }
       setSearchLoading(false);
     }
   };
@@ -356,24 +355,20 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
         </Toolbar>
       </AppBar>
       <Box sx={{ p: 3, pb: queue.length > 0 ? 10 : 3 }}>
-        {searchActive ? (
-          <SearchPage query={searchValue} onClose={() => setSearchActive(false)} />
-        ) : (
-          <Routes>
-            <Route path="/" element={<DashboardWrapper />} />
-            <Route path="/artists" element={<Artists />} />
-            <Route path="/albums" element={<Albums />} />
-            <Route path="/playlists" element={<Playlists />} />
-            <Route path="/songs" element={<Songs />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
-            <Route path="/profile" element={<ProfilePage />} />
+        <Routes>
+          <Route path="/" element={<DashboardWrapper />} />
+          <Route path="/artists" element={<Artists />} />
+          <Route path="/albums" element={<Albums />} />
+          <Route path="/playlists" element={<Playlists />} />
+          <Route path="/songs" element={<Songs />} />
+          <Route path="/search" element={<SearchPage query={searchValue} />} />
+          <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
+          <Route path="/profile" element={<ProfilePage />} />
             <Route path="/queue" element={<Queue />} />
             <Route path="/artists/:id" element={<ArtistDetailView />} />
             <Route path="/albums/:id" element={<AlbumDetailView />} />
             <Route path="/playlists/:id" element={<PlaylistDetailView />} />
           </Routes>
-        )}
       </Box>
       {/* Sticky Player at bottom if queue is not empty */}
       {queue.length > 0 && (

@@ -90,7 +90,7 @@ export interface Playlist {
 
 export interface SearchResultData {
   meta: Meta;
-  data: { 
+  data: {
     totalCount: number;
     artists: Artist[];
     totalArtists: number;
@@ -99,7 +99,7 @@ export interface SearchResultData {
     songs: Song[];
     totalSongs: number;
     playlists: Playlist[];
-    totalPlaylists: number
+    totalPlaylists: number;
   }
 }
 

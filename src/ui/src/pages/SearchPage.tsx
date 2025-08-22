@@ -26,32 +26,47 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const { t } = useTranslation();
   const location = useLocation();
 
+  // Sync search state when query prop changes
+  useEffect(() => {
+    console.log('[SearchPage] Query prop effect - query:', query, 'current search:', search);
+    if (query !== undefined && query !== search) {
+      console.log('[SearchPage] Query prop changed, updating search from', search, 'to', query);
+      setSearch(query);
+    }
+  }, [query, search]);
+
   // Debounced search effect
   useEffect(() => {
+    console.log('[SearchPage] Search effect triggered, search:', search);
     if (!search) {
+      console.log('[SearchPage] Search is empty, clearing results');
       setResults(null);
       return;
     }
+    console.log('[SearchPage] Search has value, starting API call process');
     setLoading(true);
     setError('');
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      const searchRequest: any = {
+      const searchRequest = {
         query: search,
-        type: 'data',
         pageSize,
         artistPage,
         albumPage,
         songPage,
         playlistPage,
       };
+      console.log('[SearchPage] Sending search request:', searchRequest);
       api.post<SearchResultData>('/search', searchRequest)
         .then((res) => {
+          console.log('[SearchPage] Search response:', res.data);
           setResults(res.data);
           setLoading(false);
         })
-        .catch(() => {
-          setError('Search failed');
+        .catch((error) => {
+          console.error('[SearchPage] Search error:', error);
+          console.error('[SearchPage] Error response:', error.response?.data);
+          setError(`Search failed: ${error.response?.data?.message || error.message}`);
           setLoading(false);
         });
     }, 500);
@@ -68,20 +83,16 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     setPlaylistPage(1);
   }, [search]);
 
-  // Close the search modal/overlay if the route changes away from /search
-  useEffect(() => {
-    if (onClose && location.pathname !== '/search') {
-      onClose();
-    }
-  }, [location.pathname, onClose]);
-
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
       <TextField
         fullWidth
         placeholder={t('search.placeholder')}
         value={search}
-        onChange={e => setSearch(e.target.value)}
+        onChange={e => {
+          console.log('[SearchPage] Search input changed:', e.target.value);
+          setSearch(e.target.value);
+        }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
