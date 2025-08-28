@@ -82,7 +82,14 @@ export default function AlbumDetailView() {
 
   const handlePlayAlbum = () => {
     if (!songs || songs.length === 0) return;
-    setQueue(songs);
+    
+    // Transform API Song objects to Queue Song objects
+    const queueSongs = songs.map(song => ({
+      ...song,
+      url: song.streamUrl  // Map streamUrl to url for queue compatibility
+    }));
+    
+    setQueue(queueSongs);
     setCurrent(0);
   };
 
