@@ -180,14 +180,11 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     localStorage.setItem('userSettings', JSON.stringify(settings));
   }, [settings]);
-  const baseTheme = typeof themeMap[settings.theme] === 'function'
-    ? themeMap[settings.theme](settings.mode || 'light')
-    : themeMap[settings.theme] || classicTheme;
 
   React.useEffect(() => {
     document.documentElement.style.setProperty('--meloamp-font-scale', String(settings.fontScale || 1));

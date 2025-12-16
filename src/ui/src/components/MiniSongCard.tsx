@@ -15,16 +15,10 @@ interface MiniSongCardProps {
 const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const playNow = useQueueStore(state => state.playNow);
   const addToQueue = useQueueStore(state => state.addToQueue);
   const [favorite, setFavorite] = React.useState(song.userStarred);
   const [hated, setHated] = React.useState(song.userRating === -1);
-  const [hovered, setHovered] = React.useState(false);
 
-  const handlePlayNow = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    playNow(toQueueSong(song));
-  };
   const handlePlayNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     addToQueue(toQueueSong(song));

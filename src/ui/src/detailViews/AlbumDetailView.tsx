@@ -54,7 +54,7 @@ export default function AlbumDetailView() {
       })
       .finally(() => {
         setSongsLoading(false);
-        console.log('[AlbumDetailView] Songs loading finished. songs:', songs);
+        console.log('[AlbumDetailView] Songs loading finished.');
       });
   }, [id]);
 

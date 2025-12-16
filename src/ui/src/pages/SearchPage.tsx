@@ -43,7 +43,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
       setSearch(incoming);
     }
     prevPropRef.current = query;
-  }, [query]);
+  }, [query, search]);
 
   // Effect: when URL param changes (back/forward or external), decide whether to apply it
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
       setSearch(incoming);
     }
     prevParamRef.current = paramQ;
-  }, [paramQ]);
+  }, [paramQ, search]);
 
   // Debounced search effect
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     return () => {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
-  }, [search, artistPage, albumPage, songPage, playlistPage]);
+  }, [search, artistPage, albumPage, songPage, playlistPage, location.pathname, navigate]);
 
   // Reset pages when search changes
   useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, Button, Chip, Stack, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, Chip, Stack, IconButton, Tooltip } from '@mui/material';
 import { apiRequest } from '../api';
 import api from '../api';
 import { Artist, Album, PaginatedResponse } from '../apiModels';
