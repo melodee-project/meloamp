@@ -30,6 +30,7 @@ import { Playlist, Song, User } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from '../components/toQueueSong';
+import SongCard from '../components/SongCard';
 
 export default function PlaylistDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -84,7 +85,7 @@ export default function PlaylistDetailView() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    apiRequest(`/playlists/${id}`)
+    apiRequest(`/Playlists/${id}`)
       .then(res => {
         const responseData = res.data as { data?: Playlist } | Playlist;
         const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
@@ -99,9 +100,11 @@ export default function PlaylistDetailView() {
     if (!id) return;
     setSongsLoading(true);
     try {
-      const res = await apiRequest(`/playlists/${id}/songs?pageSize=1000`);
-      const responseData = res.data as { data?: Song[] } | Song[];
-      const songsData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
+      const res = await apiRequest(`/Playlists/${id}/songs?pageSize=200`);
+      // The API returns { meta: {...}, data: Song[] }
+      // apiRequest returns { data: { meta: {...}, data: Song[] } }
+      const responseData = res.data as { meta?: any; data?: Song[] };
+      const songsData = responseData?.data || [];
       setSongs(Array.isArray(songsData) ? songsData : []);
     } catch (err: any) {
       console.error('Failed to load playlist songs', err);
@@ -149,7 +152,7 @@ export default function PlaylistDetailView() {
       setEditMode(false);
       setSnackbar({ open: true, message: t('playlistDetail.saveSuccess'), severity: 'success' });
       // Refresh playlist to get updated song count
-      const res = await apiRequest(`/playlists/${id}`);
+      const res = await apiRequest(`/Playlists/${id}`);
       const responseData = res.data as { data?: Playlist } | Playlist;
       const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
       setPlaylist(playlistData as Playlist);
@@ -191,11 +194,6 @@ export default function PlaylistDetailView() {
     if (songs.length > 0) {
       playNow(songs.map(toQueueSong));
     }
-  };
-
-  // Play single song
-  const handlePlaySong = (song: Song) => {
-    playNow(toQueueSong(song));
   };
 
   const handleCloseSnackbar = () => {
@@ -346,38 +344,12 @@ export default function PlaylistDetailView() {
           </Droppable>
         </DragDropContext>
       ) : (
-        // Normal view
-        <List>
-          {songs.map((song, index) => (
-            <ListItem
-              key={song.id}
-              sx={{
-                mb: 1,
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'divider',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.hover' }
-              }}
-              onClick={() => handlePlaySong(song)}
-            >
-              <Typography sx={{ width: 32, textAlign: 'center', color: 'text.secondary', mr: 1 }}>
-                {index + 1}
-              </Typography>
-              <ListItemAvatar>
-                <Avatar
-                  src={song.thumbnailUrl || song.album?.thumbnailUrl}
-                  alt={song.title}
-                  variant="rounded"
-                />
-              </ListItemAvatar>
-              <ListItemText
-                primary={song.title}
-                secondary={`${song.artist?.name || t('queue.unknownArtist')} • ${song.durationFormatted}`}
-              />
-            </ListItem>
+        // Normal view with SongCard components
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {songs.map((song) => (
+            <SongCard key={song.id} song={song} maxWidth="100%" />
           ))}
-        </List>
+        </Box>
       )}
 
       {/* Delete Confirmation Dialog */}
