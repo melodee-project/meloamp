@@ -73,8 +73,8 @@ echo -e "\n[3/5] Installing Electron dependencies..."
 cd "$PROJECT_ROOT/src/electron"
 yarn install
 
-echo -e "\n[4/5] Building Electron App for Linux (AppImage, deb, tar.gz)..."
-yarn run electron-builder --linux AppImage deb tar.gz
+echo -e "\n[4/5] Building Electron App for Linux (AppImage, tar.gz)..."
+yarn run electron-builder --linux AppImage tar.gz
 
 echo -e "\n[5/5] Build complete! Find your packages in src/electron/dist/"
 ls -la "$PROJECT_ROOT/src/electron/dist/" 2>/dev/null || true
