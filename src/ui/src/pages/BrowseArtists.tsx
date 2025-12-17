@@ -29,9 +29,7 @@ export default function BrowseArtists() {
       {loading ? <CircularProgress /> : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
           {artists.map((artist) => (
-            <Box key={artist.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
-              <ArtistCard artist={artist} />
-            </Box>
+            <ArtistCard key={artist.id} artist={artist} compact />
           ))}
         </Box>
       )}

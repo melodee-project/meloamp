@@ -85,7 +85,7 @@ export default function ArtistDetailView() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', gap: 3 }}>
           <CardMedia
             component="img"
-            sx={{ width: 140, height: 140, objectFit: 'cover', borderRadius: 2, mb: { xs: 2, sm: 0 } }}
+            sx={{ width: 210, height: 210, objectFit: 'cover', borderRadius: 2, mb: { xs: 2, sm: 0 } }}
             image={artist.imageUrl || artist.thumbnailUrl}
             alt={artist.name}
           />

@@ -29,9 +29,7 @@ export default function BrowseAlbums() {
       {loading ? <CircularProgress /> : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
           {albums.map((album) => (
-            <Box key={album.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
-              <AlbumCard album={album} />
-            </Box>
+            <AlbumCard key={album.id} album={album} compact />
           ))}
         </Box>
       )}

@@ -29,9 +29,7 @@ export default function PlaylistManager() {
       {loading ? <CircularProgress /> : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
           {playlists.map((playlist) => (
-            <Box key={playlist.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
-              <PlaylistCard playlist={playlist} />
-            </Box>
+            <PlaylistCard key={playlist.id} playlist={playlist} compact />
           ))}
         </Box>
       )}

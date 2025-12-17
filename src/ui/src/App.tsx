@@ -72,8 +72,6 @@ function Artists() { return <BrowseArtists />; }
 function Songs() { return <BrowseSongs />; }
 function Queue() { return <QueueView />; }
 
-function ProfilePage() { return <div>Profile Page</div>; }
-
 // Navigation bar component with active highlighting
 function NavBar({ user }: { user: any }) {
   const location = useLocation();
@@ -419,7 +417,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
             </IconButton>
             <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
               <MenuItem component={Link} to="/settings" onClick={handleClose}><Settings sx={{ mr: 1 }} />{t('nav.settings')}</MenuItem>
-              <MenuItem component={Link} to="/profile" onClick={handleClose}><AccountCircle sx={{ mr: 1 }} />{t('nav.profile')}</MenuItem>
               <MenuItem onClick={() => { handleClose(); handleLogout(); }}><Logout sx={{ mr: 1 }} />{t('nav.logout')}</MenuItem>
               <MenuItem divider disabled style={{ margin: '4px 0', padding: 0, minHeight: 0, height: 0, background: 'transparent' }}>
                 <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', width: '100%' }} />
@@ -439,7 +436,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
           <Route path="/songs" element={<Songs />} />
           <Route path="/search" element={<SearchPage query={searchValue} />} />
           <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
-          <Route path="/profile" element={<ProfilePage />} />
             <Route path="/queue" element={<Queue />} />
             <Route path="/artists/:id" element={<ArtistDetailView />} />
             <Route path="/albums/:id" element={<AlbumDetailView />} />

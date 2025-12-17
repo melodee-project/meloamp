@@ -4,19 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { Artist } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 
-export default function ArtistCard({ artist }: { artist: Artist }) {
+export default function ArtistCard({ artist, compact }: { artist: Artist; compact?: boolean }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Size based on compact prop (matches AlbumCard sizes)
+  const imageSize = compact ? 225 : 300;
+  const cardWidth = compact ? 245 : 320;
+
   return (
     <Card
-      sx={{ width: 200, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+      sx={{ width: cardWidth, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
       onClick={() => navigate(`/artists/${artist.id}`)}
     >
-      <Box sx={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2 }}>
+      <Box sx={{ width: imageSize, height: imageSize, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2 }}>
         <CardMedia
           component="img"
-          sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1 }}
-          image={artist.thumbnailUrl}
+          sx={{ width: imageSize, height: imageSize, objectFit: 'cover', borderRadius: 1 }}
+          image={artist.imageUrl || artist.thumbnailUrl}
           alt={artist.name}
         />
       </Box>

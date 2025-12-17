@@ -8,11 +8,15 @@ import { PlayArrow } from '@mui/icons-material';
 import { toQueueSong } from './toQueueSong';
 import { useTranslation } from 'react-i18next';
 
-export default function AlbumCard({ album }: { album: Album }) {
+export default function AlbumCard({ album, compact }: { album: Album; compact?: boolean }) {
   const navigate = useNavigate();
   const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
   const { t } = useTranslation();
+
+  // Size based on compact prop (25% smaller when compact)
+  const imageSize = compact ? 225 : 300;
+  const cardWidth = compact ? 245 : 320;
 
   // Handler for clicking the album image
   const handlePlayAlbum = async (e: React.MouseEvent) => {
@@ -31,18 +35,18 @@ export default function AlbumCard({ album }: { album: Album }) {
 
   return (
     <Card
-      sx={{ width: 200, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+      sx={{ width: cardWidth, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
       onClick={() => navigate(`/albums/${album.id}`)}
     >
       <Box
-        sx={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2, position: 'relative' }}
+        sx={{ width: imageSize, height: imageSize, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2, position: 'relative' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
         <CardMedia
           component="img"
-          sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, cursor: 'pointer', filter: hovered ? 'brightness(0.7)' : 'none', transition: 'filter 0.2s' }}
-          image={album.thumbnailUrl}
+          sx={{ width: imageSize, height: imageSize, objectFit: 'cover', borderRadius: 1, cursor: 'pointer', filter: hovered ? 'brightness(0.7)' : 'none', transition: 'filter 0.2s' }}
+          image={album.imageUrl || album.thumbnailUrl}
           alt={album.name}
           onClick={handlePlayAlbum}
         />

@@ -338,7 +338,17 @@ export default function PlaylistDetailView() {
       <Typography variant="h6" sx={{ mb: 2 }}>{t('playlistDetail.tracks')}</Typography>
 
       {songsLoading ? (
-        <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress size={24} /></Box>
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <CircularProgress size={48} />
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+            {t('playlistDetail.loadingSongs', 'Loading songs...')}
+          </Typography>
+          {playlist.songCount && playlist.songCount > 100 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {t('playlistDetail.loadingLargePlaylist', 'This playlist has {{count}} songs, please wait...', { count: playlist.songCount })}
+            </Typography>
+          )}
+        </Box>
       ) : songs.length === 0 ? (
         <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
           {t('playlistDetail.noSongs')}

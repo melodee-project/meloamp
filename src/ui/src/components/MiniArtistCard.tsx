@@ -27,7 +27,7 @@ export default function MiniArtistCard({ artist }: { artist: Artist }) {
         <CardMedia
           component="img"
           sx={{ width: 84, height: 84, objectFit: 'cover', borderRadius: '50%' }}
-          image={artist.thumbnailUrl}
+          image={artist.imageUrl || artist.thumbnailUrl}
           alt={artist.name}
         />
       </Box>

@@ -79,17 +79,13 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
       <Typography variant="h5" gutterBottom>{t('dashboard.recentArtists')}</Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start', mb: 3 }}>
         {recentArtists.map(a => (
-          <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
-            <ArtistCard artist={a} />
-          </Box>
+          <ArtistCard key={a.id} artist={a} compact />
         ))}
       </Box>
       <Typography variant="h5" gutterBottom>{t('dashboard.recentAlbums')}</Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start', mb: 3 }}>
         {recentAlbums.map(a => (
-          <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
-            <AlbumCard album={a} />
-          </Box>
+          <AlbumCard key={a.id} album={a} compact />
         ))}
       </Box>
       <Typography variant="h5" gutterBottom>{t('dashboard.yourPlaylists')}</Typography>

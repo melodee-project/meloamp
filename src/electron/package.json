@@ -52,8 +52,8 @@
         "to": "build"
       },
       {
-        "from": "resources",
-        "to": "resources"
+        "from": "resources/logo.png",
+        "to": "resources/logo.png"
       }
     ]
   }

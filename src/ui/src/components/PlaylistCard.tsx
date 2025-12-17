@@ -8,11 +8,15 @@ import { PlayArrow } from '@mui/icons-material';
 import { toQueueSong } from './toQueueSong';
 import { useTranslation } from 'react-i18next';
 
-export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
+export default function PlaylistCard({ playlist, compact }: { playlist: Playlist; compact?: boolean }) {
   const navigate = useNavigate();
   const playNow = useQueueStore((state: any) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
   const { t } = useTranslation();
+
+  // Size based on compact prop (matches AlbumCard sizes)
+  const imageSize = compact ? 225 : 300;
+  const cardWidth = compact ? 245 : 320;
 
   // Handler for clicking the playlist image
   const handlePlayPlaylist = async (e: React.MouseEvent) => {
@@ -31,18 +35,18 @@ export default function PlaylistCard({ playlist }: { playlist: Playlist }) {
 
   return (
     <Card
-      sx={{ minWidth: 250, maxWidth: 345, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
+      sx={{ width: cardWidth, m: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
       onClick={() => navigate(`/playlists/${playlist.id}`)}
     >
       <Box
-        sx={{ width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2, position: 'relative' }}
+        sx={{ width: imageSize, height: imageSize, display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2, position: 'relative' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
         <CardMedia
           component="img"
-          sx={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 1, cursor: 'pointer', filter: hovered ? 'brightness(0.7)' : 'none', transition: 'filter 0.2s' }}
-          image={playlist.thumbnailUrl}
+          sx={{ width: imageSize, height: imageSize, objectFit: 'cover', borderRadius: 1, cursor: 'pointer', filter: hovered ? 'brightness(0.7)' : 'none', transition: 'filter 0.2s' }}
+          image={playlist.imageUrl || playlist.thumbnailUrl}
           alt={playlist.name}
           onClick={handlePlayPlaylist}
         />
