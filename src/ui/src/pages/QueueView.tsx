@@ -1,6 +1,7 @@
-import React, { useRef, ReactElement } from 'react';
-import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button } from '@mui/material';
-import { Delete, DragIndicator } from '@mui/icons-material';
+import React, { useRef, ReactElement, useState } from 'react';
+import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert } from '@mui/material';
+import { Delete, DragIndicator, ImageOutlined } from '@mui/icons-material';
+import api from '../api';
 import { useQueueStore, QueueState, Song } from '../queueStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { List as VirtualList, RowComponentProps } from 'react-window';
@@ -81,6 +82,21 @@ export default function QueueView() {
   const [playerCurrent, setPlayerCurrent] = React.useState<number>(-1);
   const { t } = useTranslation();
 
+  // State for save playlist dialog
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [playlistName, setPlaylistName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // State for snackbar notifications
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ 
+    open: false, 
+    message: '', 
+    severity: 'success' 
+  });
+
   React.useEffect(() => {
     // Listen for playing state and current index from Player via window event
     function handlePlayerState(e: any) {
@@ -111,14 +127,91 @@ export default function QueueView() {
     reorderQueue(result.source.index, result.destination.index);
   };
 
+  const handleOpenSaveDialog = () => {
+    setPlaylistName('');
+    setSelectedImage(null);
+    setImagePreview(null);
+    setSaveDialogOpen(true);
+  };
+
+  const handleCloseSaveDialog = () => {
+    setSaveDialogOpen(false);
+    setPlaylistName('');
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setSnackbar({ open: true, message: t('queue.invalidImageType'), severity: 'error' });
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setSnackbar({ open: true, message: t('queue.imageTooLarge'), severity: 'error' });
+        return;
+      }
+      setSelectedImage(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSaveAsPlaylist = async () => {
-    // Example: POST to /users/playlists with queue as songs
-    await fetch('/users/playlists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Queue Playlist', songs: queue }),
-    });
-    // Optionally show a snackbar or feedback
+    if (!playlistName.trim()) {
+      setSnackbar({ open: true, message: t('queue.playlistNameRequired'), severity: 'error' });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const songIds = queue.map(song => song.id);
+      const response = await api.post<{ data: { id: string } }>('/Playlists', {
+        name: playlistName.trim(),
+        comment: '',
+        isPublic: false,
+        songIds
+      });
+
+      // If an image was selected, upload it
+      const playlistId = response.data?.data?.id;
+      if (selectedImage && playlistId) {
+        const formData = new FormData();
+        formData.append('file', selectedImage);
+        await api.post(`/Playlists/${playlistId}/image`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
+
+      setSnackbar({ open: true, message: t('queue.saveSuccess'), severity: 'success' });
+      handleCloseSaveDialog();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || t('queue.saveError');
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   // Helper to sum total duration in seconds using song.durationMs (guaranteed present and always a number)
@@ -193,7 +286,7 @@ export default function QueueView() {
       </Typography>
       <Button onClick={clearQueue} color="error" sx={{ mr: 2 }}>{t('queue.clear')}</Button>
       <Button onClick={shuffleQueue} sx={{ mr: 2 }}>{t('queue.shuffle')}</Button>
-      <Button onClick={handleSaveAsPlaylist} sx={{ mr: 2 }}>{t('queue.save')}</Button>
+      <Button onClick={handleOpenSaveDialog} sx={{ mr: 2 }} disabled={queue.length === 0}>{t('queue.save')}</Button>
       <Button onClick={() => {}} color="primary">{t('queue.playAll')}</Button>
       {queue.length === 0 ? (
         <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary', fontSize: 24 }}>
@@ -237,6 +330,103 @@ export default function QueueView() {
           </Droppable>
         </DragDropContext>
       )}
+
+      {/* Save to Playlist Dialog */}
+      <Dialog open={saveDialogOpen} onClose={handleCloseSaveDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('queue.saveDialogTitle')}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('queue.playlistNameLabel')}
+            fullWidth
+            variant="outlined"
+            value={playlistName}
+            onChange={(e) => setPlaylistName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !isSaving && playlistName.trim() && handleSaveAsPlaylist()}
+            disabled={isSaving}
+            sx={{ mb: 2 }}
+          />
+          
+          {/* Image picker */}
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              {t('queue.playlistImageLabel')}
+            </Typography>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              id="playlist-image-input"
+            />
+            {imagePreview ? (
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Box
+                  component="img"
+                  src={imagePreview}
+                  alt={t('queue.playlistImagePreview')}
+                  sx={{
+                    width: 150,
+                    height: 150,
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                />
+                <IconButton
+                  size="small"
+                  onClick={handleRemoveImage}
+                  sx={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    bgcolor: 'background.paper',
+                    boxShadow: 1,
+                    '&:hover': { bgcolor: 'error.light', color: 'white' }
+                  }}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Box>
+            ) : (
+              <label htmlFor="playlist-image-input">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={<ImageOutlined />}
+                  disabled={isSaving}
+                >
+                  {t('queue.selectImage')}
+                </Button>
+              </label>
+            )}
+            <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+              {t('queue.imageHint')}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSaveDialog} disabled={isSaving}>{t('common.cancel')}</Button>
+          <Button onClick={handleSaveAsPlaylist} variant="contained" disabled={isSaving || !playlistName.trim()}>
+            {isSaving ? t('common.saving') : t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

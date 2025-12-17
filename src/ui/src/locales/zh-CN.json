@@ -9,6 +9,10 @@
     "error": "发生错误",
     "refresh": "刷新",
     "close": "关闭",
+    "cancel": "取消",
+    "save": "保存",
+    "saving": "保存中...",
+    "deleting": "删除中...",
     "viewing": "显示第 {{from}} 到 {{to}} 条，共 {{total}} 条",
     "created": "创建时间",
     "updated": "更新时间",
@@ -81,9 +85,20 @@
     "title": "队列",
     "clear": "清空队列",
     "shuffle": "随机播放",
-    "save": "保存队列",
+    "save": "保存到播放列表",
     "playAll": "全部播放",
-    "unknownArtist": "未知艺术家"
+    "unknownArtist": "未知艺术家",
+    "saveDialogTitle": "将队列保存为播放列表",
+    "playlistNameLabel": "播放列表名称",
+    "playlistNameRequired": "请输入播放列表名称",
+    "saveSuccess": "播放列表创建成功",
+    "saveError": "保存播放列表失败",
+    "playlistImageLabel": "封面图片（可选）",
+    "playlistImagePreview": "图片预览",
+    "selectImage": "选择图片",
+    "imageHint": "JPG、PNG或GIF。最大5MB。",
+    "invalidImageType": "请选择有效的图片文件",
+    "imageTooLarge": "图片必须小于5MB"
   },
   "login": {
     "email": "电子邮件",
@@ -110,6 +125,18 @@
   },
   "playlistDetail": {
     "createdBy": "创建者",
-    "tracks": "歌曲"
+    "tracks": "歌曲",
+    "playAll": "全部播放",
+    "edit": "编辑",
+    "delete": "删除",
+    "noSongs": "此播放列表中没有歌曲",
+    "removeSong": "从播放列表中移除",
+    "loadError": "加载播放列表失败",
+    "saveSuccess": "播放列表保存成功",
+    "saveError": "保存播放列表失败",
+    "deleteSuccess": "播放列表删除成功",
+    "deleteError": "删除播放列表失败",
+    "deleteDialogTitle": "删除播放列表",
+    "deleteDialogMessage": "确定要删除\"{{name}}\"吗？此操作无法撤销。"
   }
 }

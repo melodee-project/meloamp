@@ -9,6 +9,10 @@
     "error": "An error occurred",
     "refresh": "Refresh",
     "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
     "viewing": "Viewing {{from}} to {{to}} of {{total}}",
     "created": "Created",
     "updated": "Updated",
@@ -81,9 +85,20 @@
     "title": "Queue",
     "clear": "Clear Queue",
     "shuffle": "Shuffle",
-    "save": "Save Queue",
+    "save": "Save to Playlist",
     "playAll": "Play All",
-    "unknownArtist": "Unknown Artist"
+    "unknownArtist": "Unknown Artist",
+    "saveDialogTitle": "Save Queue to Playlist",
+    "playlistNameLabel": "Playlist Name",
+    "playlistNameRequired": "Please enter a playlist name",
+    "saveSuccess": "Playlist created successfully",
+    "saveError": "Failed to save playlist",
+    "playlistImageLabel": "Playlist Cover Image (optional)",
+    "playlistImagePreview": "Playlist image preview",
+    "selectImage": "Select Image",
+    "imageHint": "JPG, PNG or GIF. Max 5MB.",
+    "invalidImageType": "Please select a valid image file",
+    "imageTooLarge": "Image must be less than 5MB"
   },
   "login": {
     "email": "Email",
@@ -110,6 +125,18 @@
   },
   "playlistDetail": {
     "createdBy": "Created by",
-    "tracks": "Songs"
+    "tracks": "Songs",
+    "playAll": "Play All",
+    "edit": "Edit",
+    "delete": "Delete",
+    "noSongs": "No songs in this playlist",
+    "removeSong": "Remove from playlist",
+    "loadError": "Failed to load playlist",
+    "saveSuccess": "Playlist saved successfully",
+    "saveError": "Failed to save playlist",
+    "deleteSuccess": "Playlist deleted successfully",
+    "deleteError": "Failed to delete playlist",
+    "deleteDialogTitle": "Delete Playlist",
+    "deleteDialogMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
   }
 }

@@ -8,6 +8,10 @@
     "loading": "Lädt...",
     "error": "Ein Fehler ist aufgetreten",
     "refresh": "Aktualisieren",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Speichern...",
+    "deleting": "Löschen...",
     "viewing": "Zeige {{from}} bis {{to}} von {{total}}",
     "created": "Erstellt",
     "updated": "Aktualisiert",
@@ -80,9 +84,20 @@
     "title": "Warteschlange",
     "clear": "Warteschlange leeren",
     "shuffle": "Mischen",
-    "save": "Warteschlange speichern",
+    "save": "In Playlist speichern",
     "playAll": "Alle abspielen",
-    "unknownArtist": "Unbekannter Künstler"
+    "unknownArtist": "Unbekannter Künstler",
+    "saveDialogTitle": "Warteschlange als Playlist speichern",
+    "playlistNameLabel": "Playlist-Name",
+    "playlistNameRequired": "Bitte gib einen Playlist-Namen ein",
+    "saveSuccess": "Playlist erfolgreich erstellt",
+    "saveError": "Playlist konnte nicht gespeichert werden",
+    "playlistImageLabel": "Playlist-Cover (optional)",
+    "playlistImagePreview": "Playlist-Bild Vorschau",
+    "selectImage": "Bild auswählen",
+    "imageHint": "JPG, PNG oder GIF. Max 5MB.",
+    "invalidImageType": "Bitte wähle eine gültige Bilddatei",
+    "imageTooLarge": "Bild muss kleiner als 5MB sein"
   },
   "login": {
     "email": "E-Mail",
@@ -109,6 +124,18 @@
   },
   "playlistDetail": {
     "createdBy": "Erstellt von",
-    "tracks": "Lieder"
+    "tracks": "Lieder",
+    "playAll": "Alle abspielen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "noSongs": "Keine Lieder in dieser Playlist",
+    "removeSong": "Aus Playlist entfernen",
+    "loadError": "Playlist konnte nicht geladen werden",
+    "saveSuccess": "Playlist erfolgreich gespeichert",
+    "saveError": "Playlist konnte nicht gespeichert werden",
+    "deleteSuccess": "Playlist erfolgreich gelöscht",
+    "deleteError": "Playlist konnte nicht gelöscht werden",
+    "deleteDialogTitle": "Playlist löschen",
+    "deleteDialogMessage": "Möchtest du \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
   }
 }

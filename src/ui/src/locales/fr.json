@@ -9,6 +9,10 @@
     "error": "Une erreur s'est produite",
     "refresh": "Rafraîchir",
     "close": "Fermer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "deleting": "Suppression...",
     "viewing": "Affichage de {{from}} à {{to}} sur {{total}}",
     "created": "Créé",
     "updated": "Mis à jour",
@@ -81,9 +85,20 @@
     "title": "File d'attente",
     "clear": "Vider la file",
     "shuffle": "Mélanger",
-    "save": "Enregistrer la file",
+    "save": "Enregistrer en playlist",
     "playAll": "Tout lire",
-    "unknownArtist": "Artiste inconnu"
+    "unknownArtist": "Artiste inconnu",
+    "saveDialogTitle": "Enregistrer la file comme playlist",
+    "playlistNameLabel": "Nom de la playlist",
+    "playlistNameRequired": "Veuillez entrer un nom de playlist",
+    "saveSuccess": "Playlist créée avec succès",
+    "saveError": "Échec de l'enregistrement de la playlist",
+    "playlistImageLabel": "Image de couverture (optionnel)",
+    "playlistImagePreview": "Aperçu de l'image",
+    "selectImage": "Choisir une image",
+    "imageHint": "JPG, PNG ou GIF. Max 5Mo.",
+    "invalidImageType": "Veuillez sélectionner un fichier image valide",
+    "imageTooLarge": "L'image doit faire moins de 5Mo"
   },
   "login": {
     "email": "E-mail",
@@ -110,6 +125,18 @@
   },
   "playlistDetail": {
     "createdBy": "Créé par",
-    "tracks": "Chansons"
+    "tracks": "Chansons",
+    "playAll": "Tout lire",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "noSongs": "Aucune chanson dans cette playlist",
+    "removeSong": "Retirer de la playlist",
+    "loadError": "Échec du chargement de la playlist",
+    "saveSuccess": "Playlist enregistrée avec succès",
+    "saveError": "Échec de l'enregistrement de la playlist",
+    "deleteSuccess": "Playlist supprimée avec succès",
+    "deleteError": "Échec de la suppression de la playlist",
+    "deleteDialogTitle": "Supprimer la playlist",
+    "deleteDialogMessage": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action est irréversible."
   }
 }

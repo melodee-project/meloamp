@@ -9,6 +9,10 @@
     "error": "Si è verificato un errore",
     "refresh": "Aggiorna",
     "close": "Chiudi",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "deleting": "Eliminazione...",
     "viewing": "Visualizzazione da {{from}} a {{to}} di {{total}}",
     "created": "Creato",
     "updated": "Aggiornato",
@@ -81,9 +85,20 @@
     "title": "Coda",
     "clear": "Svuota coda",
     "shuffle": "Mescola",
-    "save": "Salva coda",
+    "save": "Salva in playlist",
     "playAll": "Riproduci tutto",
-    "unknownArtist": "Artista sconosciuto"
+    "unknownArtist": "Artista sconosciuto",
+    "saveDialogTitle": "Salva coda come playlist",
+    "playlistNameLabel": "Nome playlist",
+    "playlistNameRequired": "Inserisci un nome per la playlist",
+    "saveSuccess": "Playlist creata con successo",
+    "saveError": "Impossibile salvare la playlist",
+    "playlistImageLabel": "Immagine di copertina (opzionale)",
+    "playlistImagePreview": "Anteprima immagine",
+    "selectImage": "Seleziona immagine",
+    "imageHint": "JPG, PNG o GIF. Max 5MB.",
+    "invalidImageType": "Seleziona un file immagine valido",
+    "imageTooLarge": "L'immagine deve essere inferiore a 5MB"
   },
   "login": {
     "email": "Email",
@@ -110,6 +125,18 @@
   },
   "playlistDetail": {
     "createdBy": "Creato da",
-    "tracks": "Canzoni"
+    "tracks": "Canzoni",
+    "playAll": "Riproduci tutto",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "noSongs": "Nessuna canzone in questa playlist",
+    "removeSong": "Rimuovi dalla playlist",
+    "loadError": "Impossibile caricare la playlist",
+    "saveSuccess": "Playlist salvata con successo",
+    "saveError": "Impossibile salvare la playlist",
+    "deleteSuccess": "Playlist eliminata con successo",
+    "deleteError": "Impossibile eliminare la playlist",
+    "deleteDialogTitle": "Elimina playlist",
+    "deleteDialogMessage": "Sei sicuro di voler eliminare \"{{name}}\"? Questa azione non può essere annullata."
   }
 }

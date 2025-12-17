@@ -9,6 +9,10 @@
     "error": "Ocurrió un error",
     "refresh": "Actualizar",
     "close": "Cerrar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "deleting": "Eliminando...",
     "viewing": "Mostrando {{from}} a {{to}} de {{total}}",
     "created": "Creado",
     "updated": "Actualizado",
@@ -81,9 +85,20 @@
     "title": "Cola",
     "clear": "Limpiar cola",
     "shuffle": "Mezclar",
-    "save": "Guardar cola",
+    "save": "Guardar en lista",
     "playAll": "Reproducir todo",
-    "unknownArtist": "Artista desconocido"
+    "unknownArtist": "Artista desconocido",
+    "saveDialogTitle": "Guardar cola como lista de reproducción",
+    "playlistNameLabel": "Nombre de la lista",
+    "playlistNameRequired": "Por favor, introduce un nombre para la lista",
+    "saveSuccess": "Lista de reproducción creada con éxito",
+    "saveError": "No se pudo guardar la lista de reproducción",
+    "playlistImageLabel": "Imagen de portada (opcional)",
+    "playlistImagePreview": "Vista previa de imagen",
+    "selectImage": "Seleccionar imagen",
+    "imageHint": "JPG, PNG o GIF. Máx 5MB.",
+    "invalidImageType": "Por favor, selecciona un archivo de imagen válido",
+    "imageTooLarge": "La imagen debe ser menor de 5MB"
   },
   "login": {
     "email": "Correo electrónico",
@@ -110,6 +125,18 @@
   },
   "playlistDetail": {
     "createdBy": "Creado por",
-    "tracks": "Canciones"
+    "tracks": "Canciones",
+    "playAll": "Reproducir todo",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "noSongs": "No hay canciones en esta lista",
+    "removeSong": "Eliminar de la lista",
+    "loadError": "No se pudo cargar la lista",
+    "saveSuccess": "Lista guardada correctamente",
+    "saveError": "No se pudo guardar la lista",
+    "deleteSuccess": "Lista eliminada correctamente",
+    "deleteError": "No se pudo eliminar la lista",
+    "deleteDialogTitle": "Eliminar lista",
+    "deleteDialogMessage": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer."
   }
 }

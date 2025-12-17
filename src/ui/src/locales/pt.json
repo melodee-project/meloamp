@@ -9,6 +9,10 @@
     "error": "Ocorreu um erro",
     "refresh": "Atualizar",
     "close": "Fechar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "deleting": "Excluindo...",
     "viewing": "Exibindo de {{from}} a {{to}} de {{total}}",
     "created": "Criado",
     "updated": "Atualizado",
@@ -81,9 +85,20 @@
     "title": "Fila",
     "clear": "Limpar fila",
     "shuffle": "Embaralhar",
-    "save": "Salvar fila",
+    "save": "Salvar em playlist",
     "playAll": "Tocar tudo",
-    "unknownArtist": "Artista desconhecido"
+    "unknownArtist": "Artista desconhecido",
+    "saveDialogTitle": "Salvar fila como playlist",
+    "playlistNameLabel": "Nome da playlist",
+    "playlistNameRequired": "Por favor, insira um nome para a playlist",
+    "saveSuccess": "Playlist criada com sucesso",
+    "saveError": "Falha ao salvar a playlist",
+    "playlistImageLabel": "Imagem de capa (opcional)",
+    "playlistImagePreview": "Prévia da imagem",
+    "selectImage": "Selecionar imagem",
+    "imageHint": "JPG, PNG ou GIF. Máx 5MB.",
+    "invalidImageType": "Por favor, selecione um arquivo de imagem válido",
+    "imageTooLarge": "A imagem deve ter menos de 5MB"
   },
   "login": {
     "email": "E-mail",
@@ -110,6 +125,18 @@
   },
   "playlistDetail": {
     "createdBy": "Criado por",
-    "tracks": "Músicas"
+    "tracks": "Músicas",
+    "playAll": "Tocar tudo",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "noSongs": "Nenhuma música nesta playlist",
+    "removeSong": "Remover da playlist",
+    "loadError": "Falha ao carregar a playlist",
+    "saveSuccess": "Playlist salva com sucesso",
+    "saveError": "Falha ao salvar a playlist",
+    "deleteSuccess": "Playlist excluída com sucesso",
+    "deleteError": "Falha ao excluir a playlist",
+    "deleteDialogTitle": "Excluir playlist",
+    "deleteDialogMessage": "Tem certeza de que deseja excluir \"{{name}}\"? Esta ação não pode ser desfeita."
   }
 }
