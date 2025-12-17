@@ -181,15 +181,18 @@ export default function QueueView() {
     setIsSaving(true);
     try {
       const songIds = queue.map(song => song.id);
-      const response = await api.post<{ data: { id: string } }>('/Playlists', {
+      const response = await api.post('/Playlists', {
         name: playlistName.trim(),
         comment: '',
         isPublic: false,
         songIds
       });
 
+      // Extract playlist ID from response - handle different response structures
+      const responseData = response.data as { data?: { id?: string }; id?: string } | undefined;
+      const playlistId = responseData?.data?.id || responseData?.id;
+      
       // If an image was selected, upload it
-      const playlistId = response.data?.data?.id;
       if (selectedImage && playlistId) {
         const formData = new FormData();
         formData.append('file', selectedImage);
