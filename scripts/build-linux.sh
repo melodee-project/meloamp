@@ -1,37 +1,43 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 # build-linux.sh - Build MeloAmp Electron App for Linux platforms only
 # Usage: ./scripts/build-linux.sh
 
 # ---
 # NOTE: As this build script process bundles the entire Electron app, it may take some time to complete.
 # NOTE: It is not unusual for this process to take up to 5 minutes.
-# --  
+# ---
 
 set -euo pipefail
 
 # Change to the project root directory (the parent of scripts/)
-cd "$(dirname "$0")/.."
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$PROJECT_ROOT"
 
-# Build notes;
-# If you are using a Debian-based system, you may also need to install the following packages:
-# sudo apt-get update
-# sudo apt-get install rpm fakeroot
-# sudo apt-get install -y libxcrypt-compat
-# sudo apt-get install libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils at-spi2-core libuuid1
-# sudo apt-get install rpm fakeroot libxcrypt-compat libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils at-spi2-core libuuid1
+# Build notes:
+#
+# Manjaro/Arch-based systems:
+#   sudo pacman -S --needed base-devel rpm-tools fakeroot
+#   # For AppImage support:
+#   sudo pacman -S --needed libxcrypt-compat
+#
+# Debian/Ubuntu-based systems:
+#   sudo apt-get update
+#   sudo apt-get install -y rpm fakeroot libxcrypt-compat
+#   sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils at-spi2-core libuuid1
+#
+# Fedora-based systems:
+#   sudo dnf install -y rpm-build rpmdevtools fakeroot xz
+#   sudo dnf install -y libxcrypt-compat gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
 
-# If you are using a Fedora-based system, you may need to install the following packages:
-# sudo dnf install libxcrypt-compat
-# sudo dnf install rpm-build rpmdevtools fakeroot
-# sudo dnf install gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
-# sudo dnf install rpm-build fakeroot gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
-# sudo dnf install xz
-
-# If you are using an Arch-based system, you may need to install the following packages:
-# sudo pacman -S rpm fakeroot
-# sudo pacman -S libxcrypt-compat
-# sudo pacman -S rpm fakeroot libxcrypt-compat
-
+# Cleanup function to restore .gitignore on exit (success or failure)
+cleanup() {
+  cd "$PROJECT_ROOT"
+  if [[ -f .gitignore.bak ]]; then
+    echo -e "\n[cleanup] Restoring .gitignore..."
+    mv .gitignore.bak .gitignore
+  fi
+}
+trap cleanup EXIT
 
 # Warn if running as root
 if [[ $EUID -eq 0 ]]; then
@@ -39,35 +45,36 @@ if [[ $EUID -eq 0 ]]; then
   exit 1
 fi
 
-# 1. Build React UI
-echo '\n[1/5] Building React UI...'
-cd src/ui
-yarn install --check-files --verbose
-yarn build
-cd ../..
+# Check for required commands
+for cmd in yarn node; do
+  if ! command -v "$cmd" &> /dev/null; then
+    echo "[ERROR] Required command '$cmd' not found. Please install it first."
+    exit 1
+  fi
+done
 
-# 2. Copy React build output to Electron app directory
-echo '\n[2/5] Copying React build output to Electron app...'
+echo -e "\n[1/5] Building React UI..."
+cd "$PROJECT_ROOT/src/ui"
+yarn install
+yarn build
+
+echo -e "\n[2/5] Copying React build output to Electron app..."
+cd "$PROJECT_ROOT"
 rm -rf src/electron/build
 cp -r src/ui/build src/electron/build
+
 # Remove build from .gitignore temporarily for packaging
-if grep -q '^src/electron/build/' .gitignore; then
-  sed -i.bak '/^src\/electron\/build\//d' .gitignore
+if grep -q '^src/electron/build/' .gitignore 2>/dev/null; then
+  cp .gitignore .gitignore.bak
+  sed -i '/^src\/electron\/build\//d' .gitignore
 fi
 
-# 3. Install Electron dependencies
-echo '\n[3/5] Installing Electron dependencies...'
-cd src/electron
-yarn install --check-files --verbose
+echo -e "\n[3/5] Installing Electron dependencies..."
+cd "$PROJECT_ROOT/src/electron"
+yarn install
 
-# 4. Build Electron App for Linux only
-echo '\n[4/5] Building Electron App for Linux (AppImage, deb, tar.gz)...'
+echo -e "\n[4/5] Building Electron App for Linux (AppImage, deb, tar.gz)..."
 yarn run electron-builder --linux AppImage deb tar.gz
 
-# Restore .gitignore if backup exists
-echo '\n[post-build] Restoring .gitignore ignore rules...'
-if [ -f .gitignore.bak ]; then
-  mv .gitignore.bak .gitignore
-fi
-
-echo '\n[5/5] Build complete! Find your packages in src/electron/dist/'
+echo -e "\n[5/5] Build complete! Find your packages in src/electron/dist/"
+ls -la "$PROJECT_ROOT/src/electron/dist/" 2>/dev/null || true
