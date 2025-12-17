@@ -196,7 +196,7 @@ export default function PlaylistDetailView() {
   const fetchAllSongs = useCallback(async (): Promise<Song[]> => {
     if (!id) return [];
     
-    const PAGE_SIZE = 200;
+    const PAGE_SIZE = 1000; // Use max page size for bulk loading
     let allSongs: Song[] = [];
     let currentPage = 1;
     let hasMore = true;
