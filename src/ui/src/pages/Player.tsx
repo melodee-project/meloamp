@@ -673,25 +673,6 @@ export default function Player({ src }: { src: string }) {
                     </IconButton>
                   </Box>
                 </Box>
-                <Popover open={!!eqAnchor} anchorEl={eqAnchor} onClose={handleEqClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-                  <Box sx={{ p: 2, width: 300 }}>
-                    <Typography variant="subtitle2">{t('player.equalizer')}</Typography>
-                    {EQ_BANDS.map((freq, i) => (
-                      <Box key={freq} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <Typography sx={{ width: 50 }}>{freq}Hz</Typography>
-                        <Slider
-                          value={eqGains[i]}
-                          min={-12}
-                          max={12}
-                          step={0.5}
-                          onChange={(_, v) => handleEqChange(i, v as number)}
-                          sx={{ mx: 2, flex: 1 }}
-                        />
-                        <Typography sx={{ width: 30 }}>{eqGains[i]}dB</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Popover>
               </Box>
             </Box>
             {/* Right: Queue List */}
@@ -900,6 +881,26 @@ export default function Player({ src }: { src: string }) {
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         />
       </Box>
+      {/* Equalizer Popover - shared by fullscreen and main player bar */}
+      <Popover open={!!eqAnchor} anchorEl={eqAnchor} onClose={handleEqClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Box sx={{ p: 2, width: 300 }}>
+          <Typography variant="subtitle2">{t('player.equalizer')}</Typography>
+          {EQ_BANDS.map((freq, i) => (
+            <Box key={freq} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Typography sx={{ width: 50 }}>{freq}Hz</Typography>
+              <Slider
+                value={eqGains[i]}
+                min={-12}
+                max={12}
+                step={0.5}
+                onChange={(_, v) => handleEqChange(i, v as number)}
+                sx={{ mx: 2, flex: 1 }}
+              />
+              <Typography sx={{ width: 30 }}>{eqGains[i]}dB</Typography>
+            </Box>
+          ))}
+        </Box>
+      </Popover>
     </>
   );
 }

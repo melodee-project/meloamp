@@ -1,15 +1,75 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useRef, ReactElement } from 'react';
 import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button } from '@mui/material';
 import { Delete, DragIndicator } from '@mui/icons-material';
 import { useQueueStore, QueueState, Song } from '../queueStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { List as VirtualList } from 'react-window';
+import { List as VirtualList, RowComponentProps } from 'react-window';
 import './QueueView.css'; // <-- Add this import for custom CSS
 import { useTranslation } from 'react-i18next';
 
 // Threshold for enabling virtualization (for smaller lists, regular rendering is fine)
 const VIRTUALIZATION_THRESHOLD = 50;
 const ITEM_HEIGHT = 72; // Height of each queue item in pixels
+
+// Custom props passed to the virtualized row component via react-window v2 rowProps
+interface CustomRowProps {
+  queue: Song[];
+  playerCurrent: number;
+  playing: boolean;
+  removeFromQueue: (index: number) => void;
+  t: (key: string) => string;
+}
+
+// Virtualized row component for react-window v2
+// Uses RowComponentProps<CustomRowProps> which includes ariaAttributes, index, style + custom props
+function VirtualizedRow({ 
+  ariaAttributes, 
+  index, 
+  style, 
+  queue, 
+  playerCurrent, 
+  playing, 
+  removeFromQueue, 
+  t 
+}: RowComponentProps<CustomRowProps>): ReactElement {
+  const song = queue[index];
+  
+  // Return empty div if no song (should not happen, but satisfies type requirement)
+  if (!song) {
+    return <div style={style} {...ariaAttributes} />;
+  }
+  
+  return (
+    <div style={style} {...ariaAttributes}>
+      <ListItem
+        secondaryAction={
+          <IconButton edge="end" onClick={() => removeFromQueue(index)}><Delete /></IconButton>
+        }
+        className={song.played ? 'played-song' : 'unplayed-song'}
+        sx={{
+          mb: 0.5,
+          borderRadius: 2,
+          border: index === playerCurrent && playing ? '3px solid transparent' : '2px solid',
+          borderColor: index === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
+          fontWeight: song.played ? 400 : 700,
+          opacity: song.played ? 0.5 : 1,
+          background: index === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
+          height: ITEM_HEIGHT - 8,
+          transition: 'background 0.2s, opacity 0.2s',
+        }}
+      >
+        <ListItemAvatar>
+          <Avatar src={song.imageUrl} alt={song.title} />
+        </ListItemAvatar>
+        <ListItemText
+          primary={song.title}
+          secondary={song.artist?.name || t('queue.unknownArtist')}
+          primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
+        />
+      </ListItem>
+    </div>
+  );
+}
 
 export default function QueueView() {
   const queue = useQueueStore((state: QueueState) => state.queue);
@@ -79,42 +139,14 @@ export default function QueueView() {
   const useVirtualization = queue.length >= VIRTUALIZATION_THRESHOLD;
   const listContainerRef = useRef<HTMLDivElement>(null);
 
-  // Virtualized row renderer for react-window
-  const VirtualizedRow = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const song = queue[index];
-    if (!song) return null;
-    
-    return (
-      <div style={style}>
-        <ListItem
-          secondaryAction={
-            <IconButton edge="end" onClick={() => removeFromQueue(index)}><Delete /></IconButton>
-          }
-          className={song.played ? 'played-song' : 'unplayed-song'}
-          sx={{
-            mb: 0.5,
-            borderRadius: 2,
-            border: index === playerCurrent && playing ? '3px solid transparent' : '2px solid',
-            borderColor: index === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
-            fontWeight: song.played ? 400 : 700,
-            opacity: song.played ? 0.5 : 1,
-            background: index === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
-            height: ITEM_HEIGHT - 8,
-            transition: 'background 0.2s, opacity 0.2s',
-          }}
-        >
-          <ListItemAvatar>
-            <Avatar src={song.imageUrl} alt={song.title} />
-          </ListItemAvatar>
-          <ListItemText
-            primary={song.title}
-            secondary={song.artist?.name || t('queue.unknownArtist')}
-            primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
-          />
-        </ListItem>
-      </div>
-    );
-  }, [queue, playerCurrent, playing, removeFromQueue, t]);
+  // Props for the virtualized row component (react-window v2 uses rowProps)
+  const rowProps: CustomRowProps = {
+    queue,
+    playerCurrent,
+    playing,
+    removeFromQueue,
+    t
+  };
 
   // Regular draggable row for smaller lists
   const DraggableRow = ({ song, idx, provided }: { song: Song; idx: number; provided: any }) => (
@@ -169,16 +201,24 @@ export default function QueueView() {
         </Box>
       ) : useVirtualization ? (
         // Virtualized list for large queues (50+ songs) - no drag-drop for performance
-        <Box ref={listContainerRef} sx={{ mt: 2, height: 'calc(100vh - 300px)', minHeight: 400 }}>
-          <VirtualList
-            height={Math.min(600, queue.length * ITEM_HEIGHT)}
-            itemCount={queue.length}
-            itemSize={ITEM_HEIGHT}
-            width="100%"
+        <Box 
+          ref={listContainerRef} 
+          sx={{ 
+            mt: 2, 
+            height: Math.min(600, queue.length * ITEM_HEIGHT), 
+            minHeight: 400,
+            overflow: 'hidden'
+          }}
+        >
+          <VirtualList<CustomRowProps>
+            style={{ height: '100%', width: '100%' }}
+            defaultHeight={600}
+            rowCount={queue.length}
+            rowHeight={ITEM_HEIGHT}
             overscanCount={5}
-          >
-            {VirtualizedRow}
-          </VirtualList>
+            rowComponent={VirtualizedRow}
+            rowProps={rowProps}
+          />
         </Box>
       ) : (
         // Regular drag-drop list for smaller queues
