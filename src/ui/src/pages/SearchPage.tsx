@@ -78,10 +78,12 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
         songPage,
       };
       debugLog('SearchPage', 'Sending search request:', searchRequest);
-      api.post<SearchResultData>('/search', searchRequest)
+      api.post<{ data: SearchResultData }>('/search', searchRequest)
         .then((res) => {
           debugLog('SearchPage', 'Search response:', res.data);
-          setResults(res.data);
+          // The API wraps the response in a 'data' property
+          const searchResults = (res.data as any).data || res.data;
+          setResults(searchResults as SearchResultData);
           setLoading(false);
           // Update URL to reflect current search (replace to avoid history spam)
           try {

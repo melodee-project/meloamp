@@ -106,9 +106,19 @@ function createWindow() {
   // Enable DevTools (debug console) in development by default.
   // In packaged builds, opt-in via: MELOAMP_DEBUG_CONSOLE=1
   const debugConsoleEnabled = !app.isPackaged || process.env.MELOAMP_DEBUG_CONSOLE === '1';
+  
+  // Set icon path for taskbar/tray
+  let iconPath;
+  if (app.isPackaged) {
+    iconPath = path.join(process.resourcesPath, 'resources', 'logo.png');
+  } else {
+    iconPath = path.join(__dirname, 'resources', 'logo.png');
+  }
+  
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

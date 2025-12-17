@@ -50,6 +50,10 @@
       {
         "from": "build",
         "to": "build"
+      },
+      {
+        "from": "resources",
+        "to": "resources"
       }
     ]
   }

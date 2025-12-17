@@ -7,7 +7,7 @@ export default function MiniArtistCard({ artist }: { artist: Artist }) {
   return (
     <Card
       sx={{
-        width: 90,
+        width: 135,
         minWidth: 0,
         m: 1,
         p: 1,
@@ -23,10 +23,10 @@ export default function MiniArtistCard({ artist }: { artist: Artist }) {
       onClick={() => navigate(`/artists/${artist.id}`)}
       title={artist.name}
     >
-      <Box sx={{ width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+      <Box sx={{ width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
         <CardMedia
           component="img"
-          sx={{ width: 56, height: 56, objectFit: 'cover', borderRadius: '50%' }}
+          sx={{ width: 84, height: 84, objectFit: 'cover', borderRadius: '50%' }}
           image={artist.thumbnailUrl}
           alt={artist.name}
         />

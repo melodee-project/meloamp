@@ -163,10 +163,10 @@ export default function AlbumDetailView() {
       {/* Main content row: image, actions, meta */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: '100%', gap: 4 }}>
         {/* Left: Album image */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 220, flex: '0 0 220px', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 320, flex: '0 0 320px', gap: 2 }}>
           <CardMedia
             component="img"
-            sx={{ width: 200, height: 200, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
+            sx={{ width: 300, height: 300, objectFit: 'cover', borderRadius: 3, boxShadow: 2, mb: 1 }}
             image={album.imageUrl || album.thumbnailUrl}
           />
         </Box>
