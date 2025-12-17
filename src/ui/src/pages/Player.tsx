@@ -525,9 +525,9 @@ export default function Player({ src }: { src: string }) {
             <Box sx={{ width: 48 }} /> {/* Spacer for symmetry */}
           </Box>
           <Box sx={{ display: 'flex', flex: 1, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', justifyContent: 'center', gap: 4, p: { xs: 1, md: 4 }, height: '80vh', minHeight: 0 }}>
-            {/* Large Artwork */}
-            {queue[current]?.imageUrl && (
-              <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: { xs: '60vw', md: '70vh' }, height: { xs: '60vw', md: '70vh' }, maxHeight: '70vh', borderRadius: 4, objectFit: 'cover', boxShadow: 6, alignSelf: 'center' }} />
+            {/* Large Artwork - prefer album imageUrl for best quality */}
+            {(queue[current]?.album?.imageUrl || queue[current]?.imageUrl) && (
+              <Box component="img" src={queue[current].album?.imageUrl || queue[current].imageUrl} alt={queue[current].title} sx={{ width: { xs: '60vw', md: '70vh' }, height: { xs: '60vw', md: '70vh' }, maxHeight: '70vh', borderRadius: 4, objectFit: 'cover', boxShadow: 6, alignSelf: 'center' }} />
             )}
             {/* Song Info and Controls */}
             <Box sx={{

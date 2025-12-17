@@ -48,7 +48,11 @@ export function toQueueSong(song: ApiSong) {
     id: song.id,
     title: song.title,
     artist: song.artist ? { ...song.artist } : EMPTY_ARTIST,
-    album: song.album ? { ...song.album } : EMPTY_ALBUM,
+    album: song.album ? { 
+      ...song.album,
+      // Ensure imageUrl is preserved for full-screen display
+      imageUrl: song.album.imageUrl || song.album.thumbnailUrl 
+    } : EMPTY_ALBUM,
     imageUrl: song.imageUrl || song.thumbnailUrl,
     url: streamUrl,
   durationMs: song.durationMs,
