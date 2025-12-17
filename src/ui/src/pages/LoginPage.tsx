@@ -87,6 +87,9 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       const token = loginData.token;
       if (!token) throw new Error('Invalid response from authentication');
       setJwt(token);
+      // Store user in localStorage for persistence across app restarts (Electron)
+      localStorage.setItem('user', JSON.stringify(loginData.user));
+      // Also keep in sessionStorage for backward compatibility
       sessionStorage.setItem('user', JSON.stringify(loginData.user));
       if (loginData.serverVersion !== undefined && loginData.serverVersion !== null) {
         localStorage.setItem('apiVersion', loginData.serverVersion.toString());

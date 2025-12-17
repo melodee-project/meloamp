@@ -90,26 +90,27 @@ export interface Playlist {
 
 export interface SearchResultData {
   meta: Meta;
-  data: {
-    totalCount: number;
-    artists: Artist[];
-    totalArtists: number;
-    albums: Album[];
-    totalAlbums: number;
-    songs: Song[];
-    totalSongs: number;
-    playlists: Playlist[];
-    totalPlaylists: number;
-  }
+  totalCount: number;
+  artists: Artist[];
+  totalArtists: number;
+  albums: Album[];
+  totalAlbums: number;
+  songs: Song[];
+  totalSongs: number;
+  playlists: Playlist[];
+  totalPlaylists: number;
 }
 
 export interface SearchRequest {
   query: string;
   type?: 'artists' | 'albums' | 'songs' | 'playlists';
-  page?: number;
+  albumPage?: number;
+  artistPage?: number;
+  songPage?: number;
   pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  filterByArtistId?: string;
 };
 
 export interface LoginResponse {
@@ -143,6 +144,7 @@ export interface ServerInfo {
 }
 
 export interface LoginRequest {
+  userName?: string;
   email: string;
   password: string;
 }
@@ -156,8 +158,8 @@ export interface ScrobbleRequest {
   songId: string;
   playerName: 'MeloAmp';
   scrobbleType: ScrobbleType;
-  timestamp: number;
-  playbackDuration: number;
+  timestamp?: number;
+  playedDuration?: number;
 }
 
 export interface PaginatedResponse<T> {

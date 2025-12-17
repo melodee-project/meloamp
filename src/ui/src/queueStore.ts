@@ -27,6 +27,61 @@ export interface QueueState {
   playNow: (songs: Song | Song[]) => void;
 }
 
+// Debounced persistence to avoid blocking on every state change
+// This is critical for large playlists (1000+ songs)
+let persistTimeout: ReturnType<typeof setTimeout> | null = null;
+const PERSIST_DEBOUNCE_MS = 1000; // Wait 1 second after last change before persisting
+
+const debouncedPersist = (queue: Song[], current: number) => {
+  if (persistTimeout) {
+    clearTimeout(persistTimeout);
+  }
+  persistTimeout = setTimeout(() => {
+    try {
+      // Only store essential data to reduce storage size and serialization time
+      const minimalQueue = queue.map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: { id: song.artist?.id, name: song.artist?.name, imageUrl: song.artist?.imageUrl },
+        album: { id: song.album?.id, name: song.album?.name, imageUrl: song.album?.imageUrl, releaseYear: song.album?.releaseYear },
+        imageUrl: song.imageUrl,
+        url: song.url,
+        played: song.played,
+        durationMs: song.durationMs,
+        userRating: song.userRating,
+      }));
+      localStorage.setItem('queueState', JSON.stringify({ queue: minimalQueue, current }));
+      debugLog('QueueStore', `Persisted ${queue.length} songs to localStorage`);
+    } catch (e) {
+      console.warn('[QueueStore] Failed to persist queue:', e);
+    }
+  }, PERSIST_DEBOUNCE_MS);
+};
+
+// Immediate persist for critical operations (clear, playNow)
+const immediatePersist = (queue: Song[], current: number) => {
+  if (persistTimeout) {
+    clearTimeout(persistTimeout);
+    persistTimeout = null;
+  }
+  try {
+    const minimalQueue = queue.map(song => ({
+      id: song.id,
+      title: song.title,
+      artist: { id: song.artist?.id, name: song.artist?.name, imageUrl: song.artist?.imageUrl },
+      album: { id: song.album?.id, name: song.album?.name, imageUrl: song.album?.imageUrl, releaseYear: song.album?.releaseYear },
+      imageUrl: song.imageUrl,
+      url: song.url,
+      played: song.played,
+      durationMs: song.durationMs,
+      userRating: song.userRating,
+    }));
+    localStorage.setItem('queueState', JSON.stringify({ queue: minimalQueue, current }));
+  } catch (e) {
+    console.warn('[QueueStore] Failed to persist queue:', e);
+  }
+};
+
 export const useQueueStore = create<QueueState>((set: any, get: any) => {
   // Load initial state from localStorage
   let initialQueue: Song[] = [];
@@ -37,39 +92,34 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
     if (typeof saved.current === 'number') initialCurrent = saved.current;
   } catch {}
 
-  // Subscribe to changes and persist to localStorage
-  const persist = (queue: Song[], current: number) => {
-    localStorage.setItem('queueState', JSON.stringify({ queue, current }));
-  };
-
   const store: QueueState = {
     queue: initialQueue,
     current: initialCurrent,
     addToQueue: (song: Song) => set((state: QueueState) => {
       const newQueue = [...state.queue, song];
-      persist(newQueue, state.current);
+      debouncedPersist(newQueue, state.current);
       return { queue: newQueue };
     }),
     setQueue: (songs: Song[]) => set((state: QueueState) => {
       const newQueue = songs;
-      persist(newQueue, 0);
+      immediatePersist(newQueue, 0);
       return { queue: newQueue, current: 0 };
     }),
     removeFromQueue: (index: number) => set((state: QueueState) => {
       const newQueue = state.queue.filter((_: Song, i: number) => i !== index);
       const newCurrent = Math.max(0, Math.min(state.current, newQueue.length - 1));
-      persist(newQueue, newCurrent);
+      debouncedPersist(newQueue, newCurrent);
       return { queue: newQueue, current: newCurrent };
     }),
     reorderQueue: (from: number, to: number) => set((state: QueueState) => {
       const q = [...state.queue];
       const [item] = q.splice(from, 1);
       q.splice(to, 0, item);
-      persist(q, state.current);
+      debouncedPersist(q, state.current);
       return { queue: q };
     }),
     clearQueue: () => set((state: QueueState) => {
-      persist([], 0);
+      immediatePersist([], 0);
       return { queue: [], current: 0 };
     }),
     updateSong: (index: number, patch: Partial<Song>) => set((state: QueueState) => {
@@ -77,7 +127,7 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       if (q[index]) {
         q[index] = { ...q[index], ...patch };
       }
-      persist(q, state.current);
+      debouncedPersist(q, state.current);
       return { queue: q };
     }),
     setCurrent: (index: number) => set((state: QueueState) => {
@@ -86,7 +136,7 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       if (index > state.current && queue[state.current]) {
         queue[state.current] = { ...queue[state.current], played: true };
       }
-      persist(queue, index);
+      debouncedPersist(queue, index);
       return { queue, current: index };
     }),
     playNow: (songs: Song | Song[]) => {
@@ -107,7 +157,7 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
         } : null
       });
       set({ queue: newQueue, current: 0 });
-      persist(newQueue, 0);
+      immediatePersist(newQueue, 0);
     },
   };
   return store;

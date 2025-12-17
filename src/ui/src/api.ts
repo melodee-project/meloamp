@@ -13,6 +13,9 @@ export function setJwt(token: string) {
 export function clearJwt() {
   jwt = null;
   localStorage.removeItem('jwt');
+  // Also clear user data on logout to ensure clean state
+  localStorage.removeItem('user');
+  sessionStorage.removeItem('user');
 }
 
 export function getJwt(): string | null {

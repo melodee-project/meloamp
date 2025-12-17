@@ -5,10 +5,13 @@ import { useQueueStore } from '../queueStore';
 import api from '../api';
 import { ScrobbleRequest, ScrobbleType } from '../apiModels';
 import { useTranslation } from 'react-i18next';
-import { debugLog, debugError } from '../debug';
+import { debugLog, debugError, isDebugEnabled } from '../debug';
 
 // Simple equalizer bands
 const EQ_BANDS = [60, 170, 350, 1000, 3500, 10000];
+
+// Throttle progress updates to reduce re-renders (update UI max 4x per second)
+const PROGRESS_UPDATE_INTERVAL_MS = 250;
 
 export default function Player({ src }: { src: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -17,8 +20,6 @@ export default function Player({ src }: { src: string }) {
   const [duration, setDuration] = useState(0);
   const [eqAnchor, setEqAnchor] = useState<null | HTMLElement>(null);
   const [eqGains, setEqGains] = useState<number[]>(Array(EQ_BANDS.length).fill(0));
-  const [scrobbled, setScrobbled] = useState(false);
-  const [scrobbledPlayed, setScrobbledPlayed] = useState(false); // Track if PLAYED scrobble sent
   const [volume, setVolume] = useState(1);
   const [favorite, setFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
@@ -26,6 +27,12 @@ export default function Player({ src }: { src: string }) {
   const [ratingLoading, setRatingLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  
+  // Ref to track last progress update time for throttling
+  const lastProgressUpdateRef = useRef<number>(0);
+  // Ref to store actual progress for scrobbling without causing re-renders
+  const progressRef = useRef<number>(0);
+  
   const queue = useQueueStore((state: any) => state.queue);
   const current = useQueueStore((state: any) => state.current);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
@@ -87,61 +94,80 @@ export default function Player({ src }: { src: string }) {
     // eslint-disable-next-line
   }, [src, eqGains]);
 
-  // Scrobbling logic
+  // Scrobbling logic - optimized to avoid running on every progress tick
+  // Use refs to track scrobble state without triggering re-renders
+  const scrobbleStateRef = useRef({ scrobbled: false, scrobbledPlayed: false, lastSongId: '' });
+  
+  // Use an interval for scrobble checks instead of reacting to every progress change
+  // This dramatically reduces the number of effect runs for long playback sessions
   useEffect(() => {
-    if (!audioRef.current) return;
     if (!queue[current]) return;
     
-    debugLog('Player', `Scrobble check: progress=${progress.toFixed(2)}s, duration=${duration.toFixed(2)}s, scrobbled=${scrobbled}, scrobbledPlayed=${scrobbledPlayed}`);
+    const songId = queue[current].id;
     
-    const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
-      songId: queue[current].id,
-      playerName: 'MeloAmp',
-      timestamp: Date.now(),
-      playbackDuration: Math.floor(progress * 1000), // Convert seconds to milliseconds
-    };
-    // Only scrobble NOW_PLAYING once
-    if (!scrobbled && progress > 10) {
-      const nowPlayingScrobble = {
-        ...baseScrobble,
-        scrobbleType: ScrobbleType.NOW_PLAYING,
-      } as ScrobbleRequest;
-      
-      debugLog('Player', 'Sending NOW_PLAYING scrobble:', nowPlayingScrobble);
-      api.post('/scrobble', nowPlayingScrobble)
-        .then(() => {
-          debugLog('Player', 'NOW_PLAYING scrobble sent successfully');
-        })
-        .catch((error) => {
-          debugError('Player', 'Failed to send NOW_PLAYING scrobble:', error);
-        });
-      setScrobbled(true);
+    // Reset scrobble state when song changes
+    if (scrobbleStateRef.current.lastSongId !== songId) {
+      scrobbleStateRef.current = { scrobbled: false, scrobbledPlayed: false, lastSongId: songId };
     }
-    // Only scrobble PLAYED once
-    const playedThreshold = duration * 0.7;
-    if (!scrobbledPlayed && progress > playedThreshold) {
-      const playedScrobble = {
-        ...baseScrobble,
-        scrobbleType: ScrobbleType.PLAYED,
-      } as ScrobbleRequest;
+    
+    // Check scrobble conditions every 2 seconds instead of on every progress update
+    const scrobbleCheckInterval = setInterval(() => {
+      if (!audioRef.current) return;
       
-      debugLog('Player', `Sending PLAYED scrobble (progress: ${progress.toFixed(2)}s > threshold: ${playedThreshold.toFixed(2)}s):`, playedScrobble);
-      api.post('/scrobble', playedScrobble)
-        .then(() => {
-          debugLog('Player', 'PLAYED scrobble sent successfully');
-        })
-        .catch((error) => {
-          debugError('Player', 'Failed to send PLAYED scrobble:', error);
-        });
-      setScrobbledPlayed(true);
-    }
-  }, [progress, duration, queue, current, scrobbled, scrobbledPlayed]);
-
-  // Reset scrobble flags when song changes
-  useEffect(() => {
-    setScrobbled(false);
-    setScrobbledPlayed(false);
-  }, [current, src]);
+      const currentProgress = progressRef.current;
+      const currentDuration = audioRef.current.duration || 0;
+      
+      // Skip if both scrobbles already sent
+      if (scrobbleStateRef.current.scrobbled && scrobbleStateRef.current.scrobbledPlayed) {
+        return;
+      }
+      
+      // Only log in debug mode to avoid performance impact
+      if (isDebugEnabled()) {
+        debugLog('Player', `Scrobble check: progress=${currentProgress.toFixed(2)}s, duration=${currentDuration.toFixed(2)}s`);
+      }
+      
+      const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
+        songId: queue[current].id,
+        playerName: 'MeloAmp',
+        timestamp: Date.now(),
+        playedDuration: Math.floor(currentProgress * 1000), // Convert seconds to milliseconds
+      };
+      
+      // Only scrobble NOW_PLAYING once (after 10 seconds)
+      if (!scrobbleStateRef.current.scrobbled && currentProgress > 10) {
+        scrobbleStateRef.current.scrobbled = true;
+        
+        const nowPlayingScrobble = {
+          ...baseScrobble,
+          scrobbleType: ScrobbleType.NOW_PLAYING,
+        } as ScrobbleRequest;
+        
+        debugLog('Player', 'Sending NOW_PLAYING scrobble:', nowPlayingScrobble);
+        api.post('/scrobble', nowPlayingScrobble)
+          .then(() => debugLog('Player', 'NOW_PLAYING scrobble sent successfully'))
+          .catch((error) => debugError('Player', 'Failed to send NOW_PLAYING scrobble:', error));
+      }
+      
+      // Only scrobble PLAYED once (after 70% of song)
+      const playedThreshold = currentDuration * 0.7;
+      if (!scrobbleStateRef.current.scrobbledPlayed && currentDuration > 0 && currentProgress > playedThreshold) {
+        scrobbleStateRef.current.scrobbledPlayed = true;
+        
+        const playedScrobble = {
+          ...baseScrobble,
+          scrobbleType: ScrobbleType.PLAYED,
+        } as ScrobbleRequest;
+        
+        debugLog('Player', `Sending PLAYED scrobble (progress: ${currentProgress.toFixed(2)}s > threshold: ${playedThreshold.toFixed(2)}s)`);
+        api.post('/scrobble', playedScrobble)
+          .then(() => debugLog('Player', 'PLAYED scrobble sent successfully'))
+          .catch((error) => debugError('Player', 'Failed to send PLAYED scrobble:', error));
+      }
+    }, 2000); // Check every 2 seconds
+    
+    return () => clearInterval(scrobbleCheckInterval);
+  }, [queue, current]); // Only re-run when song changes, not on progress
 
   // Auto-play when src changes
   useEffect(() => {
@@ -752,7 +778,17 @@ export default function Player({ src }: { src: string }) {
           ref={audioRef}
           src={queue[current]?.url || ''}
           crossOrigin="anonymous"
-          onTimeUpdate={e => setProgress((e.target as HTMLAudioElement).currentTime)}
+          onTimeUpdate={e => {
+            const currentTime = (e.target as HTMLAudioElement).currentTime;
+            // Always update the ref for scrobbling accuracy
+            progressRef.current = currentTime;
+            // Throttle UI updates to reduce re-renders
+            const now = Date.now();
+            if (now - lastProgressUpdateRef.current >= PROGRESS_UPDATE_INTERVAL_MS) {
+              lastProgressUpdateRef.current = now;
+              setProgress(currentTime);
+            }
+          }}
           onLoadedMetadata={e => {
             const audio = e.target as HTMLAudioElement;
             debugLog('Player Audio', 'loadedmetadata:', {

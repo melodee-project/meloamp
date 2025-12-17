@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button } from '@mui/material';
 import { Delete, DragIndicator } from '@mui/icons-material';
-import { useQueueStore, QueueState } from '../queueStore';
+import { useQueueStore, QueueState, Song } from '../queueStore';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { List as VirtualList } from 'react-window';
 import './QueueView.css'; // <-- Add this import for custom CSS
 import { useTranslation } from 'react-i18next';
+
+// Threshold for enabling virtualization (for smaller lists, regular rendering is fine)
+const VIRTUALIZATION_THRESHOLD = 50;
+const ITEM_HEIGHT = 72; // Height of each queue item in pixels
 
 export default function QueueView() {
   const queue = useQueueStore((state: QueueState) => state.queue);
@@ -70,12 +75,89 @@ export default function QueueView() {
       : `${m}:${s.toString().padStart(2, '0')}`;
   }
 
+  // Use virtualization for large lists (50+ songs)
+  const useVirtualization = queue.length >= VIRTUALIZATION_THRESHOLD;
+  const listContainerRef = useRef<HTMLDivElement>(null);
+
+  // Virtualized row renderer for react-window
+  const VirtualizedRow = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const song = queue[index];
+    if (!song) return null;
+    
+    return (
+      <div style={style}>
+        <ListItem
+          secondaryAction={
+            <IconButton edge="end" onClick={() => removeFromQueue(index)}><Delete /></IconButton>
+          }
+          className={song.played ? 'played-song' : 'unplayed-song'}
+          sx={{
+            mb: 0.5,
+            borderRadius: 2,
+            border: index === playerCurrent && playing ? '3px solid transparent' : '2px solid',
+            borderColor: index === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
+            fontWeight: song.played ? 400 : 700,
+            opacity: song.played ? 0.5 : 1,
+            background: index === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
+            height: ITEM_HEIGHT - 8,
+            transition: 'background 0.2s, opacity 0.2s',
+          }}
+        >
+          <ListItemAvatar>
+            <Avatar src={song.imageUrl} alt={song.title} />
+          </ListItemAvatar>
+          <ListItemText
+            primary={song.title}
+            secondary={song.artist?.name || t('queue.unknownArtist')}
+            primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
+          />
+        </ListItem>
+      </div>
+    );
+  }, [queue, playerCurrent, playing, removeFromQueue, t]);
+
+  // Regular draggable row for smaller lists
+  const DraggableRow = ({ song, idx, provided }: { song: Song; idx: number; provided: any }) => (
+    <ListItem 
+      ref={provided.innerRef} 
+      {...provided.draggableProps} 
+      secondaryAction={
+        <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
+      }
+      className={song.played ? 'played-song' : 'unplayed-song'}
+      sx={{
+        mb: 1,
+        borderRadius: 2,
+        border: idx === playerCurrent && playing ? '3px solid transparent' : '2px solid',
+        borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
+        fontWeight: song.played ? 400 : 700,
+        opacity: song.played ? 0.5 : 1,
+        background: idx === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
+        position: 'relative',
+        zIndex: idx === playerCurrent ? 1 : 'auto',
+        bgcolor: song.played ? 'background.paper' : (idx > 0 && !queue[idx-1].played ? 'background.default' : 'background.paper'),
+        transition: 'background 0.2s, opacity 0.2s',
+      }}
+    >
+      <span {...provided.dragHandleProps}><DragIndicator /></span>
+      <ListItemAvatar>
+        <Avatar src={song.imageUrl} alt={song.title} />
+      </ListItemAvatar>
+      <ListItemText 
+        primary={song.title} 
+        secondary={song.artist?.name || t('queue.unknownArtist')} 
+        primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
+      />
+    </ListItem>
+  );
+
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 2 }}>{t('queue.title')}</Typography>
       <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
         {queue.length} song{queue.length === 1 ? '' : 's'}
         {queue.length > 0 ? ` • ${formatMs(totalDuration)}` : ''}
+        {useVirtualization && <span> • Virtualized for performance</span>}
       </Typography>
       <Button onClick={clearQueue} color="error" sx={{ mr: 2 }}>{t('queue.clear')}</Button>
       <Button onClick={shuffleQueue} sx={{ mr: 2 }}>{t('queue.shuffle')}</Button>
@@ -85,51 +167,28 @@ export default function QueueView() {
         <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary', fontSize: 24 }}>
           No Songs
         </Box>
+      ) : useVirtualization ? (
+        // Virtualized list for large queues (50+ songs) - no drag-drop for performance
+        <Box ref={listContainerRef} sx={{ mt: 2, height: 'calc(100vh - 300px)', minHeight: 400 }}>
+          <VirtualList
+            height={Math.min(600, queue.length * ITEM_HEIGHT)}
+            itemCount={queue.length}
+            itemSize={ITEM_HEIGHT}
+            width="100%"
+            overscanCount={5}
+          >
+            {VirtualizedRow}
+          </VirtualList>
+        </Box>
       ) : (
+        // Regular drag-drop list for smaller queues
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="queue">
             {(provided: any) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
-                {queue.map((song: any, idx: number) => (
+                {queue.map((song: Song, idx: number) => (
                   <Draggable key={song.id} draggableId={song.id.toString()} index={idx}>
-                    {(provided: any) => (
-                      <ListItem 
-                        ref={provided.innerRef} 
-                        {...provided.draggableProps} 
-                        secondaryAction={
-                          <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
-                        }
-                        className={
-                          // Remove rainbow-border-playing class
-                          song.played
-                            ? 'played-song'
-                            : 'unplayed-song'
-                        }
-                        sx={{
-                          mb: 1,
-                          borderRadius: 2,
-                          border: idx === playerCurrent && playing ? '3px solid transparent' : '2px solid',
-                          borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
-                          fontWeight: song.played ? 400 : 700,
-                          opacity: song.played ? 0.5 : 1,
-                          background: idx === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
-                          position: 'relative',
-                          zIndex: idx === playerCurrent ? 1 : 'auto',
-                          bgcolor: song.played ? 'background.paper' : (idx > 0 && !queue[idx-1].played ? 'background.default' : 'background.paper'),
-                          transition: 'background 0.2s, opacity 0.2s',
-                        }}
-                      >
-                        <span {...provided.dragHandleProps}><DragIndicator /></span>
-                        <ListItemAvatar>
-                          <Avatar src={song.imageUrl} alt={song.title} />
-                        </ListItemAvatar>
-                        <ListItemText 
-                          primary={song.title} 
-                          secondary={song.artist?.name || t('queue.unknownArtist')} 
-                          primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
-                        />
-                      </ListItem>
-                    )}
+                    {(provided: any) => <DraggableRow song={song} idx={idx} provided={provided} />}
                   </Draggable>
                 ))}
                 {provided.placeholder}

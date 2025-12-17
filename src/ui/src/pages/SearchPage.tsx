@@ -76,7 +76,6 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
         artistPage,
         albumPage,
         songPage,
-        playlistPage,
       };
       debugLog('SearchPage', 'Sending search request:', searchRequest);
       api.post<SearchResultData>('/search', searchRequest)
@@ -102,7 +101,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     return () => {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
-  }, [search, artistPage, albumPage, songPage, playlistPage, location.pathname, navigate]);
+  }, [search, artistPage, albumPage, songPage, location.pathname, navigate]);
 
   // Reset pages when search changes
   useEffect(() => {
@@ -140,96 +139,96 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
       {results && (
         <Box sx={{ mt: 4 }}>
           {/* Artists Grid */}
-          {results.data.artists?.length > 0 && (
+          {results.artists?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.artists', 'Artists')}</Typography>
-              {((results.data.totalArtists ?? results.data.artists.length) > pageSize) && (
+              {((results.totalArtists ?? results.artists.length) > pageSize) && (
                 <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
                   from: (artistPage - 1) * pageSize + 1,
-                  to: Math.min(artistPage * pageSize, results.data.totalArtists ?? results.data.artists.length),
-                  total: results.data.totalArtists ?? results.data.artists.length
+                  to: Math.min(artistPage * pageSize, results.totalArtists ?? results.artists.length),
+                  total: results.totalArtists ?? results.artists.length
                 })}</Typography>
               )}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
-                {results.data.artists.map((a: Artist) => (
+                {results.artists.map((a: Artist) => (
                   <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
                     <ArtistCard artist={a} />
                   </Box>
                 ))}
               </Box>
-              {((results.data.totalArtists ?? results.data.artists.length) > pageSize) && (
+              {((results.totalArtists ?? results.artists.length) > pageSize) && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 1 }}>
                   <Button size="small" disabled={artistPage === 1} onClick={() => setArtistPage(p => Math.max(1, p - 1))}>{t('common.back', 'Back')}</Button>
-                  <Button size="small" disabled={artistPage * pageSize >= (results.data.totalArtists ?? results.data.artists.length)} onClick={() => setArtistPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
+                  <Button size="small" disabled={artistPage * pageSize >= (results.totalArtists ?? results.artists.length)} onClick={() => setArtistPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
                 </Box>
               )}
             </Box>
           )}
           {/* Albums Grid */}
-          {results.data.albums?.length > 0 && (
+          {results.albums?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.albums', 'Albums')}</Typography>
-              {((results.data.totalAlbums ?? results.data.albums.length) > pageSize) && (
+              {((results.totalAlbums ?? results.albums.length) > pageSize) && (
                 <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
                   from: (albumPage - 1) * pageSize + 1,
-                  to: Math.min(albumPage * pageSize, results.data.totalAlbums ?? results.data.albums.length),
-                  total: results.data.totalAlbums ?? results.data.albums.length
+                  to: Math.min(albumPage * pageSize, results.totalAlbums ?? results.albums.length),
+                  total: results.totalAlbums ?? results.albums.length
                 })}</Typography>
               )}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
-                {results.data.albums.map((a: Album) => (
+                {results.albums.map((a: Album) => (
                   <Box key={a.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
                     <AlbumCard album={a} />
                   </Box>
                 ))}
               </Box>
-              {((results.data.totalAlbums ?? results.data.albums.length) > pageSize) && (
+              {((results.totalAlbums ?? results.albums.length) > pageSize) && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 1 }}>
                   <Button size="small" disabled={albumPage === 1} onClick={() => setAlbumPage(p => Math.max(1, p - 1))}>{t('common.back', 'Back')}</Button>
-                  <Button size="small" disabled={albumPage * pageSize >= (results.data.totalAlbums ?? results.data.albums.length)} onClick={() => setAlbumPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
+                  <Button size="small" disabled={albumPage * pageSize >= (results.totalAlbums ?? results.albums.length)} onClick={() => setAlbumPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
                 </Box>
               )}
             </Box>
           )}
           {/* Songs Grid */}
-          {results.data.songs?.length > 0 && (
+          {results.songs?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.songs', 'Songs')}</Typography>
-              {((results.data.totalSongs ?? results.data.songs.length) > pageSize) && (
+              {((results.totalSongs ?? results.songs.length) > pageSize) && (
                 <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
                   from: (songPage - 1) * pageSize + 1,
-                  to: Math.min(songPage * pageSize, results.data.totalSongs ?? results.data.songs.length),
-                  total: results.data.totalSongs ?? results.data.songs.length
+                  to: Math.min(songPage * pageSize, results.totalSongs ?? results.songs.length),
+                  total: results.totalSongs ?? results.songs.length
                 })}</Typography>
               )}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
-                {results.data.songs.map((s: Song) => (
+                {results.songs.map((s: Song) => (
                   <Box key={s.id} sx={{ width: 300, minWidth: 300, maxWidth: 300, display: 'flex', justifyContent: 'center' }}>
                     <SongCard song={s} />
                   </Box>
                 ))}
               </Box>
-              {((results.data.totalSongs ?? results.data.songs.length) > pageSize) && (
+              {((results.totalSongs ?? results.songs.length) > pageSize) && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 1 }}>
                   <Button size="small" disabled={songPage === 1} onClick={() => setSongPage(p => Math.max(1, p - 1))}>{t('common.back', 'Back')}</Button>
-                  <Button size="small" disabled={songPage * pageSize >= (results.data.totalSongs ?? results.data.songs.length)} onClick={() => setSongPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
+                  <Button size="small" disabled={songPage * pageSize >= (results.totalSongs ?? results.songs.length)} onClick={() => setSongPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
                 </Box>
               )}
             </Box>
           )}
           {/* Playlists Grid */}
-          {results.data.playlists?.length > 0 && (
+          {results.playlists?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.playlists', 'Playlists')}</Typography>
-              {((results.data.totalPlaylists ?? results.data.playlists.length) > pageSize) && (
+              {((results.totalPlaylists ?? results.playlists.length) > pageSize) && (
                 <Typography variant="body2" sx={{ mb: 1 }}>{t('common.viewing', {
                   from: (playlistPage - 1) * pageSize + 1,
-                  to: Math.min(playlistPage * pageSize, results.data.totalPlaylists ?? results.data.playlists.length),
-                  total: results.data.totalPlaylists ?? results.data.playlists.length
+                  to: Math.min(playlistPage * pageSize, results.totalPlaylists ?? results.playlists.length),
+                  total: results.totalPlaylists ?? results.playlists.length
                 })}</Typography>
               )}
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
-                {results.data.playlists.map((p: Playlist) => (
+                {results.playlists.map((p: Playlist) => (
                   <Box key={p.id} sx={{ flex: '1 1 250px', maxWidth: 350, minWidth: 220, display: 'flex', justifyContent: 'center' }}>
                     <ListItem disableGutters sx={{ width: '100%' }}>
                       <ListItemText primary={p.name} secondary={t('search.playlist')} />
@@ -237,10 +236,10 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
                   </Box>
                 ))}
               </Box>
-              {((results.data.totalPlaylists ?? results.data.playlists.length) > pageSize) && (
+              {((results.totalPlaylists ?? results.playlists.length) > pageSize) && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, gap: 1 }}>
                   <Button size="small" disabled={playlistPage === 1} onClick={() => setPlaylistPage(p => Math.max(1, p - 1))}>{t('common.back', 'Back')}</Button>
-                  <Button size="small" disabled={playlistPage * pageSize >= (results.data.totalPlaylists ?? results.data.playlists.length)} onClick={() => setPlaylistPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
+                  <Button size="small" disabled={playlistPage * pageSize >= (results.totalPlaylists ?? results.playlists.length)} onClick={() => setPlaylistPage(p => p + 1)}>{t('common.next', 'Next')}</Button>
                 </Box>
               )}
             </Box>

@@ -151,12 +151,12 @@ export enum ScrobbleType {
 }
 
 // Request model posted when creating a scrobble event while playing a song.
-export interface ScrobbleResut {
+export interface ScrobbleRequest {
 	songId: string;
-	playerName: "Meloamp";
+	playerName: "MeloAmp";
 	scrobbleType: ScrobbleType;
-	timestamp: number; // Unix timestamp in milliseconds
-	playbackDuration: number; // Duration of the song played in milliseconds, when "played" this is used, can be 0 or null when "nowPlaying"
+	timestamp?: number; // Unix timestamp in milliseconds
+	playedDuration?: number; // Duration of the song played in milliseconds, when "played" this is used, can be 0 or null when "nowPlaying"
 }
 ```
 

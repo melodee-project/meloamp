@@ -197,6 +197,10 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
   const [user, setUser] = React.useState(() => {
     try {
+      // Try localStorage first (persists across Electron app restarts)
+      const persistedUser = localStorage.getItem('user');
+      if (persistedUser) return JSON.parse(persistedUser);
+      // Fallback to sessionStorage for backward compatibility
       return JSON.parse(sessionStorage.getItem('user') || 'null');
     } catch {
       return null;
@@ -226,31 +230,54 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
-  // Always load user from sessionStorage on mount and when authentication changes
+  // Always load user from storage on mount and when authentication changes
+  // Also validates the JWT token is still valid by fetching user profile
   React.useEffect(() => {
     const loadUser = async () => {
       try {
-        const storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
-        if (storedUser) {
-          setUser(storedUser);
-          return;
+        // First check localStorage (persistent across Electron restarts)
+        let storedUser = null;
+        try {
+          storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+        } catch {}
+        
+        // Fallback to sessionStorage
+        if (!storedUser) {
+          try {
+            storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
+          } catch {}
         }
-        // If there's a JWT but no session user, attempt to fetch the profile from the API
-        if (localStorage.getItem('jwt')) {
+        
+        // If there's a JWT, validate it by fetching the user profile
+        const jwt = localStorage.getItem('jwt');
+        if (jwt) {
           try {
             const res: any = await apiRequest('/users/me');
-            // apiRequest returns an object with `data`
             const userFromApi = res && res.data ? res.data : null;
             if (userFromApi) {
+              // Token is valid, update stored user data
+              localStorage.setItem('user', JSON.stringify(userFromApi));
               sessionStorage.setItem('user', JSON.stringify(userFromApi));
               setUser(userFromApi);
               return;
             }
-          } catch (e) {
-            // If fetching the profile fails, clear stored user state but keep jwt handling to other logic
+          } catch (e: any) {
+            // If 401, token is expired - this will be handled by axios interceptor
+            // For other errors, use cached user if available
+            if (e?.response?.status !== 401 && storedUser) {
+              setUser(storedUser);
+              return;
+            }
             console.error('Failed to fetch user profile', e);
           }
         }
+        
+        // Use cached user if available and no JWT validation needed
+        if (storedUser && !jwt) {
+          setUser(storedUser);
+          return;
+        }
+        
         setUser(null);
       } catch {
         setUser(null);
@@ -271,9 +298,14 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   if (!isAuthenticated) {
     return <LoginPage onLogin={() => {
       setIsAuthenticated(true);
-      // Update user state after login
+      // Update user state after login (check localStorage first, then sessionStorage)
       try {
-        setUser(JSON.parse(sessionStorage.getItem('user') || 'null'));
+        const persistedUser = localStorage.getItem('user');
+        if (persistedUser) {
+          setUser(JSON.parse(persistedUser));
+        } else {
+          setUser(JSON.parse(sessionStorage.getItem('user') || 'null'));
+        }
       } catch {
         setUser(null);
       }
