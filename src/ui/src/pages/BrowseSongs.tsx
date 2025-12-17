@@ -26,14 +26,14 @@ export default function BrowseSongs() {
   }, [page]);
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>{t('nav.songs')}</Typography>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
           <CircularProgress />
         </Box>
       ) : (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
           {songs.map((song) => (
             <Box key={song.id} sx={{ flex: '1 1 250px', maxWidth: 350, minWidth: 220, display: 'flex', justifyContent: 'center' }}>
               <SongCard song={song} />

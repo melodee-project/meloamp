@@ -1,3 +1,4 @@
+import { debugLog, debugError } from '../debug';
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, InputAdornment, IconButton, CircularProgress, Button, ListItem, ListItemText } from '@mui/material';
 import { Search } from '@mui/icons-material';
@@ -58,13 +59,13 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
 
   // Debounced search effect
   useEffect(() => {
-    console.log('[SearchPage] Search effect triggered, search:', search);
+    debugLog('SearchPage', 'Search effect triggered, search:', search);
   if (!search) {
-      console.log('[SearchPage] Search is empty, clearing results');
+      debugLog('SearchPage', 'Search is empty, clearing results');
       setResults(null);
       return;
     }
-    console.log('[SearchPage] Search has value, starting API call process');
+    debugLog('SearchPage', 'Search has value, starting API call process');
     setLoading(true);
     setError('');
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
@@ -77,10 +78,10 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
         songPage,
         playlistPage,
       };
-      console.log('[SearchPage] Sending search request:', searchRequest);
+      debugLog('SearchPage', 'Sending search request:', searchRequest);
       api.post<SearchResultData>('/search', searchRequest)
         .then((res) => {
-          console.log('[SearchPage] Search response:', res.data);
+          debugLog('SearchPage', 'Search response:', res.data);
           setResults(res.data);
           setLoading(false);
           // Update URL to reflect current search (replace to avoid history spam)
@@ -92,8 +93,8 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           }
         })
         .catch((error) => {
-          console.error('[SearchPage] Search error:', error);
-          console.error('[SearchPage] Error response:', error.response?.data);
+          debugError('SearchPage', 'Search error:', error);
+          debugError('SearchPage', 'Error response:', error.response?.data);
           setError(`Search failed: ${error.response?.data?.message || error.message}`);
           setLoading(false);
         });
@@ -112,27 +113,27 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   }, [search]);
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
+    <Box sx={{ p: 3 }}>
       <Box sx={{ position: 'relative' }}>
         <TextField
-        fullWidth
-        placeholder={t('search.placeholder')}
-        value={search}
-        onChange={e => {
-          console.log('[SearchPage] Search input changed:', e.target.value);
-          setSearch(e.target.value);
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <IconButton disabled>
-                <Search />
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
-  </Box>
+          fullWidth
+          placeholder={t('search.placeholder')}
+          value={search}
+          onChange={e => {
+            debugLog('SearchPage', 'Search input changed:', e.target.value);
+            setSearch(e.target.value);
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <IconButton disabled>
+                  <Search />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
       {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>{t('common.close', 'Close')}</Button>}
       {loading && <CircularProgress sx={{ mt: 2 }} />}
       {error && <Typography color="error" sx={{ mt: 2 }}>{t('search.error', { error })}</Typography>}

@@ -1,3 +1,4 @@
+import { debugLog, debugError } from '../debug';
 import React from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, IconButton, Tooltip, Stack } from '@mui/material';
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, QueueMusic, SkipNext } from '@mui/icons-material';
@@ -6,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from './toQueueSong';
 import { useTranslation } from 'react-i18next';
+import api from '../api';
 
 interface SongCardProps {
   song: Song;
@@ -26,6 +28,12 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
   // Play now: clear queue, add song, set current
   const handlePlayNow = (e: React.MouseEvent) => {
     e.stopPropagation();
+    debugLog('SongCard', 'Play now clicked:', {
+      songId: song.id,
+      title: song.title,
+      streamUrl: song.streamUrl,
+      hasStreamUrl: !!song.streamUrl
+    });
     playNow(toQueueSong(song));
   };
 
@@ -42,17 +50,39 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
   };
 
   // Toggle favorite
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setFavorite((prev) => !prev);
-    // TODO: Call API to update favorite
+    const newVal = !favorite;
+    try {
+      debugLog('SongCard', ` Toggling favorite for song ${song.id} to ${newVal}`);
+      await api.post(`/songs/starred/${song.id}/${newVal}`);
+      setFavorite(newVal);
+      // If starring, clear hated state
+      if (newVal && hated) {
+        setHated(false);
+      }
+      debugLog('SongCard', ` Favorite updated successfully`);
+    } catch (err) {
+      debugError('SongCard', 'Failed to update favorite:', err);
+    }
   };
 
   // Toggle hated
-  const handleToggleHated = (e: React.MouseEvent) => {
+  const handleToggleHated = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setHated((prev) => !prev);
-    // TODO: Call API to update hated
+    const newVal = !hated;
+    try {
+      debugLog('SongCard', ` Toggling hated for song ${song.id} to ${newVal}`);
+      await api.post(`/songs/hated/${song.id}/${newVal}`);
+      setHated(newVal);
+      // If hating, clear favorite
+      if (newVal && favorite) {
+        setFavorite(false);
+      }
+      debugLog('SongCard', ` Hated updated successfully`);
+    } catch (err) {
+      debugError('SongCard', 'Failed to update hated:', err);
+    }
   };
 
   return (

@@ -1,3 +1,4 @@
+import { debugLog } from './debug';
 import { create } from 'zustand/react';
 import { Artist, Album } from './apiModels';
 
@@ -95,6 +96,16 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       } else {
         newQueue = [songs];
       }
+      debugLog('QueueStore', 'playNow called:', {
+        isArray: Array.isArray(songs),
+        queueLength: newQueue.length,
+        firstSong: newQueue[0] ? {
+          id: newQueue[0].id,
+          title: newQueue[0].title,
+          url: newQueue[0].url,
+          hasUrl: !!newQueue[0].url
+        } : null
+      });
       set({ queue: newQueue, current: 0 });
       persist(newQueue, 0);
     },

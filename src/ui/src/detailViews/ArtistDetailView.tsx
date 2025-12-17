@@ -1,3 +1,4 @@
+import { debugLog, debugError } from '../debug';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, Chip, Stack, IconButton, Tooltip } from '@mui/material';
@@ -27,7 +28,7 @@ export default function ArtistDetailView() {
     setError(null);
     Promise.all([
       apiRequest(`/artists/${id}`),
-      apiRequest(`/artists/${id}/albums`)
+      apiRequest(`/artists/${id}/albums`, { params: { page: 1, pageSize: 100 } })
     ])
       .then(([artistRes, albumsRes]) => {
         setArtist(artistRes.data as Artist);
@@ -43,11 +44,14 @@ export default function ArtistDetailView() {
     if (!artist) return;
     setFavLoading(true);
     try {
-      await api.post(`/artists/starred/${artist.id}/${!artist.userStarred}`);
-      setArtist({ ...artist, userStarred: !artist.userStarred, userRating: !artist.userStarred ? 1 : 0 });
+      const newVal = !artist.userStarred;
+      debugLog('ArtistDetailView', ` Toggling favorite for artist ${artist.id} to ${newVal}`);
+      await api.post(`/artists/starred/${artist.id}/${newVal}`);
+      setArtist({ ...artist, userStarred: newVal, userRating: newVal ? 1 : 0 });
       setDislike(false);
-    } catch {
-      // Optionally show error
+      debugLog('ArtistDetailView', ` Favorite updated successfully`);
+    } catch (err) {
+      debugError('ArtistDetailView', 'Failed to update favorite:', err);
     } finally {
       setFavLoading(false);
     }
@@ -58,13 +62,14 @@ export default function ArtistDetailView() {
     if (!artist) return;
     setFavLoading(true);
     try {
-      // If already disliked, reset to 0; else set to -1
-      const newRating = dislike ? 0 : -1;
-      await api.post(`/artists/rating/${artist.id}/${newRating}`);
-      setArtist({ ...artist, userStarred: false, userRating: newRating });
-      setDislike(!dislike);
-    } catch {
-      // Optionally show error
+      const newVal = !dislike;
+      debugLog('ArtistDetailView', ` Toggling hated for artist ${artist.id} to ${newVal}`);
+      await api.post(`/artists/hated/${artist.id}/${newVal}`);
+      setArtist({ ...artist, userStarred: newVal ? false : artist.userStarred, userRating: newVal ? -1 : 0 });
+      setDislike(newVal);
+      debugLog('ArtistDetailView', ` Hated updated successfully`);
+    } catch (err) {
+      debugError('ArtistDetailView', 'Failed to update hated:', err);
     } finally {
       setFavLoading(false);
     }
@@ -75,8 +80,8 @@ export default function ArtistDetailView() {
   if (!artist) return null;
 
   return (
-    <Box sx={{ maxWidth: 800, m: 'auto', mt: 4 }}>
-      <Card sx={{ maxWidth: 600, m: 'auto', p: 2 }}>
+    <Box sx={{ p: 3 }}>
+      <Card sx={{ p: 2, mb: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', gap: 3 }}>
           <CardMedia
             component="img"

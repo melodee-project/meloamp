@@ -24,10 +24,10 @@ export default function BrowseAlbums() {
   }, [page]);
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>{t('nav.albums')}</Typography>
       {loading ? <CircularProgress /> : (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
           {albums.map((album) => (
             <Box key={album.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
               <AlbumCard album={album} />

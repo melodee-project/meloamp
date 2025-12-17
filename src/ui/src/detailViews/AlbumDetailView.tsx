@@ -1,6 +1,7 @@
+import { debugLog, debugError } from '../debug';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem } from '@mui/material';
+import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem, Rating } from '@mui/material';
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import api from '../api';
@@ -18,6 +19,8 @@ export default function AlbumDetailView() {
   const [favLoading, setFavLoading] = useState(false);
   const [favorite, setFavorite] = useState(false);
   const [disliked, setDisliked] = useState(false);
+  const [rating, setRating] = useState<number>(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [songsLoading, setSongsLoading] = useState(true);
   const { t } = useTranslation();
@@ -29,10 +32,11 @@ export default function AlbumDetailView() {
     setError(null);
     apiRequest(`/albums/${id}`)
       .then(res => {
-        const albumData = res.data as Album & { userStarred?: boolean; userDisliked?: boolean };
+        const albumData = res.data as Album & { userStarred?: boolean; userDisliked?: boolean; userRating?: number };
         setAlbum(albumData);
         setFavorite(albumData.userStarred ?? false);
         setDisliked(albumData.userDisliked ?? false);
+        setRating(albumData.userRating && albumData.userRating > 0 ? albumData.userRating : 0);
       })
       .catch(err => setError(err?.response?.data?.message || err?.message || 'Failed to load album.'))
       .finally(() => setLoading(false));
@@ -41,20 +45,20 @@ export default function AlbumDetailView() {
   useEffect(() => {
     if (!id) return;
     setSongsLoading(true);
-    console.log('[AlbumDetailView] Fetching songs for album id:', id);
-    apiRequest(`/albums/${id}/songs`)
+    debugLog('AlbumDetailView', 'Fetching songs for album id:', id);
+    apiRequest(`/albums/${id}/songs`, { params: { page: 1, pageSize: 100 } })
       .then(res => {
-        console.log('[AlbumDetailView] Songs API response:', res.data);
+        debugLog('AlbumDetailView', 'Songs API response:', res.data);
         const response = res.data as PaginatedResponse<Song>;
         setSongs(response.data);
       })
       .catch((err) => {
-        console.error('[AlbumDetailView] Error fetching songs:', err);
+        debugError('AlbumDetailView', 'Error fetching songs:', err);
         setSongs([])
       })
       .finally(() => {
         setSongsLoading(false);
-        console.log('[AlbumDetailView] Songs loading finished.');
+        debugLog('AlbumDetailView', 'Songs loading finished.');
       });
   }, [id]);
 
@@ -62,10 +66,18 @@ export default function AlbumDetailView() {
     if (!album) return;
     setFavLoading(true);
     try {
-      await api.post(`/albums/starred/${album.id}/${!favorite}`);
+      debugLog('AlbumDetailView', 'Toggling favorite for album:', album.id, 'to:', !favorite);
+      const response = await api.post(`/albums/starred/${album.id}/${!favorite}`);
+      debugLog('AlbumDetailView', 'Favorite response:', response);
       setFavorite(!favorite);
-      if (disliked && !favorite) setDisliked(false); // Remove dislike if favorited
-    } catch {}
+      // If favoriting, clear dislike
+      if (!favorite) {
+        setDisliked(false);
+        setRating(1);
+      }
+    } catch (err: any) {
+      debugError('AlbumDetailView', 'Failed to toggle favorite:', err?.response?.data || err?.message || err);
+    }
     setFavLoading(false);
   };
 
@@ -73,11 +85,37 @@ export default function AlbumDetailView() {
     if (!album) return;
     setFavLoading(true);
     try {
-      await api.post(`/albums/disliked/${album.id}/${!disliked}`);
-      setDisliked(!disliked);
-      if (favorite && !disliked) setFavorite(false); // Remove favorite if disliked
-    } catch {}
+      const newVal = !disliked;
+      debugLog('AlbumDetailView', 'Setting hated for album:', album.id, 'to:', newVal);
+      const response = await api.post(`/albums/hated/${album.id}/${newVal}`);
+      debugLog('AlbumDetailView', 'Hated response:', response);
+      setDisliked(newVal);
+      // If disliking, clear favorite
+      if (newVal) {
+        setFavorite(false);
+        setRating(0);
+      }
+    } catch (err: any) {
+      debugError('AlbumDetailView', 'Failed to toggle hated:', err?.response?.data || err?.message || err);
+    }
     setFavLoading(false);
+  };
+
+  const handleRating = async (newRating: number | null) => {
+    if (!album) return;
+    const r = newRating === null ? 0 : newRating;
+    setRatingLoading(true);
+    try {
+      debugLog('AlbumDetailView', 'Setting rating for album:', album.id, 'to:', r);
+      const response = await api.post(`/albums/setrating/${album.id}/${r}`);
+      debugLog('AlbumDetailView', 'Rating response:', response);
+      setRating(r);
+      // Clear dislike if rating > 0
+      if (r > 0) setDisliked(false);
+    } catch (err: any) {
+      debugError('AlbumDetailView', 'Failed to set rating:', err?.response?.data || err?.message || err);
+    }
+    setRatingLoading(false);
   };
 
   const handlePlayAlbum = () => {
@@ -98,9 +136,8 @@ export default function AlbumDetailView() {
   if (!album) return null;
 
   return (
-    <Card sx={{   
-      width: { xs: '100%', sm: '90%', md: '80%', lg: '60%' },
-      maxWidth: 1200, m: 'auto', mt: 4, p: { xs: 1, sm: 3 }, bgcolor: 'background.default', boxShadow: 4 }}>
+    <Box sx={{ p: 3 }}>
+    <Card sx={{ p: { xs: 1, sm: 3 }, bgcolor: 'background.default', boxShadow: 4 }}>
       {/* Album name and artist at the top */}
       <Box sx={{ width: '100%', mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
         {album.artist && (
@@ -157,6 +194,20 @@ export default function AlbumDetailView() {
                 </IconButton>
               </span>
             </Tooltip>
+            <Tooltip title={t('common.rating', 'Rating')}>
+              <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                {ratingLoading ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <Rating
+                    value={rating}
+                    max={5}
+                    onChange={(_, v) => handleRating(v)}
+                    size="medium"
+                  />
+                )}
+              </Box>
+            </Tooltip>
           </Box>
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{t('albumDetail.releaseYear')}: <span style={{ fontWeight: 400 }}>{album.releaseYear}</span></Typography>
@@ -195,5 +246,6 @@ export default function AlbumDetailView() {
         )}
       </Box>
     </Card>
+    </Box>
   );
 }

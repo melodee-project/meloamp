@@ -15,6 +15,10 @@ export function clearJwt() {
   localStorage.removeItem('jwt');
 }
 
+export function getJwt(): string | null {
+  return jwt;
+}
+
 const api = axios.create({
   baseURL: API_BASE,
 });

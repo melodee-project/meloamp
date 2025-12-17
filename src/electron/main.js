@@ -102,6 +102,10 @@ function setupMpris(win) {
 
 function createWindow() {
   startStaticServer();
+
+  // Enable DevTools (debug console) in development by default.
+  // In packaged builds, opt-in via: MELOAMP_DEBUG_CONSOLE=1
+  const debugConsoleEnabled = !app.isPackaged || process.env.MELOAMP_DEBUG_CONSOLE === '1';
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -109,6 +113,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      devTools: debugConsoleEnabled,
     },
   });
 
@@ -117,6 +122,13 @@ function createWindow() {
 
   // Load the React build output via HTTP server
   win.loadURL('http://localhost:' + SERVER_PORT);
+
+  if (debugConsoleEnabled) {
+    win.webContents.on('did-finish-load', () => {
+      // Use a detached window so the console is always visible.
+      win.webContents.openDevTools({ mode: 'detach' });
+    });
+  }
 
   // MPRIS setup
   if (!mprisPlayer) {

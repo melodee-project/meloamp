@@ -1,3 +1,4 @@
+import { debugLog, debugError } from '../debug';
 import React from 'react';
 import { Card, Typography, Box, IconButton, Tooltip, Stack, Rating } from '@mui/material';
 import { Song } from '../apiModels';
@@ -6,6 +7,7 @@ import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, QueueMusic, SkipN
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from './toQueueSong';
 import { useTranslation } from 'react-i18next';
+import api from '../api';
 
 interface MiniSongCardProps {
   song: Song;
@@ -18,6 +20,7 @@ const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
   const addToQueue = useQueueStore(state => state.addToQueue);
   const [favorite, setFavorite] = React.useState(song.userStarred);
   const [hated, setHated] = React.useState(song.userRating === -1);
+  const [rating, setRating] = React.useState(song.userRating && song.userRating > 0 ? song.userRating : 0);
 
   const handlePlayNext = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -27,15 +30,55 @@ const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
     e.stopPropagation();
     addToQueue(toQueueSong(song));
   };
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setFavorite((prev) => !prev);
-    // TODO: Call API to update favorite
+    const newVal = !favorite;
+    try {
+      debugLog('MiniSongCard', ` Toggling favorite for song ${song.id} to ${newVal}`);
+      await api.post(`/songs/starred/${song.id}/${newVal}`);
+      setFavorite(newVal);
+      // If starring, clear hated state
+      if (newVal && hated) {
+        setHated(false);
+      }
+      debugLog('MiniSongCard', ` Favorite updated successfully`);
+    } catch (err) {
+      debugError('MiniSongCard', 'Failed to update favorite:', err);
+    }
   };
-  const handleToggleHated = (e: React.MouseEvent) => {
+  const handleToggleHated = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setHated((prev) => !prev);
-    // TODO: Call API to update hated
+    const newVal = !hated;
+    try {
+      debugLog('MiniSongCard', ` Toggling hated for song ${song.id} to ${newVal}`);
+      await api.post(`/songs/hated/${song.id}/${newVal}`);
+      setHated(newVal);
+      if (newVal) {
+        setRating(0);
+        // If hating, clear favorite
+        if (favorite) {
+          setFavorite(false);
+        }
+      }
+      debugLog('MiniSongCard', ` Hated updated successfully`);
+    } catch (err) {
+      debugError('MiniSongCard', 'Failed to update hated:', err);
+    }
+  };
+  const handleRatingChange = async (_e: React.SyntheticEvent, newValue: number | null) => {
+    const r = newValue ?? 0;
+    try {
+      debugLog('MiniSongCard', ` Setting rating for song ${song.id} to ${r}`);
+      await api.post(`/songs/setrating/${song.id}/${r}`);
+      setRating(r);
+      // If rating > 0, clear hated
+      if (r > 0 && hated) {
+        setHated(false);
+      }
+      debugLog('MiniSongCard', ` Rating updated successfully`);
+    } catch (err) {
+      debugError('MiniSongCard', 'Failed to update rating:', err);
+    }
   };
 
   return (
@@ -116,9 +159,9 @@ const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
             {favorite ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
           </IconButton>
         </Tooltip>
-        {/* Display user rating as small read-only stars (0..5). Negative ratings are treated as 0 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 0.5 }}>
-          <Rating value={song.userRating && song.userRating > 0 ? Math.min(5, song.userRating) : 0} size="small" readOnly />
+        {/* Rating stars (0..5). Click to set rating */}
+        <Box sx={{ display: 'flex', alignItems: 'center', px: 0.5 }} onClick={(e) => e.stopPropagation()}>
+          <Rating value={Math.min(5, rating)} size="small" onChange={handleRatingChange} />
         </Box>
         <Tooltip title={hated ? t('songCard.unhate') : t('songCard.hate')}>
           <IconButton size="small" color={hated ? 'error' : 'default'} onClick={handleToggleHated}>

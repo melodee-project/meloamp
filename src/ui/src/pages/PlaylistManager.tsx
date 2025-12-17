@@ -24,10 +24,10 @@ export default function PlaylistManager() {
   }, [page]);
 
   return (
-    <Box sx={{ maxWidth: 1000, mx: 'auto', mt: 4 }}>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom>{t('playlistManager.title')}</Typography>
       {loading ? <CircularProgress /> : (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
           {playlists.map((playlist) => (
             <Box key={playlist.id} sx={{ flex: '1 1 200px', maxWidth: 250, minWidth: 180, display: 'flex', justifyContent: 'center' }}>
               <PlaylistCard playlist={playlist} />

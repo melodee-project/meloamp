@@ -5,6 +5,7 @@ import { useQueueStore } from '../queueStore';
 import api from '../api';
 import { ScrobbleRequest, ScrobbleType } from '../apiModels';
 import { useTranslation } from 'react-i18next';
+import { debugLog, debugError } from '../debug';
 
 // Simple equalizer bands
 const EQ_BANDS = [60, 170, 350, 1000, 3500, 10000];
@@ -91,7 +92,7 @@ export default function Player({ src }: { src: string }) {
     if (!audioRef.current) return;
     if (!queue[current]) return;
     
-    console.log(`Scrobble check: progress=${progress.toFixed(2)}s, duration=${duration.toFixed(2)}s, scrobbled=${scrobbled}, scrobbledPlayed=${scrobbledPlayed}`);
+    debugLog('Player', `Scrobble check: progress=${progress.toFixed(2)}s, duration=${duration.toFixed(2)}s, scrobbled=${scrobbled}, scrobbledPlayed=${scrobbledPlayed}`);
     
     const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
       songId: queue[current].id,
@@ -106,13 +107,13 @@ export default function Player({ src }: { src: string }) {
         scrobbleType: ScrobbleType.NOW_PLAYING,
       } as ScrobbleRequest;
       
-      console.log('Sending NOW_PLAYING scrobble:', nowPlayingScrobble);
+      debugLog('Player', 'Sending NOW_PLAYING scrobble:', nowPlayingScrobble);
       api.post('/scrobble', nowPlayingScrobble)
         .then(() => {
-          console.log('NOW_PLAYING scrobble sent successfully');
+          debugLog('Player', 'NOW_PLAYING scrobble sent successfully');
         })
         .catch((error) => {
-          console.error('Failed to send NOW_PLAYING scrobble:', error);
+          debugError('Player', 'Failed to send NOW_PLAYING scrobble:', error);
         });
       setScrobbled(true);
     }
@@ -124,13 +125,13 @@ export default function Player({ src }: { src: string }) {
         scrobbleType: ScrobbleType.PLAYED,
       } as ScrobbleRequest;
       
-      console.log(`Sending PLAYED scrobble (progress: ${progress.toFixed(2)}s > threshold: ${playedThreshold.toFixed(2)}s):`, playedScrobble);
+      debugLog('Player', `Sending PLAYED scrobble (progress: ${progress.toFixed(2)}s > threshold: ${playedThreshold.toFixed(2)}s):`, playedScrobble);
       api.post('/scrobble', playedScrobble)
         .then(() => {
-          console.log('PLAYED scrobble sent successfully');
+          debugLog('Player', 'PLAYED scrobble sent successfully');
         })
         .catch((error) => {
-          console.error('Failed to send PLAYED scrobble:', error);
+          debugError('Player', 'Failed to send PLAYED scrobble:', error);
         });
       setScrobbledPlayed(true);
     }
@@ -145,10 +146,52 @@ export default function Player({ src }: { src: string }) {
   // Auto-play when src changes
   useEffect(() => {
     if (!audioRef.current) return;
+    debugLog('Player', 'Auto-play effect triggered, src changed to:', src);
+    
+    // Inspect the stream URL response before playback
+    if (src && src.startsWith('http')) {
+      fetch(src, { method: 'HEAD' })
+        .then(response => {
+          debugLog('Player', 'Stream URL HEAD response:', {
+            status: response.status,
+            statusText: response.statusText,
+            contentType: response.headers.get('content-type'),
+            contentLength: response.headers.get('content-length'),
+            acceptRanges: response.headers.get('accept-ranges'),
+            headers: Array.from(response.headers.entries())
+          });
+          
+          // If HEAD doesn't work, try GET with range to check first bytes
+          if (!response.ok) {
+            return fetch(src, { headers: { 'Range': 'bytes=0-1023' } })
+              .then(getResponse => {
+                debugLog('Player', 'Stream URL GET (first 1KB) response:', {
+                  status: getResponse.status,
+                  contentType: getResponse.headers.get('content-type'),
+                  contentRange: getResponse.headers.get('content-range'),
+                  headers: Array.from(getResponse.headers.entries())
+                });
+                return getResponse.blob();
+              })
+              .then(blob => {
+                debugLog('Player', 'First 1KB blob:', {
+                  size: blob.size,
+                  type: blob.type
+                });
+              });
+          }
+        })
+        .catch(error => {
+          debugError('Player', 'Failed to inspect stream URL:', error);
+        });
+    }
+    
     audioRef.current.currentTime = 0;
     audioRef.current.play().then(() => {
+      debugLog('Player', 'Auto-play successful');
       setPlaying(true);
-    }).catch(() => {
+    }).catch((error) => {
+      debugError('Player', 'Auto-play failed:', error);
       setPlaying(false);
     });
   }, [src]);
@@ -157,6 +200,7 @@ export default function Player({ src }: { src: string }) {
   const prevQueueLength = useRef(queue.length);
   useEffect(() => {
     if (prevQueueLength.current === 0 && queue.length > 0) {
+      debugLog('Player', 'Queue changed from empty to non-empty, triggering auto-play');
       setCurrent(0);
       setShouldAutoPlayFirst(true);
     }
@@ -172,9 +216,20 @@ export default function Player({ src }: { src: string }) {
       typeof current === 'number' &&
       queue[current]?.url
     ) {
+      debugLog('Player', 'Unified auto-play: Setting src and playing:', {
+        url: queue[current].url,
+        currentIndex: current,
+        songTitle: queue[current]?.title
+      });
       audioRef.current.src = queue[current].url;
       audioRef.current.currentTime = 0;
-      audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      audioRef.current.play().then(() => {
+        debugLog('Player', 'Unified auto-play successful');
+        setPlaying(true);
+      }).catch((error) => {
+        debugError('Player', 'Unified auto-play failed:', error);
+        setPlaying(false);
+      });
       setShouldAutoPlayFirst(false);
     }
   }, [shouldAutoPlayFirst, queue, current]);
@@ -242,9 +297,15 @@ export default function Player({ src }: { src: string }) {
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (playing) {
+      debugLog('Player', 'Pausing playback');
       audioRef.current.pause();
       setPlaying(false);
     } else {
+      debugLog('Player', 'Resuming/starting playback:', {
+        hasSrc: !!audioRef.current.src,
+        src: audioRef.current.src || src,
+        currentTime: audioRef.current.currentTime
+      });
       // Always set src in case it was lost on refresh
       if (!audioRef.current.src && src) {
         audioRef.current.src = src;
@@ -252,8 +313,10 @@ export default function Player({ src }: { src: string }) {
       const playPromise = audioRef.current.play();
       if (playPromise && typeof playPromise.then === 'function') {
         playPromise.then(() => {
+          debugLog('Player', 'Play promise resolved');
           setPlaying(true);
-        }).catch(() => {
+        }).catch((error) => {
+          debugError('Player', 'Play promise rejected:', error);
           setPlaying(false);
           setSnackbar(t('player.playbackFailed'));
         });
@@ -314,13 +377,27 @@ export default function Player({ src }: { src: string }) {
 
   // Helper to play a song at a given index
   const playSongAtIndex = (idx: number) => {
-    // log idx and que length
-    console.log(`Playing song at index ${idx} of queue length ${queue.length}`);
+    debugLog('Player', 'playSongAtIndex called:', {
+      index: idx,
+      queueLength: queue.length,
+      song: queue[idx] ? {
+        id: queue[idx].id,
+        title: queue[idx].title,
+        url: queue[idx].url
+      } : null
+    });
     setCurrent(idx);
     setTimeout(() => {
       if (audioRef.current) {
+        debugLog('Player', 'Playing song after timeout');
         audioRef.current.currentTime = 0;
-        audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+        audioRef.current.play().then(() => {
+          debugLog('Player', 'Play successful in playSongAtIndex');
+          setPlaying(true);
+        }).catch((error) => {
+          debugError('Player', 'Play failed in playSongAtIndex:', error);
+          setPlaying(false);
+        });
       }
     }, 0);
   };
@@ -676,8 +753,98 @@ export default function Player({ src }: { src: string }) {
           src={queue[current]?.url || ''}
           crossOrigin="anonymous"
           onTimeUpdate={e => setProgress((e.target as HTMLAudioElement).currentTime)}
-          onLoadedMetadata={e => setDuration((e.target as HTMLAudioElement).duration)}
+          onLoadedMetadata={e => {
+            const audio = e.target as HTMLAudioElement;
+            debugLog('Player Audio', 'loadedmetadata:', {
+              duration: audio.duration,
+              src: audio.src,
+              readyState: audio.readyState,
+              networkState: audio.networkState
+            });
+            setDuration(audio.duration);
+          }}
+          onLoadStart={e => {
+            const audio = e.target as HTMLAudioElement;
+            debugLog('Player Audio', 'loadstart:', {
+              src: audio.src,
+              currentTime: audio.currentTime
+            });
+          }}
+          onLoadedData={e => {
+            const audio = e.target as HTMLAudioElement;
+            debugLog('Player Audio', 'loadeddata:', {
+              readyState: audio.readyState,
+              duration: audio.duration,
+              buffered: audio.buffered.length > 0 ? `${audio.buffered.start(0)}-${audio.buffered.end(0)}` : 'none'
+            });
+          }}
+          onCanPlay={e => {
+            const audio = e.target as HTMLAudioElement;
+            debugLog('Player Audio', 'canplay:', {
+              readyState: audio.readyState,
+              paused: audio.paused,
+              buffered: audio.buffered.length > 0 ? `${audio.buffered.start(0)}-${audio.buffered.end(0)}` : 'none'
+            });
+          }}
+          onCanPlayThrough={e => {
+            debugLog('Player Audio', 'canplaythrough - enough data loaded to play through');
+          }}
+          onPlaying={e => {
+            debugLog('Player Audio', 'playing event - playback has begun');
+          }}
+          onPause={e => {
+            debugLog('Player Audio', 'pause event');
+          }}
+          onWaiting={e => {
+            debugLog('Player Audio', 'waiting - playback stopped due to lack of data');
+          }}
+          onStalled={e => {
+            const audio = e.target as HTMLAudioElement;
+            console.warn('[Player Audio] stalled - browser is trying to fetch data but it\'s not coming:', {
+              networkState: audio.networkState,
+              readyState: audio.readyState,
+              buffered: audio.buffered.length > 0 ? `${audio.buffered.start(0)}-${audio.buffered.end(0)}` : 'none'
+            });
+          }}
+          onSuspend={e => {
+            debugLog('Player Audio', 'suspend - media data loading has been suspended');
+          }}
+          onAbort={e => {
+            console.warn('[Player Audio] abort - media data loading aborted');
+          }}
+          onError={e => {
+            const audio = e.target as HTMLAudioElement;
+            const error = audio.error;
+            debugError('Player Audio', 'ERROR:', {
+              code: error?.code,
+              message: error?.message,
+              src: audio.src,
+              networkState: audio.networkState,
+              readyState: audio.readyState,
+              errorDetails: error ? {
+                MEDIA_ERR_ABORTED: error.code === 1,
+                MEDIA_ERR_NETWORK: error.code === 2,
+                MEDIA_ERR_DECODE: error.code === 3,
+                MEDIA_ERR_SRC_NOT_SUPPORTED: error.code === 4
+              } : null
+            });
+          }}
+          onProgress={e => {
+            const audio = e.target as HTMLAudioElement;
+            if (audio.buffered.length > 0) {
+              const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+              const percentBuffered = (bufferedEnd / audio.duration) * 100;
+              // Only log every 10% to avoid spam
+              if (percentBuffered % 10 < 1) {
+                debugLog('Player Audio', 'progress:', {
+                  buffered: `${bufferedEnd.toFixed(2)}s / ${audio.duration.toFixed(2)}s (${percentBuffered.toFixed(0)}%)`,
+                  ranges: audio.buffered.length
+                });
+              }
+            }
+          }}
           onEnded={() => {
+            debugLog('Player Audio', 'ended - playback completed');
             if (current < queue.length - 1) {
               playSongAtIndex(current + 1);
             } else {

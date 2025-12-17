@@ -29,13 +29,28 @@ const EMPTY_ALBUM: Album = {
 };
 
 export function toQueueSong(song: ApiSong) {
+  // Append JWT to stream URL to fix audio element auth (can't send headers)
+  let streamUrl = song.streamUrl || '';
+  if (streamUrl) {
+    try {
+      const jwt = localStorage.getItem('jwt');
+      if (jwt) {
+        const url = new URL(streamUrl, window.location.origin);
+        url.searchParams.set('jwt', jwt);
+        streamUrl = url.toString();
+      }
+    } catch (e) {
+      console.warn('[toQueueSong] Failed to append JWT to stream URL:', e);
+    }
+  }
+  
   return {
     id: song.id,
     title: song.title,
     artist: song.artist ? { ...song.artist } : EMPTY_ARTIST,
     album: song.album ? { ...song.album } : EMPTY_ALBUM,
     imageUrl: song.imageUrl || song.thumbnailUrl,
-    url: song.streamUrl || '',
+    url: streamUrl,
   durationMs: song.durationMs,
   userStarred: song.userStarred ?? false,
   userRating: song.userRating ?? 0,

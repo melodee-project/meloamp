@@ -30,6 +30,7 @@ import DashboardWrapper from './pages/Dashboard';
 import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
 import PlaylistDetailView from './detailViews/PlaylistDetailView';
+import SongDetailView from './detailViews/SongDetailView';
 import getAuroraTheme from './themes/auroraTheme';
 import getMonoContrastTheme from './themes/monoContrastTheme';
 import getBerryTwilightTheme from './themes/berryTwilightTheme';
@@ -120,6 +121,31 @@ export default function App() {
   const baseTheme = typeof themeMap[settings.theme] === 'function'
     ? themeMap[settings.theme](settings.mode || 'light')
     : themeMap[settings.theme] || classicTheme;
+  
+  // Apply mode override to static themes that don't accept mode parameter
+  const themedWithMode = React.useMemo(() => {
+    const mode = settings.mode || 'light';
+    // If theme is already a function (mode-aware), it's handled above
+    if (typeof themeMap[settings.theme] === 'function') {
+      return baseTheme;
+    }
+    // For static themes, create a new theme with mode override
+    return createTheme({
+      ...baseTheme,
+      palette: {
+        ...baseTheme.palette,
+        mode,
+        // Adjust background colors based on mode
+        background: mode === 'dark' 
+          ? { default: '#121212', paper: '#1e1e1e' }
+          : baseTheme.palette.background,
+        text: mode === 'dark'
+          ? { primary: '#ffffff', secondary: 'rgba(255,255,255,0.7)' }
+          : baseTheme.palette.text,
+      },
+    });
+  }, [baseTheme, settings.theme, settings.mode]);
+  
   function getHighContrastTheme(baseTheme: any) {
     return createTheme({
       ...baseTheme,
@@ -150,8 +176,8 @@ export default function App() {
     });
   }
   const theme = React.useMemo(() => (
-    settings.highContrast ? getHighContrastTheme(baseTheme) : baseTheme
-  ), [settings.highContrast, baseTheme]);
+    settings.highContrast ? getHighContrastTheme(themedWithMode) : themedWithMode
+  ), [settings.highContrast, themedWithMode]);
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -386,6 +412,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
             <Route path="/artists/:id" element={<ArtistDetailView />} />
             <Route path="/albums/:id" element={<AlbumDetailView />} />
             <Route path="/playlists/:id" element={<PlaylistDetailView />} />
+            <Route path="/songs/:id" element={<SongDetailView />} />
           </Routes>
       </Box>
       {/* Sticky Player at bottom if queue is not empty */}
