@@ -127,6 +127,7 @@
     "createdBy": "Créé par",
     "tracks": "Chansons",
     "playAll": "Tout lire",
+    "loadingAll": "Chargement...",
     "edit": "Modifier",
     "delete": "Supprimer",
     "noSongs": "Aucune chanson dans cette playlist",

@@ -26,7 +26,7 @@ import {
 import { Delete, DragIndicator, Edit, EditOff, PlayArrow } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import api, { apiRequest } from '../api';
-import { Playlist, Song, User } from '../apiModels';
+import { Playlist, Song, User, Meta } from '../apiModels';
 import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from '../components/toQueueSong';
@@ -48,6 +48,9 @@ export default function PlaylistDetailView() {
   const [editMode, setEditMode] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Play all loading state
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
 
   // Delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -189,10 +192,58 @@ export default function PlaylistDetailView() {
     }
   };
 
+  // Fetch all songs (handles pagination)
+  const fetchAllSongs = useCallback(async (): Promise<Song[]> => {
+    if (!id) return [];
+    
+    const PAGE_SIZE = 200;
+    let allSongs: Song[] = [];
+    let currentPage = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await apiRequest(`/Playlists/${id}/songs?pageSize=${PAGE_SIZE}&page=${currentPage}`);
+      const responseData = res.data as { meta?: Meta; data?: Song[] };
+      const pageSongs = responseData?.data || [];
+      
+      if (Array.isArray(pageSongs)) {
+        allSongs = [...allSongs, ...pageSongs];
+      }
+
+      // Check if there are more pages
+      const meta = responseData?.meta;
+      hasMore = meta?.hasNext ?? false;
+      currentPage++;
+
+      // Safety limit to prevent infinite loops
+      if (currentPage > 100) break;
+    }
+
+    return allSongs;
+  }, [id]);
+
   // Play all songs
-  const handlePlayAll = () => {
-    if (songs.length > 0) {
+  const handlePlayAll = async () => {
+    // If we already have all songs loaded (single page), just play them
+    if (songs.length > 0 && playlist && songs.length >= (playlist.songCount || 0)) {
       playNow(songs.map(toQueueSong));
+      return;
+    }
+
+    // Otherwise, fetch all pages first
+    setIsLoadingAll(true);
+    try {
+      const allSongs = await fetchAllSongs();
+      if (allSongs.length > 0) {
+        playNow(allSongs.map(toQueueSong));
+        // Update local state with all songs
+        setSongs(allSongs);
+      }
+    } catch (err: any) {
+      console.error('Failed to load all playlist songs', err);
+      setSnackbar({ open: true, message: t('playlistDetail.loadError'), severity: 'error' });
+    } finally {
+      setIsLoadingAll(false);
     }
   };
 
@@ -231,11 +282,11 @@ export default function PlaylistDetailView() {
             <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               <Button
                 variant="contained"
-                startIcon={<PlayArrow />}
+                startIcon={isLoadingAll ? <CircularProgress size={20} color="inherit" /> : <PlayArrow />}
                 onClick={handlePlayAll}
-                disabled={songs.length === 0}
+                disabled={songs.length === 0 || isLoadingAll}
               >
-                {t('playlistDetail.playAll')}
+                {isLoadingAll ? t('playlistDetail.loadingAll') : t('playlistDetail.playAll')}
               </Button>
 
               {isOwner && (

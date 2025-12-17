@@ -126,8 +126,7 @@
   "playlistDetail": {
     "createdBy": "Creato da",
     "tracks": "Canzoni",
-    "playAll": "Riproduci tutto",
-    "edit": "Modifica",
+    "playAll": "Riproduci tutto",    "loadingAll": "Caricamento...",    "edit": "Modifica",
     "delete": "Elimina",
     "noSongs": "Nessuna canzone in questa playlist",
     "removeSong": "Rimuovi dalla playlist",

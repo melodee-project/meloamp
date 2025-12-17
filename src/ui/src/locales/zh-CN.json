@@ -127,6 +127,7 @@
     "createdBy": "创建者",
     "tracks": "歌曲",
     "playAll": "全部播放",
+    "loadingAll": "加载中...",
     "edit": "编辑",
     "delete": "删除",
     "noSongs": "此播放列表中没有歌曲",

@@ -127,6 +127,7 @@
     "createdBy": "Creado por",
     "tracks": "Canciones",
     "playAll": "Reproducir todo",
+    "loadingAll": "Cargando...",
     "edit": "Editar",
     "delete": "Eliminar",
     "noSongs": "No hay canciones en esta lista",

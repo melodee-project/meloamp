@@ -126,6 +126,7 @@
     "createdBy": "Erstellt von",
     "tracks": "Lieder",
     "playAll": "Alle abspielen",
+    "loadingAll": "Laden...",
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "noSongs": "Keine Lieder in dieser Playlist",
