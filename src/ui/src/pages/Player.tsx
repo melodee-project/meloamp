@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog, Rating } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder, Fullscreen, FullscreenExit } from '@mui/icons-material';
 import { useQueueStore } from '../queueStore';
@@ -14,6 +15,7 @@ const EQ_BANDS = [60, 170, 350, 1000, 3500, 10000];
 const PROGRESS_UPDATE_INTERVAL_MS = 250;
 
 export default function Player({ src }: { src: string }) {
+  const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -562,7 +564,7 @@ export default function Player({ src }: { src: string }) {
               <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', alignItems: 'center', mb: 2, minHeight: 60 }}>
                 {queue[current].album && (
                   <Box
-                    onClick={() => window.location.assign(`/albums/${queue[current].album.id}`)}
+                    onClick={() => navigate(`/albums/${queue[current].album.id}`)}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -593,7 +595,7 @@ export default function Player({ src }: { src: string }) {
                 )}
                 {queue[current].artist && (
                   <Box
-                    onClick={() => window.location.assign(`/artists/${queue[current].artist.id}`)}
+                    onClick={() => navigate(`/artists/${queue[current].artist.id}`)}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -703,7 +705,7 @@ export default function Player({ src }: { src: string }) {
               {queue[current].album && (
                 <Typography variant="caption" color="text.secondary">
                   <Box component="span" sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }}
-                    onClick={() => window.location.assign(`/albums/${queue[current].album.id}`)}>
+                    onClick={() => navigate(`/albums/${queue[current].album.id}`)}>
                     {queue[current].album.releaseYear ? `${queue[current].album.releaseYear} • ` : ''}{queue[current].album.name}
                   </Box>
                 </Typography>
@@ -711,7 +713,7 @@ export default function Player({ src }: { src: string }) {
               {queue[current].artist && (
                 <Typography variant="caption" color="text.secondary">
                   <Box component="span" sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }}
-                    onClick={() => window.location.assign(`/artists/${queue[current].artist.id}`)}>
+                    onClick={() => navigate(`/artists/${queue[current].artist.id}`)}>
                     {queue[current].artist.name}
                   </Box>
                 </Typography>

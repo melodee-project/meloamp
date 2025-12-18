@@ -1,8 +1,8 @@
 import { debugLog, debugError } from '../debug';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem, Rating } from '@mui/material';
-import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow } from '@mui/icons-material';
+import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem, Rating, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow, ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import api from '../api';
 import { Album, Song, PaginatedResponse } from '../apiModels';
@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import MiniArtistCard from '../components/MiniArtistCard';
 import { useQueueStore } from '../queueStore';
 import MiniSongCard from '../components/MiniSongCard';
+
+type SongSortField = 'Title' | 'SongNumber' | 'AlbumId' | 'PlayedCount' | 'Duration' | 'LastPlayedAt' | 'CalculatedRating';
 
 export default function AlbumDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,8 @@ export default function AlbumDetailView() {
   const [ratingLoading, setRatingLoading] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [songsLoading, setSongsLoading] = useState(true);
+  const [songSort, setSongSort] = useState<SongSortField>('SongNumber');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { t } = useTranslation();
   const setQueue = useQueueStore((state: any) => state.setQueue);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
@@ -46,7 +50,14 @@ export default function AlbumDetailView() {
     if (!id) return;
     setSongsLoading(true);
     debugLog('AlbumDetailView', 'Fetching songs for album id:', id);
-    apiRequest(`/albums/${id}/songs`, { params: { page: 1, pageSize: 100 } })
+    apiRequest(`/albums/${id}/songs`, { 
+      params: { 
+        page: 1, 
+        pageSize: 100,
+        orderBy: songSort,
+        orderDirection: sortDirection
+      } 
+    })
       .then(res => {
         debugLog('AlbumDetailView', 'Songs API response:', res.data);
         const response = res.data as PaginatedResponse<Song>;
@@ -54,13 +65,22 @@ export default function AlbumDetailView() {
       })
       .catch((err) => {
         debugError('AlbumDetailView', 'Error fetching songs:', err);
-        setSongs([])
+        setSongs([]);
       })
       .finally(() => {
         setSongsLoading(false);
         debugLog('AlbumDetailView', 'Songs loading finished.');
       });
-  }, [id]);
+  }, [id, songSort, sortDirection]);
+
+  const handleSongSortChange = (field: SongSortField) => {
+    if (field === songSort) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSongSort(field);
+      setSortDirection(field === 'SongNumber' ? 'asc' : 'asc');
+    }
+  };
 
   const handleFavorite = async () => {
     if (!album) return;
@@ -230,7 +250,30 @@ export default function AlbumDetailView() {
       </Box>
       {/* Song List */}
       <Box sx={{ mt: 4, bgcolor: 'background.paper', borderRadius: 2, p: 2, boxShadow: 1 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>{t('albumDetail.tracks')}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6">{t('albumDetail.tracks')}</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="song-sort-label">{t('sort.sortBy')}</InputLabel>
+              <Select
+                labelId="song-sort-label"
+                value={songSort}
+                label={t('sort.sortBy')}
+                onChange={(e) => handleSongSortChange(e.target.value as SongSortField)}
+              >
+                <MenuItem value="Title">{t('sort.title')}</MenuItem>
+                <MenuItem value="SongNumber">{t('sort.trackNumber')}</MenuItem>
+                <MenuItem value="Duration">{t('sort.duration')}</MenuItem>
+                <MenuItem value="LastPlayedAt">{t('sort.lastPlayed')}</MenuItem>
+                <MenuItem value="PlayedCount">{t('sort.playCount')}</MenuItem>
+                <MenuItem value="CalculatedRating">{t('sort.rating')}</MenuItem>
+              </Select>
+            </FormControl>
+            <IconButton onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
+              {sortDirection === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
+            </IconButton>
+          </Box>
+        </Box>
         {songsLoading ? (
           <Typography variant="body2" color="text.secondary">{t('albumDetail.loadingTracks', 'Loading songs...')}</Typography>
         ) : songs.length > 0 ? (

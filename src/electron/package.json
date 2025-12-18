@@ -31,10 +31,19 @@
     "productName": "MeloAmp",
     "executableName": "MeloAmp",
     "artifactName": "${name}-${version}.${ext}",
+    "asar": true,
+    "compression": "normal",
+    "generateUpdatesFilesForAllChannels": false,
     "linux": {
       "target": [
-        "AppImage",
-        "tar.gz"
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
       ],
       "category": "Audio",
       "icon": "resources/logo.png",

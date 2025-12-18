@@ -121,7 +121,22 @@
   },
   "artistDetail": {
     "albums": "Albums",
-    "songs": "Songs"
+    "songs": "Songs",
+    "noAlbums": "No albums found"
+  },
+  "sort": {
+    "sortBy": "Sort by",
+    "name": "Name",
+    "title": "Title",
+    "trackNumber": "Track Number",
+    "album": "Album",
+    "releaseDate": "Release Date",
+    "songCount": "Song Count",
+    "albumCount": "Album Count",
+    "duration": "Duration",
+    "lastPlayed": "Last Played",
+    "playCount": "Play Count",
+    "rating": "Rating"
   },
   "playlistDetail": {
     "createdBy": "Created by",

@@ -1,7 +1,8 @@
 import { debugLog, debugError } from '../debug';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, Chip, Stack, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, Chip, Stack, IconButton, Tooltip, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import api from '../api';
 import { Artist, Album, PaginatedResponse } from '../apiModels';
@@ -12,6 +13,8 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import AlbumCard from '../components/AlbumCard';
 
+type AlbumSortField = 'Name' | 'ReleaseDate' | 'SongCount' | 'Duration' | 'LastPlayedAt' | 'PlayedCount' | 'CalculatedRating';
+
 export default function ArtistDetailView() {
   const { id } = useParams<{ id: string }>();
   const [artist, setArtist] = useState<Artist | null>(null);
@@ -20,24 +23,48 @@ export default function ArtistDetailView() {
   const [error, setError] = useState<string | null>(null);
   const [favLoading, setFavLoading] = useState(false);
   const [dislike, setDislike] = useState(false);
+  const [albumSort, setAlbumSort] = useState<AlbumSortField>('ReleaseDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { t } = useTranslation();
 
-  // Fetch artist and albums
+  // Fetch artist on mount
   useEffect(() => {
     setLoading(true);
     setError(null);
-    Promise.all([
-      apiRequest(`/artists/${id}`),
-      apiRequest(`/artists/${id}/albums`, { params: { page: 1, pageSize: 100 } })
-    ])
-      .then(([artistRes, albumsRes]) => {
+    apiRequest(`/artists/${id}`)
+      .then((artistRes) => {
         setArtist(artistRes.data as Artist);
-        setAlbums((albumsRes.data as PaginatedResponse<Album>).data || []);
         setDislike((artistRes.data as Artist).userRating === -1);
       })
       .catch(err => setError(err?.response?.data?.message || err?.message || 'Failed to load artist.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Fetch albums when sort changes
+  useEffect(() => {
+    if (!id) return;
+    apiRequest(`/artists/${id}/albums`, { 
+      params: { 
+        page: 1, 
+        pageSize: 100,
+        orderBy: albumSort,
+        orderDirection: sortDirection
+      } 
+    })
+      .then((albumsRes) => {
+        setAlbums((albumsRes.data as PaginatedResponse<Album>).data || []);
+      })
+      .catch(err => debugError('ArtistDetailView', 'Failed to load albums:', err));
+  }, [id, albumSort, sortDirection]);
+
+  const handleSortChange = (field: AlbumSortField) => {
+    if (field === albumSort) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setAlbumSort(field);
+      setSortDirection(field === 'ReleaseDate' ? 'desc' : 'asc');
+    }
+  };
 
   // Favorite/Unfavorite
   const handleFavorite = async () => {
@@ -122,7 +149,31 @@ export default function ArtistDetailView() {
         </Box>
       </Card>
       <Box sx={{ mt: 4 }}>
-        <Typography variant="h5" gutterBottom>{t('artistDetail.albums')}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5">{t('artistDetail.albums')}</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="album-sort-label">{t('sort.sortBy')}</InputLabel>
+              <Select
+                labelId="album-sort-label"
+                value={albumSort}
+                label={t('sort.sortBy')}
+                onChange={(e) => handleSortChange(e.target.value as AlbumSortField)}
+              >
+                <MenuItem value="Name">{t('sort.name')}</MenuItem>
+                <MenuItem value="ReleaseDate">{t('sort.releaseDate')}</MenuItem>
+                <MenuItem value="SongCount">{t('sort.songCount')}</MenuItem>
+                <MenuItem value="Duration">{t('sort.duration')}</MenuItem>
+                <MenuItem value="LastPlayedAt">{t('sort.lastPlayed')}</MenuItem>
+                <MenuItem value="PlayedCount">{t('sort.playCount')}</MenuItem>
+                <MenuItem value="CalculatedRating">{t('sort.rating')}</MenuItem>
+              </Select>
+            </FormControl>
+            <IconButton onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
+              {sortDirection === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
+            </IconButton>
+          </Box>
+        </Box>
         {albums.length === 0 ? (
           <Typography variant="body2" color="text.secondary">{t('artistDetail.noAlbums') || 'No albums found.'}</Typography>
         ) : (

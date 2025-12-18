@@ -38,9 +38,11 @@ function startStaticServer() {
     buildPath = path.join(__dirname, '../ui/build');
   }
 
+  // Serve static files (js, css, images, etc.)
   server.use(express.static(buildPath));
 
-  server.get(/^\/(?!api).*/, (req, res) => {
+  // For all other routes (SPA routing), serve index.html
+  server.get('*', (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
   staticServer = server.listen(SERVER_PORT, () => {
