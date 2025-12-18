@@ -6,7 +6,6 @@
     "main.js",
     "preload.js",
     "build/**/*",
-    "node_modules/**/*",
     "package.json"
   ],
   "scripts": {
