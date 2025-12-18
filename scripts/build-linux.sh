@@ -1,83 +1,93 @@
 #!/usr/bin/env bash
-# build-linux.sh - Build MeloAmp Electron App for Linux platforms only
-# Usage: ./scripts/build-linux.sh
-
-# ---
-# NOTE: As this build script process bundles the entire Electron app, it may take some time to complete.
-# NOTE: It is not unusual for this process to take up to 5 minutes.
-# ---
-
 set -euo pipefail
 
-# Change to the project root directory (the parent of scripts/)
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$PROJECT_ROOT"
+# Fast(er) local Linux build for MeloAmp (React UI + Electron packaging)
+#
+# Key changes vs the original:
+# - Avoid repeated installs when node_modules look up-to-date
+# - Use Yarn offline preference + frozen lockfile (repro + faster when cache is warm)
+# - Build both Linux targets in a single electron-builder run (avoids double packaging)
+# - Optional CLEAN=1 to wipe dist/build between runs
+#
+# Usage:
+#   ./build-linux-fast.sh
+#   CLEAN=1 ./build-linux-fast.sh          # full clean build
+#   SKIP_PACKAGE=1 ./build-linux-fast.sh   # build UI + electron JS only (no packaging)
 
-# Build notes:
-#
-# Manjaro/Arch-based systems:
-#   sudo pacman -S --needed base-devel rpm-tools fakeroot
-#   # For AppImage support:
-#   sudo pacman -S --needed libxcrypt-compat
-#
-# Debian/Ubuntu-based systems:
-#   sudo apt-get update
-#   sudo apt-get install -y rpm fakeroot libxcrypt-compat
-#   sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils at-spi2-core libuuid1
-#
-# Fedora-based systems:
-#   sudo dnf install -y rpm-build rpmdevtools fakeroot xz
-#   sudo dnf install -y libxcrypt-compat gtk3 libnotify nss libXScrnSaver libXtst xdg-utils at-spi2-core libuuid
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+UI_DIR="$ROOT_DIR/src/ui"
+ELECTRON_DIR="$ROOT_DIR/src/electron"
+DIST_DIR="$ELECTRON_DIR/dist"
+BUILD_DIR="$ELECTRON_DIR/build"
 
-# Cleanup function to restore .gitignore on exit (success or failure)
-cleanup() {
-  cd "$PROJECT_ROOT"
-  if [[ -f .gitignore.bak ]]; then
-    echo -e "\n[cleanup] Restoring .gitignore..."
-    mv .gitignore.bak .gitignore
+log() { printf "\n[%(%F %T)T] %s\n" -1 "$*"; }
+
+need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }; }
+
+yarn_install_if_needed() {
+  local dir="$1"
+  local lock="$dir/yarn.lock"
+  local nm="$dir/node_modules"
+  local integrity="$nm/.yarn-integrity"
+
+  if [[ ! -d "$nm" ]]; then
+    log "yarn install ($dir) – node_modules missing"
+  elif [[ -f "$lock" && ! -f "$integrity" ]]; then
+    log "yarn install ($dir) – .yarn-integrity missing"
+  elif [[ -f "$lock" && "$lock" -nt "$integrity" ]]; then
+    log "yarn install ($dir) – yarn.lock newer than install"
+  else
+    log "yarn install ($dir) – skipped (looks up-to-date)"
+    return 0
   fi
+
+  (cd "$dir" && yarn install --frozen-lockfile --prefer-offline)
 }
-trap cleanup EXIT
 
-# Warn if running as root
-if [[ $EUID -eq 0 ]]; then
-  echo "[ERROR] Do not run this script as root or with sudo."
-  exit 1
-fi
+main() {
+  log "Step 0/5: Sanity checks"
+  need_cmd node
+  need_cmd yarn
+  need_cmd rsync
 
-# Check for required commands
-for cmd in yarn node; do
-  if ! command -v "$cmd" &> /dev/null; then
-    echo "[ERROR] Required command '$cmd' not found. Please install it first."
-    exit 1
+  # If you ever run this script with sudo, you'll lose per-user caches (Electron/Yarn)
+  # and builds will be slower. Prefer running as a normal user.
+  log "Node: $(node -v) | Yarn: $(yarn -v) | User: $(id -un) | HOME: $HOME"
+
+  if [[ "${CLEAN:-0}" == "1" ]]; then
+    log "CLEAN=1 => removing $DIST_DIR and $BUILD_DIR"
+    rm -rf "$DIST_DIR" "$BUILD_DIR"
   fi
-done
 
-echo -e "\n[1/5] Building React UI..."
-cd "$PROJECT_ROOT/src/ui"
-yarn install
-yarn build
+  log "Step 1/5: Install + build React UI"
+  yarn_install_if_needed "$UI_DIR"
 
-echo -e "\n[2/5] Copying React build output to Electron app..."
-cd "$PROJECT_ROOT"
-rm -rf src/electron/build
-cp -r src/ui/build src/electron/build
+  # If your UI is CRA, uncomment to speed builds (no source maps):
+  # export GENERATE_SOURCEMAP=false
+  (cd "$UI_DIR" && time yarn build)
 
-# Remove build from .gitignore temporarily for packaging
-if grep -q '^src/electron/build/' .gitignore 2>/dev/null; then
-  cp .gitignore .gitignore.bak
-  sed -i '/^src\/electron\/build\//d' .gitignore
-fi
+  log "Step 2/5: Sync UI build -> Electron build folder"
+  mkdir -p "$BUILD_DIR"
+  rsync -a --delete "$UI_DIR/build/" "$BUILD_DIR/"
 
-echo -e "\n[3/5] Installing Electron dependencies..."
-cd "$PROJECT_ROOT/src/electron"
-yarn install
+  log "Step 3/5: Install Electron deps"
+  yarn_install_if_needed "$ELECTRON_DIR"
 
-echo -e "\n[4/5] Building Electron App for Linux..."
-echo "    Building tar.gz..."
-timeout 300 yarn run electron-builder --linux tar.gz --publish never || true
-echo "    Building AppImage..."
-timeout 300 yarn run electron-builder --linux AppImage --publish never || true
+  log "Step 4/5: Package Electron app (linux)"
+  if [[ "${SKIP_PACKAGE:-0}" == "1" ]]; then
+    log "SKIP_PACKAGE=1 => skipping packaging step"
+    exit 0
+  fi
 
-echo -e "\n[5/5] Build complete! Find your packages in src/electron/dist/"
-ls -la "$PROJECT_ROOT/src/electron/dist/" 2>/dev/null || true
+  # Ensure electron-builder cache stays warm between runs
+  export ELECTRON_CACHE="${ELECTRON_CACHE:-$HOME/.cache/electron}"
+  export ELECTRON_BUILDER_CACHE="${ELECTRON_BUILDER_CACHE:-$HOME/.cache/electron-builder}"
+
+  # Build AppImage + tar.gz in ONE run (much faster than two separate runs)
+  # If you also want deb/rpm, add them after tar.gz.
+  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux AppImage tar.gz)
+
+  log "Done. Artifacts should be in: $DIST_DIR"
+}
+
+main "$@"

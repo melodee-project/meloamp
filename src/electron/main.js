@@ -1,5 +1,5 @@
 // main.js - Electron Main Process
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification } = require('electron');
 const path = require('path');
 const express = require('express');
 const mpris = require('mpris-service');
@@ -14,6 +14,7 @@ const SERVER_PORT = 3001;
 let mprisPlayer;
 let currentPosition = 0;
 let lastPositionUpdate = Date.now();
+let lastTrackId = null;
 
 function startStaticServer() {
   if (staticServer) return;
@@ -42,7 +43,8 @@ function startStaticServer() {
   server.use(express.static(buildPath));
 
   // For all other routes (SPA routing), serve index.html
-  server.get('*', (req, res) => {
+  // Express 5 requires named wildcard parameters: {*splat} matches any path
+  server.get('{*splat}', (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
   staticServer = server.listen(SERVER_PORT, () => {
@@ -241,6 +243,20 @@ ipcMain.on('meloamp-playback-info', async (event, info) => {
   const trackId = generateTrackId(info.trackId);
   const lengthMicroseconds = (info.length || 0) * 1000000; // Convert to microseconds
   
+  // Send desktop notification on track change
+  if (info.trackId && info.trackId !== lastTrackId && info.status === 'Playing') {
+    lastTrackId = info.trackId;
+    if (Notification.isSupported()) {
+      const iconPath = artUrl.startsWith('file://') ? artUrl.slice(7) : undefined;
+      new Notification({
+        title: info.title || 'Now Playing',
+        body: `${artistNames.join(', ')} \n${albumName}`,
+        icon: iconPath,
+        silent: true
+      }).show();
+    }
+  }
+
   // Log the metadata being sent to MPRIS for debugging
   console.log('Sending MPRIS metadata:', {
     'mpris:trackid': trackId,
