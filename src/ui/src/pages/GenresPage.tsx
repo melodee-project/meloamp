@@ -51,8 +51,9 @@ export default function GenresPage() {
       setError(null);
       
       try {
-        const res = await api.get<{ data: Genre[] } | Genre[]>('/genres');
-        const genreData = Array.isArray(res.data) ? res.data : (res.data as any).data || [];
+        // API returns GenreListResponse: { genres: Genre[], totalCount, page, limit }
+        const res = await api.get<{ genres: Genre[], totalCount: number, page: number, limit: number }>('/genres');
+        const genreData = res.data.genres || [];
         setGenres(genreData);
       } catch (err: any) {
         // If endpoint doesn't exist, show placeholder genres from albums/artists
@@ -109,23 +110,17 @@ export default function GenresPage() {
       }
 
       try {
-        // Try to fetch genre-specific content
-        // If server supports genre endpoints:
-        const [artistsRes, albumsRes, songsRes] = await Promise.allSettled([
-          api.get<PaginatedResponse<Artist>>(`/genres/${genreId}/artists`, { params: { pageSize: 20 } }),
-          api.get<PaginatedResponse<Album>>(`/genres/${genreId}/albums`, { params: { pageSize: 20 } }),
-          api.get<PaginatedResponse<Song>>(`/genres/${genreId}/songs`, { params: { pageSize: 20 } })
-        ]);
-
-        if (artistsRes.status === 'fulfilled') {
-          setArtists(artistsRes.value.data.data || []);
-        }
-        if (albumsRes.status === 'fulfilled') {
-          setAlbums(albumsRes.value.data.data || []);
-        }
-        if (songsRes.status === 'fulfilled') {
-          setSongs(songsRes.value.data.data || []);
-        }
+        // Fetch genre-specific content using the new API
+        // API returns GenreSongsResponse: { songs: Song[], totalCount, page, limit }
+        const songsRes = await api.get<{ songs: Song[], totalCount: number, page: number, limit: number }>(
+          `/Genres/${genreId}/songs`, 
+          { params: { limit: 50 } }
+        );
+        
+        setSongs(songsRes.data.songs || []);
+        // Note: Artist and album endpoints for genres are not yet available
+        setArtists([]);
+        setAlbums([]);
       } catch {
         // Fallback: filter locally (less efficient but works without API support)
         // This requires fetching all content which is expensive

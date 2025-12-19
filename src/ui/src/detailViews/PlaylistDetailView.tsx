@@ -101,7 +101,7 @@ export default function PlaylistDetailView() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    apiRequest(`/Playlists/${id}`)
+    apiRequest(`/playlists/${id}`)
       .then(res => {
         const responseData = res.data as { data?: Playlist } | Playlist;
         const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
@@ -116,7 +116,7 @@ export default function PlaylistDetailView() {
     if (!id) return;
     setSongsLoading(true);
     try {
-      const res = await apiRequest(`/Playlists/${id}/songs?pageSize=200`);
+      const res = await apiRequest(`/playlists/${id}/songs?pageSize=200`);
       // The API returns { meta: {...}, data: Song[] }
       // apiRequest returns { data: { meta: {...}, data: Song[] } }
       const responseData = res.data as { meta?: any; data?: Song[] };
@@ -163,12 +163,12 @@ export default function PlaylistDetailView() {
     setIsSaving(true);
     try {
       const songIds = songs.map(s => s.id);
-      await api.put(`/Playlists/${id}/songs/reorder`, { songIds });
+      await api.put(`/playlists/${id}/songs/reorder`, { songIds });
       setHasChanges(false);
       setEditMode(false);
       setSnackbar({ open: true, message: t('playlistDetail.saveSuccess'), severity: 'success' });
       // Refresh playlist to get updated song count
-      const res = await apiRequest(`/Playlists/${id}`);
+      const res = await apiRequest(`/playlists/${id}`);
       const responseData = res.data as { data?: Playlist } | Playlist;
       const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
       setPlaylist(playlistData as Playlist);
@@ -193,7 +193,7 @@ export default function PlaylistDetailView() {
 
     setIsDeleting(true);
     try {
-      await api.delete(`/Playlists/${id}`);
+      await api.delete(`/playlists/${id}`);
       setDeleteDialogOpen(false);
       setSnackbar({ open: true, message: t('playlistDetail.deleteSuccess'), severity: 'success' });
       // Navigate back to playlists after a short delay
@@ -215,7 +215,7 @@ export default function PlaylistDetailView() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await apiRequest(`/Playlists/${id}/songs?pageSize=${PAGE_SIZE}&page=${currentPage}`);
+      const res = await apiRequest(`/playlists/${id}/songs?pageSize=${PAGE_SIZE}&page=${currentPage}`);
       const responseData = res.data as { meta?: Meta; data?: Song[] };
       const pageSongs = responseData?.data || [];
       
@@ -337,7 +337,7 @@ export default function PlaylistDetailView() {
     setIsSavingMetadata(true);
     try {
       // Update playlist metadata
-      await api.put(`/Playlists/${id}`, {
+      await api.put(`/playlists/${id}`, {
         name: editName.trim(),
         comment: editDescription.trim(),
         isPublic: editPublic
@@ -347,13 +347,13 @@ export default function PlaylistDetailView() {
       if (editImage) {
         const formData = new FormData();
         formData.append('file', editImage);
-        await api.post(`/Playlists/${id}/image`, formData, {
+        await api.post(`/playlists/${id}/image`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
 
       // Refresh playlist data
-      const res = await apiRequest(`/Playlists/${id}`);
+      const res = await apiRequest(`/playlists/${id}`);
       const responseData = res.data as { data?: Playlist } | Playlist;
       const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
       setPlaylist(playlistData as Playlist);

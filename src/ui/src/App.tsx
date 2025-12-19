@@ -1,7 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton, InputBase, Menu, MenuItem, Avatar, Box, Button, Tooltip, ThemeProvider, CssBaseline } from '@mui/material';
-import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info, QueueMusic, Dns } from '@mui/icons-material';
+import { 
+  Brightness4, 
+  Brightness7, 
+  Search, 
+  Settings, 
+  Logout, 
+  Info, 
+  QueueMusic, 
+  Dns,
+  Dashboard as DashboardIcon,
+  Album as AlbumIcon,
+  Person as ArtistIcon,
+  MusicNote as SongIcon,
+  PlaylistPlay as PlaylistIcon,
+  Category as GenreIcon,
+  Favorite as FavoriteIcon
+} from '@mui/icons-material';
 import logo from './logo.svg';
 import './App.css';
 import Badge from '@mui/material/Badge';
@@ -86,14 +102,15 @@ function NavBar({ user }: { user: any }) {
         <img src={logo} alt="MeloAmp Logo" style={{ height: 40, marginRight: 12 }} />
         <Typography variant="h6" noWrap>MeloAmp</Typography>
       </Link>
-      <Box sx={{ ml: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/">{t('nav.dashboard')}</Button>
-        <Button color={location.pathname === '/artists' ? 'primary' : 'inherit'} component={Link} to="/artists">{t('nav.artists')}</Button>
-        <Button color={location.pathname === '/albums' ? 'primary' : 'inherit'} component={Link} to="/albums">{t('nav.albums')}</Button>
-        <Button color={location.pathname === '/playlists' ? 'primary' : 'inherit'} component={Link} to="/playlists">{t('nav.playlists')}</Button>
-        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs">{t('nav.songs')}</Button>
-        <Button color={location.pathname.startsWith('/genres') ? 'primary' : 'inherit'} component={Link} to="/genres">{t('nav.genres', 'Genres')}</Button>
-        <Button color={location.pathname === '/favorites' ? 'primary' : 'inherit'} component={Link} to="/favorites">{t('nav.favorites', 'Favorites')}</Button>
+      <Box sx={{ ml: 4, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        {/* Navigation order: Home → Browse (Albums, Artists, Songs) → Organized (Playlists, Genres) → Personal (My Library) */}
+        <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/" startIcon={<DashboardIcon />}>{t('nav.dashboard')}</Button>
+        <Button color={location.pathname === '/albums' ? 'primary' : 'inherit'} component={Link} to="/albums" startIcon={<AlbumIcon />}>{t('nav.albums')}</Button>
+        <Button color={location.pathname === '/artists' ? 'primary' : 'inherit'} component={Link} to="/artists" startIcon={<ArtistIcon />}>{t('nav.artists')}</Button>
+        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs" startIcon={<SongIcon />}>{t('nav.songs')}</Button>
+        <Button color={location.pathname === '/playlists' ? 'primary' : 'inherit'} component={Link} to="/playlists" startIcon={<PlaylistIcon />}>{t('nav.playlists')}</Button>
+        <Button color={location.pathname.startsWith('/genres') ? 'primary' : 'inherit'} component={Link} to="/genres" startIcon={<GenreIcon />}>{t('nav.genres', 'Genres')}</Button>
+        <Button color={location.pathname === '/favorites' ? 'primary' : 'inherit'} component={Link} to="/favorites" startIcon={<FavoriteIcon />}>{t('nav.myLibrary', 'My Library')}</Button>
       </Box>
     </Box>
   );
@@ -367,7 +384,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
         const jwt = localStorage.getItem('jwt');
         if (jwt) {
           try {
-            const res: any = await apiRequest('/users/me');
+            const res: any = await apiRequest('/user/me');
             const userFromApi = res && res.data ? res.data : null;
             if (userFromApi) {
               // Token is valid, update stored user data

@@ -91,8 +91,8 @@ function setupDefaultHandlers(mock: MockAdapter) {
   const mockStats = createMockStatistics();
 
   // Authentication endpoints
-  mock.onGet('/users/me').reply(200, mockUser);
-  mock.onPost('/users/authenticate').reply(200, {
+  mock.onGet('/user/me').reply(200, mockUser);
+  mock.onPost('/auth/authenticate').reply(200, {
     user: mockUser,
     token: 'mock-jwt-token',
     serverVersion: 1,
@@ -139,7 +139,7 @@ function setupDefaultHandlers(mock: MockAdapter) {
   });
 
   // Playlists endpoints
-  mock.onGet('/users/playlists').reply(200, createMockPaginatedResponse(mockPlaylists));
+  mock.onGet('/user/playlists').reply(200, createMockPaginatedResponse(mockPlaylists));
   mock.onGet(/\/playlists\/[^/]+$/).reply((config) => {
     const id = config.url?.split('/').pop();
     const playlist = mockPlaylists.find(p => p.id === id) || mockPlaylists[0];
@@ -174,7 +174,7 @@ function setupDefaultHandlers(mock: MockAdapter) {
  */
 export function mockUnauthorized() {
   const mock = getMockApi();
-  mock.onGet('/users/me').reply(401, { message: 'Unauthorized' });
+  mock.onGet('/user/me').reply(401, { message: 'Unauthorized' });
 }
 
 /**

@@ -323,9 +323,20 @@
     "liked": "Liked",
     "disliked": "Disliked",
     "topRated": "Top Rated",
+    "rated": "Rated",
+    "entityType": "Content type",
+    "entity": {
+      "songs": "Songs",
+      "albums": "Albums",
+      "artists": "Artists"
+    },
+    "noLiked": "No liked {{entity}} yet. Click the heart icon to add items here.",
+    "noDisliked": "No disliked {{entity}}.",
+    "noTopRated": "No top rated {{entity}} yet. Rate items with 4+ stars to see them here.",
+    "noRated": "No rated {{entity}} yet. Rate items to see them here.",
     "noLikedSongs": "No liked songs yet. Click the heart icon on any song to add it here.",
     "noDislikedSongs": "No disliked songs.",
-    "noTopRated": "No top rated songs yet. Rate songs with 4+ stars to see them here."
+    "noTopRatedSongs": "No top rated songs yet. Rate songs with 4+ stars to see them here."
   },
   "genres": {
     "title": "Browse by Genre",

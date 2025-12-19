@@ -62,7 +62,7 @@ export default function PlaylistPickerDialog({
       setShowCreateNew(false);
       setNewPlaylistName('');
       
-      api.get<PaginatedResponse<Playlist>>('/users/playlists', { params: { pageSize: 100 } })
+      api.get<PaginatedResponse<Playlist>>('/user/playlists', { params: { pageSize: 100 } })
         .then(res => {
           setPlaylists(res.data.data || []);
           setLoading(false);
@@ -88,7 +88,7 @@ export default function PlaylistPickerDialog({
     
     try {
       // POST to add songs to playlist
-      await api.post(`/Playlists/${selectedPlaylist.id}/songs`, { songIds });
+      await api.post(`/playlists/${selectedPlaylist.id}/songs`, { songIds });
       onSuccess?.(selectedPlaylist.name, 'added');
       onClose();
     } catch (err: any) {
@@ -109,7 +109,7 @@ export default function PlaylistPickerDialog({
     
     try {
       // Create new playlist with songs
-      await api.post('/Playlists', {
+      await api.post('/playlists', {
         name: newPlaylistName.trim(),
         comment: '',
         isPublic: false,

@@ -56,7 +56,7 @@ export default function PlaylistManager() {
 
   const fetchPlaylists = () => {
     setLoading(true);
-    api.get<PaginatedResponse<Playlist>>('/users/playlists', { params: { page, pageSize: 20 } })
+    api.get<PaginatedResponse<Playlist>>('/user/playlists', { params: { page, pageSize: 20 } })
       .then((res) => {
         setPlaylists(res.data.data);
         setTotal(res.data.meta?.totalCount || 0);
@@ -119,7 +119,7 @@ export default function PlaylistManager() {
       if (selectedImage && playlistId) {
         const formData = new FormData();
         formData.append('file', selectedImage);
-        await api.post(`/Playlists/${playlistId}/image`, formData, {
+        await api.post(`/playlists/${playlistId}/image`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       }

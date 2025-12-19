@@ -32,7 +32,7 @@ describe('App Authentication', () => {
     expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
   });
 
-  test('shows dashboard when JWT is present and /users/me succeeds', async () => {
+  test('shows dashboard when JWT is present and /user/me succeeds', async () => {
     // Setup authenticated user
     setupAuthenticatedUser();
     
@@ -50,7 +50,7 @@ describe('App Authentication', () => {
     expect(screen.getByRole('link', { name: /songs/i })).toBeInTheDocument();
   });
 
-  test('returns to login when /users/me returns 401', async () => {
+  test('returns to login when /user/me returns 401', async () => {
     // Setup user with JWT, but mock 401 response
     localStorage.setItem('jwt', 'expired-token');
     localStorage.setItem('userSettings', JSON.stringify({
@@ -63,7 +63,7 @@ describe('App Authentication', () => {
     
     // Mock 401 response
     const mock = getMockApi();
-    mock.onGet('/users/me').reply(401, { message: 'Unauthorized' });
+    mock.onGet('/user/me').reply(401, { message: 'Unauthorized' });
     
     render(<App />);
     

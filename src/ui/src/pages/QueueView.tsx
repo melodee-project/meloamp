@@ -265,7 +265,7 @@ export default function QueueView() {
       if (selectedImage && playlistId) {
         const formData = new FormData();
         formData.append('file', selectedImage);
-        await api.post(`/Playlists/${playlistId}/image`, formData, {
+        await api.post(`/playlists/${playlistId}/image`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }

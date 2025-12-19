@@ -29,7 +29,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
       apiRequest('/system/stats'),
       apiRequest(`/artists/recent?limit=${recentLimit}`),
       apiRequest(`/albums/recent?limit=${recentLimit}`),
-      apiRequest('/users/playlists'),
+      apiRequest('/user/playlists'),
     ])
       .then(([statsRes, artistsRes, albumsRes, playlistsRes]) => {
         setStats((statsRes.data as Statistic[]));

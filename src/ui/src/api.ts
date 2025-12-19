@@ -51,7 +51,7 @@ export function setApiBaseUrl(url: string) {
 }
 
 export async function authenticate({ email, password }: LoginRequest): Promise<{ data: LoginResponse }> {
-  return api.post<LoginResponse>('/users/authenticate', { email, password });
+  return api.post<LoginResponse>('/auth/authenticate', { email, password });
 }
 
 export async function apiRequest(path: string, options: any = {}) {
