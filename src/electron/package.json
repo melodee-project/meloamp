@@ -22,6 +22,7 @@
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
+    "electron-updater": "^6.6.2",
     "express": "^5.1.0",
     "got": "^11.8.6",
     "mpris-service": "^2.1.2"
@@ -29,24 +30,66 @@
   "build": {
     "productName": "MeloAmp",
     "executableName": "MeloAmp",
+    "appId": "org.melodee.meloamp",
     "artifactName": "${name}-${version}.${ext}",
     "asar": true,
     "compression": "normal",
     "generateUpdatesFilesForAllChannels": false,
+    "publish": {
+      "provider": "github",
+      "owner": "melodee",
+      "repo": "meloamp",
+      "releaseType": "release"
+    },
     "linux": {
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "tar.gz",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Audio",
       "icon": "resources/logo.png",
       "executableName": "MeloAmp"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/logo.png"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "public.app-category.music",
+      "icon": "resources/logo.png"
     },
     "directories": {
       "output": "dist",

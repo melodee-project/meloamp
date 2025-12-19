@@ -154,5 +154,16 @@
     "deleteError": "Failed to delete playlist",
     "deleteDialogTitle": "Delete Playlist",
     "deleteDialogMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+  },
+  "update": {
+    "checking": "Checking for updates...",
+    "available": "Update available: v{{version}}",
+    "notAvailable": "You are using the latest version",
+    "downloading": "Downloading update: {{percent}}%",
+    "downloaded": "Update downloaded. Restart to apply.",
+    "error": "Update error: {{message}}",
+    "checkForUpdates": "Check for Updates",
+    "restart": "Restart Now",
+    "later": "Later"
   }
 }

@@ -1,0 +1,232 @@
+# CI Build and Release Workflow for MeloAmp
+# Builds the React UI and Electron app for Linux, Windows, and macOS
+# Uploads artifacts for each platform
+
+name: Build and Release
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  # Run tests first
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/ui/yarn.lock
+
+      - name: Install UI dependencies
+        working-directory: src/ui
+        run: yarn install --frozen-lockfile
+
+      - name: Run UI tests
+        working-directory: src/ui
+        run: yarn test --watchAll=false --coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: coverage-report
+          path: src/ui/coverage
+          retention-days: 7
+
+  # Build UI (shared step for all platforms)
+  build-ui:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/ui/yarn.lock
+
+      - name: Install UI dependencies
+        working-directory: src/ui
+        run: yarn install --frozen-lockfile
+
+      - name: Build React UI
+        working-directory: src/ui
+        run: yarn build
+        env:
+          CI: false  # Don't treat warnings as errors
+
+      - name: Upload UI build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-build
+          path: src/ui/build
+          retention-days: 1
+
+  # Build Linux packages
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: build-ui
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/electron/yarn.lock
+
+      - name: Download UI build
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-build
+          path: src/electron/build
+
+      - name: Install Electron dependencies
+        working-directory: src/electron
+        run: yarn install --frozen-lockfile
+
+      - name: Build Linux packages
+        working-directory: src/electron
+        run: yarn electron-builder --linux AppImage tar.gz
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            src/electron/dist/*.AppImage
+            src/electron/dist/*.tar.gz
+            src/electron/dist/latest-linux.yml
+          retention-days: 30
+
+  # Build Windows packages
+  build-windows:
+    runs-on: windows-latest
+    needs: build-ui
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/electron/yarn.lock
+
+      - name: Download UI build
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-build
+          path: src/electron/build
+
+      - name: Install Electron dependencies
+        working-directory: src/electron
+        run: yarn install --frozen-lockfile
+
+      - name: Build Windows packages
+        working-directory: src/electron
+        run: yarn electron-builder --win nsis portable zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            src/electron/dist/*.exe
+            src/electron/dist/*.zip
+            src/electron/dist/latest.yml
+          retention-days: 30
+
+  # Build macOS packages
+  build-macos:
+    runs-on: macos-latest
+    needs: build-ui
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: src/electron/yarn.lock
+
+      - name: Download UI build
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-build
+          path: src/electron/build
+
+      - name: Install Electron dependencies
+        working-directory: src/electron
+        run: yarn install --frozen-lockfile
+
+      - name: Build macOS packages
+        working-directory: src/electron
+        run: yarn electron-builder --mac dmg zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            src/electron/dist/*.dmg
+            src/electron/dist/*.zip
+            src/electron/dist/latest-mac.yml
+          retention-days: 30
+
+  # Create release on tag push
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows, build-macos]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/linux-artifacts/*
+            artifacts/windows-artifacts/*
+            artifacts/macos-artifacts/*
+          draft: false
+          prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

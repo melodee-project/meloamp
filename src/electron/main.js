@@ -1,5 +1,5 @@
 // main.js - Electron Main Process
-const { app, BrowserWindow, ipcMain, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, Menu, dialog } = require('electron');
 const path = require('path');
 const express = require('express');
 const mpris = require('mpris-service');
@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const stream = require('stream');
 const { promisify } = require('util');
 const got = require('got');
+const { autoUpdater } = require('electron-updater');
 
 let staticServer;
 const SERVER_PORT = 3001;
@@ -15,6 +16,11 @@ let mprisPlayer;
 let currentPosition = 0;
 let lastPositionUpdate = Date.now();
 let lastTrackId = null;
+let mainWindow = null;
+
+// Auto-updater configuration
+autoUpdater.autoDownload = false; // Don't auto-download, let user choose
+autoUpdater.autoInstallOnAppQuit = true;
 
 function startStaticServer() {
   if (staticServer) return;
@@ -119,7 +125,7 @@ function createWindow() {
     iconPath = path.join(__dirname, 'resources', 'logo.png');
   }
   
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     icon: iconPath,
@@ -131,22 +137,19 @@ function createWindow() {
     },
   });
 
-  // Hide the default menu bar
-  win.setMenu(null);
-
   // Load the React build output via HTTP server
-  win.loadURL('http://localhost:' + SERVER_PORT);
+  mainWindow.loadURL('http://localhost:' + SERVER_PORT);
 
   if (debugConsoleEnabled) {
-    win.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.on('did-finish-load', () => {
       // Use a detached window so the console is always visible.
-      win.webContents.openDevTools({ mode: 'detach' });
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
     });
   }
 
   // MPRIS setup
   if (!mprisPlayer) {
-    setupMpris(win);
+    setupMpris(mainWindow);
   }
 }
 
@@ -320,7 +323,11 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection:', reason);
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  setupAutoUpdater();
+  setupApplicationMenu();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -329,3 +336,240 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+// ============================================
+// Auto-Updater Setup
+// ============================================
+
+function setupAutoUpdater() {
+  // Only enable auto-updater in packaged builds
+  if (!app.isPackaged) {
+    console.log('Auto-updater disabled in development mode');
+    return;
+  }
+
+  // Configure auto-updater logging
+  autoUpdater.logger = console;
+
+  // Auto-updater events
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Checking for updates...');
+    sendUpdateStatus('checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info);
+    sendUpdateStatus('available', info);
+    
+    // Show notification
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'Update Available',
+        body: `MeloAmp ${info.version} is available. Click to download.`,
+        silent: false
+      }).show();
+    }
+
+    // Ask user if they want to download
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version (${info.version}) is available.`,
+      detail: 'Would you like to download it now?',
+      buttons: ['Download', 'Later'],
+      defaultId: 0,
+      cancelId: 1
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.downloadUpdate();
+      }
+    });
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('Update not available:', info);
+    sendUpdateStatus('not-available', info);
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Auto-updater error:', err);
+    sendUpdateStatus('error', { message: err.message });
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    console.log(`Download progress: ${progress.percent.toFixed(1)}%`);
+    sendUpdateStatus('downloading', progress);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('Update downloaded:', info);
+    sendUpdateStatus('downloaded', info);
+    
+    // Ask user to restart
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: 'Update downloaded successfully.',
+      detail: 'The update will be installed when you restart MeloAmp.',
+      buttons: ['Restart Now', 'Later'],
+      defaultId: 0,
+      cancelId: 1
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  // Check for updates on startup (after a short delay)
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch(err => {
+      console.error('Failed to check for updates:', err);
+    });
+  }, 5000);
+}
+
+function sendUpdateStatus(status, data = {}) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('meloamp-update-status', { status, ...data });
+  }
+}
+
+// IPC handler for manual update check
+ipcMain.on('meloamp-check-for-updates', () => {
+  if (!app.isPackaged) {
+    sendUpdateStatus('error', { message: 'Updates are only available in packaged builds' });
+    return;
+  }
+  autoUpdater.checkForUpdates().catch(err => {
+    sendUpdateStatus('error', { message: err.message });
+  });
+});
+
+// ============================================
+// Application Menu
+// ============================================
+
+function setupApplicationMenu() {
+  const isMac = process.platform === 'darwin';
+  
+  const template = [
+    // App menu (macOS only)
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates...',
+          click: () => {
+            if (!app.isPackaged) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Development Mode',
+                message: 'Auto-updates are only available in packaged builds.',
+                buttons: ['OK']
+              });
+              return;
+            }
+            autoUpdater.checkForUpdates().catch(err => {
+              dialog.showErrorBox('Update Error', err.message);
+            });
+          }
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    // File menu
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    // Edit menu
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' }
+        ] : [
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' }
+        ])
+      ]
+    },
+    // View menu
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    // Help menu
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About MeloAmp',
+          click: () => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About MeloAmp',
+              message: `MeloAmp v${app.getVersion()}`,
+              detail: 'Cross-platform streaming client for Melodee.\n\nBuilt with Electron.',
+              buttons: ['OK']
+            });
+          }
+        },
+        ...(isMac ? [] : [
+          { type: 'separator' },
+          {
+            label: 'Check for Updates...',
+            click: () => {
+              if (!app.isPackaged) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Development Mode',
+                  message: 'Auto-updates are only available in packaged builds.',
+                  buttons: ['OK']
+                });
+                return;
+              }
+              autoUpdater.checkForUpdates().catch(err => {
+                dialog.showErrorBox('Update Error', err.message);
+              });
+            }
+          }
+        ])
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}

@@ -5,20 +5,23 @@ const { contextBridge, ipcRenderer } = require('electron');
 // Expose APIs to the renderer
 contextBridge.exposeInMainWorld('meloampAPI', {
   sendPlaybackInfo: (info) => ipcRenderer.send('meloamp-playback-info', info),
-  sendPosition: (position) => ipcRenderer.send('meloamp-position-update', position)
+  sendPosition: (position) => ipcRenderer.send('meloamp-position-update', position),
+  checkForUpdates: () => ipcRenderer.send('meloamp-check-for-updates')
 });
 
-// Expose electron APIs for MPRIS control
+// Expose electron APIs for MPRIS control and updates
 contextBridge.exposeInMainWorld('electron', {
   versions: process.versions,
   ipcRenderer: {
     on: (channel, callback) => {
-      if (channel === 'meloamp-mpris-control') {
+      const validChannels = ['meloamp-mpris-control', 'meloamp-update-status'];
+      if (validChannels.includes(channel)) {
         ipcRenderer.on(channel, callback);
       }
     },
     removeListener: (channel, callback) => {
-      if (channel === 'meloamp-mpris-control') {
+      const validChannels = ['meloamp-mpris-control', 'meloamp-update-status'];
+      if (validChannels.includes(channel)) {
         ipcRenderer.removeListener(channel, callback);
       }
     }
