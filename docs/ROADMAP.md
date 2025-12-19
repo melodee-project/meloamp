@@ -18,11 +18,11 @@ It is intentionally implementation-oriented: each feature includes acceptance cr
 - [x] **R0.5 Auto-update support** (electron-builder updater + update UI feedback)
 
 ### Milestone 1 — Playback Experience
-- [ ] **P1.1 Repeat modes** (Off / Repeat All / Repeat One)
-- [ ] **P1.2 Shuffle mode** (true shuffle + “keep current song” behavior)
-- [ ] **P1.3 Gapless-ish transitions** (preload next track + minimize silence)
-- [ ] **P1.4 Volume normalization** (ReplayGain/LUFS when available; safe fallback)
-- [ ] **P1.5 Playback error recovery** (retry/backoff, user-visible error, skip to next)
+- [x] **P1.1 Repeat modes** (Off / Repeat All / Repeat One)
+- [x] **P1.2 Shuffle mode** (true shuffle + “keep current song” behavior)
+- [x] **P1.3 Gapless-ish transitions** (preload next track + minimize silence)
+- [x] **P1.4 Volume normalization** (ReplayGain/LUFS when available; safe fallback)
+- [x] **P1.5 Playback error recovery** (retry/backoff, user-visible error, skip to next)
 
 ### Milestone 2 — Queue & Playlist Workflows
 - [ ] **Q2.1 Queue “Play Next” and “Add to Queue” consistency** across all cards/views

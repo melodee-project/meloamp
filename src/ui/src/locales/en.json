@@ -49,7 +49,18 @@
     "removedFromFavorites": "Removed from favorites",
     "failedToUpdateFavorite": "Failed to update favorite",
     "playbackFailed": "Playback failed. Click play to try again.",
-    "now": "Now"
+    "now": "Now",
+    "repeatOff": "Repeat: Off",
+    "repeatAll": "Repeat: All",
+    "repeatOne": "Repeat: One",
+    "shuffleOn": "Shuffle: On",
+    "shuffleOff": "Shuffle: Off",
+    "retrying": "Retrying playback...",
+    "skippingError": "Could not play track. Skipping...",
+    "tooManyErrors": "Too many playback errors. Stopping.",
+    "ratingRemoved": "Rating removed",
+    "ratingSaved": "Rating saved",
+    "failedToUpdateRating": "Failed to update rating"
   },
   "songCard": {
     "unknownAlbum": "Unknown Album",

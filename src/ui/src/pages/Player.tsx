@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog, Rating } from '@mui/material';
-import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder, Fullscreen, FullscreenExit } from '@mui/icons-material';
-import { useQueueStore } from '../queueStore';
+import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog, Rating, Tooltip } from '@mui/material';
+import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder, Fullscreen, FullscreenExit, Repeat, RepeatOne, Shuffle } from '@mui/icons-material';
+import { useQueueStore, RepeatMode } from '../queueStore';
 import api from '../api';
 import { ScrobbleRequest, ScrobbleType } from '../apiModels';
 import { useTranslation } from 'react-i18next';
@@ -14,9 +14,14 @@ const EQ_BANDS = [60, 170, 350, 1000, 3500, 10000];
 // Throttle progress updates to reduce re-renders (update UI max 4x per second)
 const PROGRESS_UPDATE_INTERVAL_MS = 250;
 
+// Playback error recovery constants
+const MAX_RETRY_ATTEMPTS = 1;
+const MAX_CONSECUTIVE_FAILURES = 3;
+
 export default function Player({ src }: { src: string }) {
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const nextAudioRef = useRef<HTMLAudioElement>(null); // For gapless preloading
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -29,6 +34,11 @@ export default function Player({ src }: { src: string }) {
   const [ratingLoading, setRatingLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [nextTrackPreloaded, setNextTrackPreloaded] = useState(false);
+  
+  // Error recovery state
+  const retryCountRef = useRef<number>(0);
+  const consecutiveFailuresRef = useRef<number>(0);
   
   // Ref to track last progress update time for throttling
   const lastProgressUpdateRef = useRef<number>(0);
@@ -39,12 +49,136 @@ export default function Player({ src }: { src: string }) {
   const current = useQueueStore((state: any) => state.current);
   const setCurrent = useQueueStore((state: any) => state.setCurrent);
   const updateSong = useQueueStore((state: any) => state.updateSong);
+  const repeatMode = useQueueStore((state: any) => state.repeatMode);
+  const shuffleEnabled = useQueueStore((state: any) => state.shuffleEnabled);
+  const setRepeatMode = useQueueStore((state: any) => state.setRepeatMode);
+  const toggleShuffle = useQueueStore((state: any) => state.toggleShuffle);
   const { t } = useTranslation();
 
   // Equalizer setup
   const eqNodes = useRef<any[]>([]);
   const audioCtx = useRef<AudioContext | null>(null);
   const sourceNode = useRef<MediaElementAudioSourceNode | null>(null);
+
+  // Cycle through repeat modes: OFF -> ALL -> ONE -> OFF
+  const cycleRepeatMode = () => {
+    const modes = [RepeatMode.OFF, RepeatMode.ALL, RepeatMode.ONE];
+    const currentIndex = modes.indexOf(repeatMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setRepeatMode(modes[nextIndex]);
+  };
+
+  // Get the appropriate icon and tooltip for repeat mode
+  const getRepeatIcon = () => {
+    switch (repeatMode) {
+      case RepeatMode.ONE:
+        return <RepeatOne />;
+      case RepeatMode.ALL:
+      case RepeatMode.OFF:
+      default:
+        return <Repeat />;
+    }
+  };
+
+  const getRepeatTooltip = () => {
+    switch (repeatMode) {
+      case RepeatMode.OFF:
+        return t('player.repeatOff');
+      case RepeatMode.ALL:
+        return t('player.repeatAll');
+      case RepeatMode.ONE:
+        return t('player.repeatOne');
+      default:
+        return t('player.repeatOff');
+    }
+  };
+
+  // Preload next track for gapless-ish transitions
+  useEffect(() => {
+    if (!queue[current] || current >= queue.length - 1) {
+      setNextTrackPreloaded(false);
+      return;
+    }
+
+    const nextSong = queue[current + 1];
+    if (!nextSong?.url || !nextAudioRef.current) return;
+
+    // Preload when we reach 80% of the current track
+    const preloadThreshold = 0.8;
+    
+    const checkPreload = () => {
+      if (!audioRef.current || nextTrackPreloaded) return;
+      
+      const currentProgress = audioRef.current.currentTime / (audioRef.current.duration || 1);
+      if (currentProgress >= preloadThreshold && nextSong.url) {
+        debugLog('Player', 'Preloading next track:', nextSong.title);
+        nextAudioRef.current!.src = nextSong.url;
+        nextAudioRef.current!.load();
+        setNextTrackPreloaded(true);
+      }
+    };
+
+    const interval = setInterval(checkPreload, 1000);
+    return () => clearInterval(interval);
+  }, [current, queue, nextTrackPreloaded]);
+
+  // Reset preload state when song changes
+  useEffect(() => {
+    setNextTrackPreloaded(false);
+    retryCountRef.current = 0;
+  }, [current]);
+
+  // Handle playback errors with retry logic
+  const handlePlaybackError = () => {
+    const currentSong = queue[current];
+    if (!currentSong) return;
+
+    if (retryCountRef.current < MAX_RETRY_ATTEMPTS) {
+      // Retry once
+      retryCountRef.current++;
+      debugLog('Player', `Retrying playback (attempt ${retryCountRef.current})`);
+      setSnackbar(t('player.retrying'));
+      
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.load();
+          audioRef.current.play().catch(() => {
+            handlePlaybackError();
+          });
+        }
+      }, 1000);
+    } else {
+      // Max retries reached, skip to next
+      consecutiveFailuresRef.current++;
+      retryCountRef.current = 0;
+      
+      if (consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+        // Too many consecutive failures, stop playback
+        debugError('Player', 'Too many consecutive failures, stopping playback');
+        setSnackbar(t('player.tooManyErrors'));
+        setPlaying(false);
+        consecutiveFailuresRef.current = 0;
+      } else {
+        // Skip to next track
+        debugLog('Player', 'Skipping to next track after error');
+        setSnackbar(t('player.skippingError'));
+        
+        if (current < queue.length - 1) {
+          setCurrent(current + 1);
+        } else if (repeatMode === RepeatMode.ALL) {
+          setCurrent(0);
+        } else {
+          setPlaying(false);
+        }
+      }
+    }
+  };
+
+  // Reset consecutive failures on successful playback
+  const handlePlaybackSuccess = () => {
+    consecutiveFailuresRef.current = 0;
+    retryCountRef.current = 0;
+  };
 
   // Create audio context and source node only once
   useEffect(() => {
@@ -638,9 +772,21 @@ export default function Player({ src }: { src: string }) {
               {/* Controls (reuse main controls) */}
               <Box sx={{ mt: 4 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  {/* Shuffle button */}
+                  <Tooltip title={shuffleEnabled ? t('player.shuffleOn') : t('player.shuffleOff')}>
+                    <IconButton onClick={toggleShuffle} color={shuffleEnabled ? 'primary' : 'default'} sx={{ mx: 1 }}>
+                      <Shuffle fontSize="large" />
+                    </IconButton>
+                  </Tooltip>
                   <IconButton onClick={() => playSongAtIndex(Math.max(current - 1, 0))} sx={{ mx: 1, fontSize: 32 }}><SkipPrevious fontSize="large" /></IconButton>
                   <IconButton onClick={togglePlay} sx={{ mx: 2, fontSize: 40 }}>{playing ? <Pause fontSize="large" /> : <PlayArrow fontSize="large" />}</IconButton>
                   <IconButton onClick={() => playSongAtIndex(Math.min(current + 1, queue.length - 1))} sx={{ mx: 1, fontSize: 32 }}><SkipNext fontSize="large" /></IconButton>
+                  {/* Repeat button */}
+                  <Tooltip title={getRepeatTooltip()}>
+                    <IconButton onClick={cycleRepeatMode} color={repeatMode !== RepeatMode.OFF ? 'primary' : 'default'} sx={{ mx: 1 }}>
+                      {getRepeatIcon()}
+                    </IconButton>
+                  </Tooltip>
                   {/* Volume slider */}
                   <Box sx={{ width: 120, mx: 2, display: 'flex', alignItems: 'center' }}>
                     <Typography variant="caption" sx={{ mr: 1 }}>{t('player.vol')}</Typography>
@@ -721,9 +867,27 @@ export default function Player({ src }: { src: string }) {
             </Box>
           </Box>
         )}
+        {/* Shuffle button */}
+        <Tooltip title={shuffleEnabled ? t('player.shuffleOn') : t('player.shuffleOff')}>
+          <IconButton 
+            onClick={toggleShuffle} 
+            color={shuffleEnabled ? 'primary' : 'default'}
+          >
+            <Shuffle />
+          </IconButton>
+        </Tooltip>
         <IconButton onClick={() => playSongAtIndex(Math.max(current - 1, 0))}><SkipPrevious /></IconButton>
         <IconButton onClick={togglePlay}>{playing ? <Pause /> : <PlayArrow />}</IconButton>
         <IconButton onClick={() => playSongAtIndex(Math.min(current + 1, queue.length - 1))}><SkipNext /></IconButton>
+        {/* Repeat button */}
+        <Tooltip title={getRepeatTooltip()}>
+          <IconButton 
+            onClick={cycleRepeatMode} 
+            color={repeatMode !== RepeatMode.OFF ? 'primary' : 'default'}
+          >
+            {getRepeatIcon()}
+          </IconButton>
+        </Tooltip>
         <Slider
           value={progress}
           min={0}
@@ -757,6 +921,8 @@ export default function Player({ src }: { src: string }) {
           {favLoading ? <CircularProgress size={24} /> : favorite ? <Favorite color="primary" /> : <FavoriteBorder />}
         </IconButton>
         <IconButton onClick={() => setIsFullScreen(true)} sx={{ ml: 1 }}><Fullscreen /></IconButton>
+        {/* Hidden audio element for preloading next track */}
+        <audio ref={nextAudioRef} preload="auto" style={{ display: 'none' }} />
         <audio
           ref={audioRef}
           src={queue[current]?.url || ''}
@@ -810,6 +976,7 @@ export default function Player({ src }: { src: string }) {
           }}
           onPlaying={e => {
             debugLog('Player Audio', 'playing event - playback has begun');
+            handlePlaybackSuccess();
           }}
           onPause={e => {
             debugLog('Player Audio', 'pause event');
@@ -847,6 +1014,8 @@ export default function Player({ src }: { src: string }) {
                 MEDIA_ERR_SRC_NOT_SUPPORTED: error.code === 4
               } : null
             });
+            // Trigger error recovery
+            handlePlaybackError();
           }}
           onProgress={e => {
             const audio = e.target as HTMLAudioElement;
@@ -863,10 +1032,23 @@ export default function Player({ src }: { src: string }) {
             }
           }}
           onEnded={() => {
-            debugLog('Player Audio', 'ended - playback completed');
-            if (current < queue.length - 1) {
+            debugLog('Player Audio', 'ended - playback completed, repeatMode:', repeatMode);
+            handlePlaybackSuccess();
+            
+            if (repeatMode === RepeatMode.ONE) {
+              // Repeat One: restart the same song
+              if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(handlePlaybackError);
+              }
+            } else if (current < queue.length - 1) {
+              // More songs in queue
               playSongAtIndex(current + 1);
+            } else if (repeatMode === RepeatMode.ALL) {
+              // Repeat All: wrap to first song
+              playSongAtIndex(0);
             } else {
+              // Repeat Off: stop at end
               setPlaying(false);
             }
           }}
