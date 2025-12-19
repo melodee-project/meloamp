@@ -1,13 +1,14 @@
 import { debugLog, debugError } from '../debug';
 import React from 'react';
-import { Box, Typography, Card, CardMedia, CardContent, IconButton, Tooltip, Stack } from '@mui/material';
-import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, QueueMusic, SkipNext } from '@mui/icons-material';
+import { Box, Typography, Card, CardMedia, CardContent, IconButton, Tooltip, Stack, Snackbar, Alert } from '@mui/material';
+import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, QueueMusic, SkipNext, PlaylistAdd } from '@mui/icons-material';
 import { Song } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from './toQueueSong';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
+import PlaylistPickerDialog from './PlaylistPickerDialog';
 
 interface SongCardProps {
   song: Song;
@@ -21,7 +22,14 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
   // Use stable selectors for each store value/action
   const playNow = useQueueStore(state => state.playNow);
   const addToQueue = useQueueStore(state => state.addToQueue);
+  const addToQueueNext = useQueueStore(state => state.addToQueueNext);
   const [favorite, setFavorite] = React.useState(song.userStarred);
+  const [playlistDialogOpen, setPlaylistDialogOpen] = React.useState(false);
+  const [snackbar, setSnackbar] = React.useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
   const [hated, setHated] = React.useState(song.userRating === -1);
   const [hovered, setHovered] = React.useState(false);
 
@@ -40,7 +48,7 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
   // Play next: insert after current
   const handlePlayNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToQueue(toQueueSong(song));
+    addToQueueNext(toQueueSong(song));
   };
 
   // Add as last in queue
@@ -85,7 +93,25 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
     }
   };
 
+  // Add to playlist
+  const handleAddToPlaylist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPlaylistDialogOpen(true);
+  };
+
+  const handlePlaylistSuccess = (playlistName: string, action: 'created' | 'added') => {
+    const message = action === 'created' 
+      ? t('playlist.createSuccess', { name: playlistName })
+      : t('playlist.addSuccess', { name: playlistName });
+    setSnackbar({ open: true, message, severity: 'success' });
+  };
+
+  const handlePlaylistError = (message: string) => {
+    setSnackbar({ open: true, message, severity: 'error' });
+  };
+
   return (
+    <>
     <Card sx={{
       minWidth: 250,
       maxWidth,
@@ -183,9 +209,37 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
           <Tooltip title={t('songCard.addLast')}>
             <IconButton size="small" onClick={handleAddLast}><QueueMusic /></IconButton>
           </Tooltip>
+          <Tooltip title={t('songCard.addToPlaylist')}>
+            <IconButton size="small" onClick={handleAddToPlaylist}><PlaylistAdd /></IconButton>
+          </Tooltip>
         </Stack>
       </CardContent>
     </Card>
+    
+    {/* Playlist picker dialog */}
+    <PlaylistPickerDialog
+      open={playlistDialogOpen}
+      onClose={() => setPlaylistDialogOpen(false)}
+      songIds={[song.id]}
+      onSuccess={handlePlaylistSuccess}
+      onError={handlePlaylistError}
+    />
+    
+    {/* Snackbar for feedback */}
+    <Snackbar
+      open={snackbar.open}
+      autoHideDuration={4000}
+      onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    >
+      <Alert 
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 
+        severity={snackbar.severity}
+      >
+        {snackbar.message}
+      </Alert>
+    </Snackbar>
+    </>
   );
 }
 

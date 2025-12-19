@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -21,9 +21,12 @@ import {
   DialogActions,
   Snackbar,
   Alert,
-  Tooltip
+  Tooltip,
+  TextField,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
-import { Delete, DragIndicator, Edit, EditOff, PlayArrow } from '@mui/icons-material';
+import { Delete, DragIndicator, Edit, EditOff, PlayArrow, Download, ImageOutlined } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import api, { apiRequest } from '../api';
 import { Playlist, Song, User, Meta } from '../apiModels';
@@ -55,6 +58,16 @@ export default function PlaylistDetailView() {
   // Delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Edit metadata dialog
+  const [editMetadataOpen, setEditMetadataOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPublic, setEditPublic] = useState(false);
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [isSavingMetadata, setIsSavingMetadata] = useState(false);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
 
   // Snackbar
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -247,6 +260,113 @@ export default function PlaylistDetailView() {
     }
   };
 
+  // Export playlist as M3U
+  const handleExportM3U = async () => {
+    if (!playlist || songs.length === 0) return;
+
+    // If we don't have all songs loaded, fetch them first
+    let allSongs = songs;
+    if (playlist.songCount && songs.length < playlist.songCount) {
+      try {
+        allSongs = await fetchAllSongs();
+      } catch (err) {
+        setSnackbar({ open: true, message: t('playlistDetail.loadError'), severity: 'error' });
+        return;
+      }
+    }
+
+    // Generate M3U content
+    const lines = ['#EXTM3U', `#PLAYLIST:${playlist.name}`];
+    allSongs.forEach(song => {
+      const durationSec = Math.round((song.durationMs || 0) / 1000);
+      const artist = song.artist?.name || 'Unknown Artist';
+      const title = song.title || 'Unknown Title';
+      lines.push(`#EXTINF:${durationSec},${artist} - ${title}`);
+      lines.push(song.streamUrl || `# Song ID: ${song.id}`);
+    });
+
+    const content = lines.join('\n');
+    const blob = new Blob([content], { type: 'audio/x-mpegurl' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    setSnackbar({ open: true, message: t('playlist.exportSuccess'), severity: 'success' });
+  };
+
+  // Open edit metadata dialog
+  const handleOpenEditMetadata = () => {
+    if (!playlist) return;
+    setEditName(playlist.name);
+    setEditDescription(playlist.description || '');
+    setEditPublic(playlist.isPublic || false);
+    setEditImage(null);
+    setEditImagePreview(null);
+    setEditMetadataOpen(true);
+  };
+
+  // Handle edit image selection
+  const handleEditImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setSnackbar({ open: true, message: t('queue.invalidImageType'), severity: 'error' });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setSnackbar({ open: true, message: t('queue.imageTooLarge'), severity: 'error' });
+        return;
+      }
+      setEditImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setEditImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Save metadata changes
+  const handleSaveMetadata = async () => {
+    if (!id || !editName.trim()) return;
+
+    setIsSavingMetadata(true);
+    try {
+      // Update playlist metadata
+      await api.put(`/Playlists/${id}`, {
+        name: editName.trim(),
+        comment: editDescription.trim(),
+        isPublic: editPublic
+      });
+
+      // Upload new image if selected
+      if (editImage) {
+        const formData = new FormData();
+        formData.append('file', editImage);
+        await api.post(`/Playlists/${id}/image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      // Refresh playlist data
+      const res = await apiRequest(`/Playlists/${id}`);
+      const responseData = res.data as { data?: Playlist } | Playlist;
+      const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
+      setPlaylist(playlistData as Playlist);
+
+      setSnackbar({ open: true, message: t('playlistDetail.saveSuccess'), severity: 'success' });
+      setEditMetadataOpen(false);
+    } catch (err: any) {
+      setSnackbar({ open: true, message: err?.response?.data?.message || t('playlistDetail.saveError'), severity: 'error' });
+    } finally {
+      setIsSavingMetadata(false);
+    }
+  };
+
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
@@ -289,6 +409,16 @@ export default function PlaylistDetailView() {
                 {isLoadingAll ? t('playlistDetail.loadingAll') : t('playlistDetail.playAll')}
               </Button>
 
+              {/* Export M3U button - available to everyone */}
+              <Button
+                variant="outlined"
+                startIcon={<Download />}
+                onClick={handleExportM3U}
+                disabled={songs.length === 0}
+              >
+                {t('playlist.exportM3U')}
+              </Button>
+
               {isOwner && (
                 <>
                   {editMode ? (
@@ -311,13 +441,22 @@ export default function PlaylistDetailView() {
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      variant="outlined"
-                      startIcon={<Edit />}
-                      onClick={() => setEditMode(true)}
-                    >
-                      {t('playlistDetail.edit')}
-                    </Button>
+                    <>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Edit />}
+                        onClick={() => setEditMode(true)}
+                      >
+                        {t('playlistDetail.edit')}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<Edit />}
+                        onClick={handleOpenEditMetadata}
+                      >
+                        {t('playlistDetail.editMetadata', 'Edit Info')}
+                      </Button>
+                    </>
                   )}
                   <Button
                     variant="outlined"
@@ -442,6 +581,101 @@ export default function PlaylistDetailView() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Edit Metadata Dialog */}
+      <Dialog open={editMetadataOpen} onClose={() => !isSavingMetadata && setEditMetadataOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('playlistDetail.editMetadata', 'Edit Playlist Info')}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label={t('playlist.playlistName')}
+            fullWidth
+            variant="outlined"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            disabled={isSavingMetadata}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label={t('playlistDetail.description', 'Description')}
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={2}
+            value={editDescription}
+            onChange={e => setEditDescription(e.target.value)}
+            disabled={isSavingMetadata}
+            sx={{ mb: 2 }}
+          />
+          <FormControlLabel
+            control={
+              <Switch 
+                checked={editPublic} 
+                onChange={e => setEditPublic(e.target.checked)}
+                disabled={isSavingMetadata}
+              />
+            }
+            label={t('playlistDetail.public', 'Public')}
+            sx={{ mb: 2 }}
+          />
+          
+          {/* Image picker */}
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              {t('queue.playlistImageLabel')}
+            </Typography>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEditImageSelect}
+              ref={editImageInputRef}
+              style={{ display: 'none' }}
+              id="edit-playlist-image-input"
+            />
+            {editImagePreview ? (
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Box
+                  component="img"
+                  src={editImagePreview}
+                  alt="Preview"
+                  sx={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
+                />
+                <IconButton
+                  size="small"
+                  onClick={() => { setEditImage(null); setEditImagePreview(null); }}
+                  sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper', boxShadow: 1 }}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {playlist?.imageUrl && (
+                  <Box
+                    component="img"
+                    src={playlist.imageUrl}
+                    alt="Current"
+                    sx={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 1 }}
+                  />
+                )}
+                <label htmlFor="edit-playlist-image-input">
+                  <Button variant="outlined" component="span" startIcon={<ImageOutlined />} disabled={isSavingMetadata}>
+                    {t('playlistDetail.changeImage', 'Change Image')}
+                  </Button>
+                </label>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditMetadataOpen(false)} disabled={isSavingMetadata}>{t('common.cancel')}</Button>
+          <Button onClick={handleSaveMetadata} variant="contained" disabled={isSavingMetadata || !editName.trim()}>
+            {isSavingMetadata ? <CircularProgress size={20} /> : t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

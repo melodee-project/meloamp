@@ -25,13 +25,13 @@ It is intentionally implementation-oriented: each feature includes acceptance cr
 - [x] **P1.5 Playback error recovery** (retry/backoff, user-visible error, skip to next)
 
 ### Milestone 2 — Queue & Playlist Workflows
-- [ ] **Q2.1 Queue “Play Next” and “Add to Queue” consistency** across all cards/views
-- [ ] **Q2.2 Queue history & undo** (undo remove/clear, back to previous track)
-- [ ] **Q2.3 Save queue to existing playlist** (append/replace) in addition to “new playlist”
-- [ ] **L2.1 Create playlist** (name/description/public) from Playlist page
-- [ ] **L2.2 Edit playlist metadata** (name/description/public + cover image)
-- [ ] **L2.3 Add/remove songs to playlists** from SongCard / Album / Artist / Search results
-- [ ] **L2.4 Playlist import/export** (M3U) 
+- [x] **Q2.1 Queue “Play Next” and “Add to Queue” consistency** across all cards/views
+- [x] **Q2.2 Queue history & undo** (undo remove/clear, back to previous track)
+- [x] **Q2.3 Save queue to existing playlist** (append/replace) in addition to “new playlist”
+- [x] **L2.1 Create playlist** (name/description/public) from Playlist page
+- [x] **L2.2 Edit playlist metadata** (name/description/public + cover image)
+- [x] **L2.3 Add/remove songs to playlists** from SongCard / Album / Artist / Search results
+- [x] **L2.4 Playlist import/export** (M3U) 
 
 ### Milestone 3 — Search & Browse
 - [ ] **S3.1 Unified search query propagation** (top-bar search should set `/search?q=` reliably)

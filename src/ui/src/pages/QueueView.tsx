@@ -77,6 +77,8 @@ export default function QueueView() {
   const removeFromQueue = useQueueStore((state: QueueState) => state.removeFromQueue);
   const reorderQueue = useQueueStore((state: QueueState) => state.reorderQueue);
   const clearQueue = useQueueStore((state: QueueState) => state.clearQueue);
+  const lastAction = useQueueStore((state: QueueState) => state.lastAction);
+  const undo = useQueueStore((state: QueueState) => state.undo);
   // Get playing state from Player (global store or context)
   const [playing, setPlaying] = React.useState(false);
   const [playerCurrent, setPlayerCurrent] = React.useState<number>(-1);
@@ -91,11 +93,15 @@ export default function QueueView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State for snackbar notifications
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ 
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error'; showUndo?: boolean }>({ 
     open: false, 
     message: '', 
-    severity: 'success' 
+    severity: 'success',
+    showUndo: false
   });
+
+  // Auto-hide undo snackbar after timeout
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     // Listen for playing state and current index from Player via window event
@@ -108,6 +114,69 @@ export default function QueueView() {
     window.addEventListener('meloamp-player-state', handlePlayerState);
     return () => window.removeEventListener('meloamp-player-state', handlePlayerState);
   }, []);
+
+  // Handle remove with undo snackbar
+  const handleRemove = (index: number) => {
+    const songTitle = queue[index]?.title || 'Song';
+    removeFromQueue(index);
+    
+    // Clear any existing timeout
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+    }
+    
+    setSnackbar({ 
+      open: true, 
+      message: t('queue.songRemoved', { title: songTitle }), 
+      severity: 'success',
+      showUndo: true
+    });
+    
+    // Auto-clear undo after 5 seconds
+    undoTimeoutRef.current = setTimeout(() => {
+      setSnackbar(prev => ({ ...prev, showUndo: false }));
+    }, 5000);
+  };
+
+  // Handle clear with undo snackbar
+  const handleClearQueue = () => {
+    const songCount = queue.length;
+    clearQueue();
+    
+    // Clear any existing timeout
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+    }
+    
+    setSnackbar({ 
+      open: true, 
+      message: t('queue.queueCleared', { count: songCount }), 
+      severity: 'success',
+      showUndo: true
+    });
+    
+    // Auto-clear undo after 5 seconds
+    undoTimeoutRef.current = setTimeout(() => {
+      setSnackbar(prev => ({ ...prev, showUndo: false }));
+    }, 5000);
+  };
+
+  // Handle undo action
+  const handleUndo = () => {
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+    }
+    
+    const success = undo();
+    if (success) {
+      setSnackbar({ 
+        open: true, 
+        message: t('queue.undoSuccess'), 
+        severity: 'success',
+        showUndo: false
+      });
+    }
+  };
 
   const shuffleQueue = () => {
     const shuffled = [...queue];
@@ -240,7 +309,7 @@ export default function QueueView() {
     queue,
     playerCurrent,
     playing,
-    removeFromQueue,
+    removeFromQueue: handleRemove,
     t
   };
 
@@ -250,7 +319,7 @@ export default function QueueView() {
       ref={provided.innerRef} 
       {...provided.draggableProps} 
       secondaryAction={
-        <IconButton edge="end" onClick={() => removeFromQueue(idx)}><Delete /></IconButton>
+        <IconButton edge="end" onClick={() => handleRemove(idx)}><Delete /></IconButton>
       }
       className={song.played ? 'played-song' : 'unplayed-song'}
       sx={{
@@ -287,7 +356,7 @@ export default function QueueView() {
         {queue.length > 0 ? ` • ${formatMs(totalDuration)}` : ''}
         {useVirtualization && <span> • Virtualized for performance</span>}
       </Typography>
-      <Button onClick={clearQueue} color="error" sx={{ mr: 2 }}>{t('queue.clear')}</Button>
+      <Button onClick={handleClearQueue} color="error" sx={{ mr: 2 }}>{t('queue.clear')}</Button>
       <Button onClick={shuffleQueue} sx={{ mr: 2 }}>{t('queue.shuffle')}</Button>
       <Button onClick={handleOpenSaveDialog} sx={{ mr: 2 }} disabled={queue.length === 0}>{t('queue.save')}</Button>
       <Button onClick={() => {}} color="primary">{t('queue.playAll')}</Button>
@@ -422,11 +491,22 @@ export default function QueueView() {
       {/* Snackbar for notifications */}
       <Snackbar 
         open={snackbar.open} 
-        autoHideDuration={6000} 
+        autoHideDuration={snackbar.showUndo ? 10000 : 6000} 
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+          action={
+            snackbar.showUndo && lastAction ? (
+              <Button color="inherit" size="small" onClick={handleUndo}>
+                {t('queue.undo')}
+              </Button>
+            ) : undefined
+          }
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

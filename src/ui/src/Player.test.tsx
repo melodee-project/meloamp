@@ -146,3 +146,97 @@ describe('RepeatMode enum values', () => {
     expect(RepeatMode.ONE).toBe('one');
   });
 });
+
+describe('QueueStore Play Next (addToQueueNext)', () => {
+  const mockSongs = [
+    { id: '1', title: 'Song 1', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 180000 },
+    { id: '2', title: 'Song 2', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 200000 },
+    { id: '3', title: 'Song 3', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 220000 },
+  ];
+
+  test('addToQueueNext inserts song after current position', () => {
+    const { playNow, setCurrent, addToQueueNext } = useQueueStore.getState();
+    
+    // Setup queue with 3 songs and set current to index 1
+    playNow(mockSongs);
+    setCurrent(1);
+    
+    const newSong = { id: '4', title: 'New Song', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 240000 };
+    addToQueueNext(newSong);
+    
+    const state = useQueueStore.getState();
+    expect(state.queue.length).toBe(4);
+    expect(state.queue[2].id).toBe('4'); // Inserted at index 2 (after current index 1)
+    expect(state.current).toBe(1); // Current unchanged
+  });
+
+  test('addToQueueNext with empty queue adds at position 1', () => {
+    const { clearQueue, addToQueueNext } = useQueueStore.getState();
+    
+    clearQueue();
+    
+    const newSong = { id: '1', title: 'First Song', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 180000 };
+    addToQueueNext(newSong);
+    
+    const state = useQueueStore.getState();
+    expect(state.queue.length).toBe(1);
+    expect(state.queue[0].id).toBe('1');
+  });
+});
+
+describe('QueueStore Undo', () => {
+  const mockSongs = [
+    { id: '1', title: 'Song 1', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 180000 },
+    { id: '2', title: 'Song 2', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 200000 },
+    { id: '3', title: 'Song 3', artist: { id: 'a1', name: 'Artist' } as any, album: { id: 'al1', name: 'Album' } as any, durationMs: 220000 },
+  ];
+
+  test('undo remove restores song at correct position', () => {
+    const { playNow, removeFromQueue, undo } = useQueueStore.getState();
+    
+    playNow(mockSongs);
+    
+    // Remove song at index 1
+    removeFromQueue(1);
+    expect(useQueueStore.getState().queue.length).toBe(2);
+    expect(useQueueStore.getState().queue.map(s => s.id)).toEqual(['1', '3']);
+    
+    // Undo
+    const success = undo();
+    expect(success).toBe(true);
+    
+    const state = useQueueStore.getState();
+    expect(state.queue.length).toBe(3);
+    expect(state.queue.map(s => s.id)).toEqual(['1', '2', '3']);
+    expect(state.lastAction).toBeNull();
+  });
+
+  test('undo clear restores entire queue', () => {
+    const { playNow, setCurrent, clearQueue, undo } = useQueueStore.getState();
+    
+    playNow(mockSongs);
+    setCurrent(2);
+    
+    clearQueue();
+    expect(useQueueStore.getState().queue.length).toBe(0);
+    
+    // Undo
+    const success = undo();
+    expect(success).toBe(true);
+    
+    const state = useQueueStore.getState();
+    expect(state.queue.length).toBe(3);
+    expect(state.queue.map(s => s.id)).toEqual(['1', '2', '3']);
+    expect(state.lastAction).toBeNull();
+  });
+
+  test('undo returns false when no action to undo', () => {
+    const { playNow, undo } = useQueueStore.getState();
+    
+    playNow(mockSongs);
+    
+    // No action performed, lastAction is null
+    const success = undo();
+    expect(success).toBe(false);
+  });
+});

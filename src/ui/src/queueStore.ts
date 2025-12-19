@@ -21,13 +21,21 @@ export enum RepeatMode {
   ONE = 'one',
 }
 
+// Action types for undo functionality
+export type QueueAction = 
+  | { type: 'remove'; index: number; song: Song }
+  | { type: 'clear'; queue: Song[]; current: number }
+  | { type: 'reorder'; from: number; to: number };
+
 export interface QueueState {
   queue: Song[];
   current: number;
   repeatMode: RepeatMode;
   shuffleEnabled: boolean;
   originalOrder: Song[] | null; // Stores original order when shuffle is enabled
+  lastAction: QueueAction | null; // For undo functionality
   addToQueue: (song: Song) => void;
+  addToQueueNext: (song: Song) => void; // Insert after current (Play Next)
   removeFromQueue: (index: number) => void;
   reorderQueue: (from: number, to: number) => void;
   clearQueue: () => void;
@@ -37,6 +45,7 @@ export interface QueueState {
   playNow: (songs: Song | Song[]) => void;
   setRepeatMode: (mode: RepeatMode) => void;
   toggleShuffle: () => void;
+  undo: () => boolean; // Returns true if undo was successful
 }
 
 // Debounced persistence to avoid blocking on every state change
@@ -148,33 +157,51 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
     repeatMode: playbackSettings.repeatMode,
     shuffleEnabled: playbackSettings.shuffleEnabled,
     originalOrder: null,
+    lastAction: null,
     addToQueue: (song: Song) => set((state: QueueState) => {
       const newQueue = [...state.queue, song];
       debouncedPersist(newQueue, state.current);
+      return { queue: newQueue };
+    }),
+    addToQueueNext: (song: Song) => set((state: QueueState) => {
+      // Insert after current position
+      const insertIndex = state.current + 1;
+      const newQueue = [...state.queue];
+      newQueue.splice(insertIndex, 0, song);
+      debouncedPersist(newQueue, state.current);
+      debugLog('QueueStore', 'addToQueueNext: inserted at index', insertIndex);
       return { queue: newQueue };
     }),
     setQueue: (songs: Song[]) => set((state: QueueState) => {
       const newQueue = songs;
       immediatePersist(newQueue, 0);
       // Clear shuffle state when setting new queue
-      return { queue: newQueue, current: 0, originalOrder: null, shuffleEnabled: false };
+      return { queue: newQueue, current: 0, originalOrder: null, shuffleEnabled: false, lastAction: null };
     }),
     removeFromQueue: (index: number) => set((state: QueueState) => {
+      // Save for undo
+      const removedSong = state.queue[index];
+      const lastAction: QueueAction = { type: 'remove', index, song: removedSong };
+      
       const newQueue = state.queue.filter((_: Song, i: number) => i !== index);
-      const newCurrent = Math.max(0, Math.min(state.current, newQueue.length - 1));
-      debouncedPersist(newQueue, newCurrent);
-      return { queue: newQueue, current: newCurrent };
+      const newCurrent = index < state.current 
+        ? state.current - 1 
+        : Math.min(state.current, newQueue.length - 1);
+      debouncedPersist(newQueue, Math.max(0, newCurrent));
+      return { queue: newQueue, current: Math.max(0, newCurrent), lastAction };
     }),
     reorderQueue: (from: number, to: number) => set((state: QueueState) => {
       const q = [...state.queue];
       const [item] = q.splice(from, 1);
       q.splice(to, 0, item);
       debouncedPersist(q, state.current);
-      return { queue: q };
+      return { queue: q, lastAction: { type: 'reorder', from, to } as QueueAction };
     }),
     clearQueue: () => set((state: QueueState) => {
+      // Save for undo
+      const lastAction: QueueAction = { type: 'clear', queue: [...state.queue], current: state.current };
       immediatePersist([], 0);
-      return { queue: [], current: 0, originalOrder: null };
+      return { queue: [], current: 0, originalOrder: null, lastAction };
     }),
     updateSong: (index: number, patch: Partial<Song>) => set((state: QueueState) => {
       const q = [...state.queue];
@@ -210,7 +237,7 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
           hasUrl: !!newQueue[0].url
         } : null
       });
-      set({ queue: newQueue, current: 0, originalOrder: null, shuffleEnabled: false });
+      set({ queue: newQueue, current: 0, originalOrder: null, shuffleEnabled: false, lastAction: null });
       immediatePersist(newQueue, 0);
     },
     setRepeatMode: (mode: RepeatMode) => set((state: QueueState) => {
@@ -218,6 +245,47 @@ export const useQueueStore = create<QueueState>((set: any, get: any) => {
       debugLog('QueueStore', 'Repeat mode changed:', mode);
       return { repeatMode: mode };
     }),
+    undo: () => {
+      const state = get();
+      const { lastAction } = state;
+      
+      if (!lastAction) {
+        debugLog('QueueStore', 'undo: no action to undo');
+        return false;
+      }
+      
+      switch (lastAction.type) {
+        case 'remove': {
+          // Restore the removed song at its original index
+          const newQueue = [...state.queue];
+          newQueue.splice(lastAction.index, 0, lastAction.song);
+          const newCurrent = lastAction.index <= state.current ? state.current + 1 : state.current;
+          debouncedPersist(newQueue, newCurrent);
+          set({ queue: newQueue, current: newCurrent, lastAction: null });
+          debugLog('QueueStore', 'undo: restored removed song at index', lastAction.index);
+          return true;
+        }
+        case 'clear': {
+          // Restore the entire queue
+          debouncedPersist(lastAction.queue, lastAction.current);
+          set({ queue: lastAction.queue, current: lastAction.current, lastAction: null });
+          debugLog('QueueStore', 'undo: restored cleared queue with', lastAction.queue.length, 'songs');
+          return true;
+        }
+        case 'reorder': {
+          // Reverse the reorder
+          const q = [...state.queue];
+          const [item] = q.splice(lastAction.to, 1);
+          q.splice(lastAction.from, 0, item);
+          debouncedPersist(q, state.current);
+          set({ queue: q, lastAction: null });
+          debugLog('QueueStore', 'undo: reversed reorder from', lastAction.to, 'to', lastAction.from);
+          return true;
+        }
+        default:
+          return false;
+      }
+    },
     toggleShuffle: () => set((state: QueueState) => {
       const newShuffleEnabled = !state.shuffleEnabled;
       

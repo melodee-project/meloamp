@@ -19,7 +19,10 @@
     "favorite": "Favorite",
     "unfavorite": "Unfavorite",
     "dislike": "Dislike",
-    "undislike": "Remove Dislike"
+    "undislike": "Remove Dislike",
+    "create": "Create",
+    "delete": "Delete",
+    "edit": "Edit"
   },
   "settings": {
     "title": "User Settings",
@@ -70,7 +73,8 @@
     "unfavorite": "Unfavorite",
     "hate": "Hate",
     "unhate": "Unhate",
-    "addLast": "Add as Last in Queue"
+    "addLast": "Add as Last in Queue",
+    "addToPlaylist": "Add to Playlist"
   },
   "albumCard": {
     "songs": "{{count}} songs"
@@ -83,7 +87,31 @@
     "songCount": "{{count}} songs"
   },
   "playlistManager": {
-    "title": "Playlists"
+    "title": "Playlists",
+    "createPlaylist": "Create Playlist",
+    "viewing": "Viewing {{from}} to {{to}} of {{total}}"
+  },
+  "playlist": {
+    "addToPlaylist": "Add to Playlist",
+    "addingSongs": "Adding {{count}} song(s)",
+    "searchPlaylists": "Search playlists...",
+    "songCount": "{{count}} songs",
+    "noMatchingPlaylists": "No matching playlists found",
+    "noPlaylists": "No playlists yet",
+    "createNewPlaylist": "Create New Playlist",
+    "playlistName": "Playlist Name",
+    "addSongs": "Add Songs",
+    "loadError": "Failed to load playlists",
+    "addError": "Failed to add songs to playlist",
+    "createError": "Failed to create playlist",
+    "addSuccess": "Added to \"{{name}}\"",
+    "createSuccess": "Created \"{{name}}\"",
+    "exportM3U": "Export as M3U",
+    "importM3U": "Import M3U",
+    "exportSuccess": "Playlist exported",
+    "importSuccess": "Imported {{matched}} of {{total}} songs",
+    "importError": "Failed to import playlist",
+    "invalidM3UFile": "Invalid M3U file"
   },
   "search": {
     "placeholder": "Search artists, albums, tracks...",
@@ -109,7 +137,17 @@
     "selectImage": "Select Image",
     "imageHint": "JPG, PNG or GIF. Max 5MB.",
     "invalidImageType": "Please select a valid image file",
-    "imageTooLarge": "Image must be less than 5MB"
+    "imageTooLarge": "Image must be less than 5MB",
+    "songRemoved": "\"{{title}}\" removed from queue",
+    "queueCleared": "Queue cleared ({{count}} songs)",
+    "undo": "Undo",
+    "undoSuccess": "Action undone",
+    "selectExistingPlaylist": "Or add to existing playlist",
+    "appendToPlaylist": "Add songs",
+    "replacePlaylist": "Replace songs",
+    "appendSuccess": "Songs added to playlist",
+    "replaceSuccess": "Playlist songs replaced",
+    "selectPlaylistPlaceholder": "Select a playlist..."
   },
   "login": {
     "email": "Email",
