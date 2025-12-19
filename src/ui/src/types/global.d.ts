@@ -1,6 +1,23 @@
+export interface MediaKeyConfig {
+  playPause?: string;
+  next?: string;
+  previous?: string;
+  stop?: string;
+}
+
+export interface TrayNowPlaying {
+  title?: string;
+  artist?: string;
+  playing?: boolean;
+}
+
 export interface MeloampAPI {
   sendPlaybackInfo: (info: any) => void;
   sendPosition: (position: number) => void;
+  checkForUpdates: () => void;
+  updateMediaKeys: (config: MediaKeyConfig) => void;
+  getMediaKeys: () => Promise<MediaKeyConfig>;
+  updateTray: (nowPlaying: TrayNowPlaying | null) => void;
 }
 
 export interface ElectronAPI {

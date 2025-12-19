@@ -22,7 +22,91 @@
     "undislike": "Remove Dislike",
     "create": "Create",
     "delete": "Delete",
-    "edit": "Edit"
+    "edit": "Edit",
+    "retry": "Try Again",
+    "back": "Back",
+    "next": "Next"
+  },
+  "empty": {
+    "noSongs": "No songs found",
+    "noSongsDesc": "There are no songs to display.",
+    "noAlbums": "No albums found",
+    "noAlbumsDesc": "There are no albums to display.",
+    "noArtists": "No artists found",
+    "noArtistsDesc": "There are no artists to display.",
+    "noPlaylists": "No playlists found",
+    "noPlaylistsDesc": "Create a playlist to get started.",
+    "noQueue": "Queue is empty",
+    "noQueueDesc": "Add songs to the queue to start playing.",
+    "noResults": "No results found",
+    "noResultsDesc": "Try a different search term.",
+    "noFavorites": "No favorites yet",
+    "noFavoritesDesc": "Click the heart icon on songs to add them here.",
+    "noGenres": "No genres found",
+    "noGenresDesc": "Genre browsing requires server support.",
+    "noContent": "Nothing here",
+    "noContentDesc": "There is no content to display."
+  },
+  "error": {
+    "generic": "Something went wrong",
+    "genericDesc": "An unexpected error occurred. Please try again.",
+    "network": "Connection error",
+    "networkDesc": "Unable to connect to the server. Check your network connection.",
+    "notFound": "Not found",
+    "notFoundDesc": "The requested resource could not be found.",
+    "unauthorized": "Session expired",
+    "unauthorizedDesc": "Please log in again to continue.",
+    "forbidden": "Access denied",
+    "forbiddenDesc": "You do not have permission to access this resource."
+  },
+  "commandPalette": {
+    "placeholder": "Type a command or search...",
+    "noResults": "No commands found",
+    "navigation": "Navigation",
+    "playback": "Playback",
+    "queue": "Queue",
+    "other": "Other",
+    "navigate": "Navigate",
+    "select": "Select",
+    "close": "Close",
+    "search": "Search",
+    "searchDesc": "Search for music",
+    "goToDashboard": "Go to dashboard",
+    "browseArtists": "Browse artists",
+    "browseAlbums": "Browse albums",
+    "browseSongs": "Browse songs",
+    "browsePlaylists": "Browse playlists",
+    "browseGenres": "Browse by genre",
+    "viewFavorites": "View favorites",
+    "openSettings": "Open settings",
+    "play": "Play",
+    "pause": "Pause",
+    "togglePlayback": "Toggle playback",
+    "nextTrack": "Next Track",
+    "playNextTrack": "Play next track",
+    "prevTrack": "Previous Track",
+    "playPrevTrack": "Play previous track",
+    "openQueue": "Open Queue",
+    "viewQueue": "View playback queue",
+    "keyboardShortcuts": "Keyboard Shortcuts",
+    "viewShortcuts": "View all keyboard shortcuts"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "playback": "Playback",
+    "navigation": "Navigation",
+    "general": "General",
+    "playPause": "Play / Pause",
+    "nextTrack": "Next track",
+    "prevTrack": "Previous track",
+    "volumeUp": "Volume up",
+    "volumeDown": "Volume down",
+    "mute": "Mute / Unmute",
+    "focusSearch": "Focus search",
+    "openCommandPalette": "Open command palette",
+    "goToDashboard": "Go to dashboard",
+    "goToQueue": "Go to queue",
+    "goToSettings": "Go to settings"
   },
   "settings": {
     "title": "User Settings",
@@ -30,7 +114,15 @@
     "language": "Language",
     "recentItems": "Recent Items on Dashboard",
     "highContrast": "High Contrast Mode",
-    "fontScale": "Font Scale"
+    "fontScale": "Font Scale",
+    "mediaKeys": "Media Keys",
+    "mediaKeysInfo": "Configure global keyboard shortcuts for playback control. Use Electron accelerator format (e.g., MediaPlayPause, CommandOrControl+Shift+P).",
+    "playPauseKey": "Play/Pause",
+    "nextKey": "Next Track",
+    "previousKey": "Previous Track",
+    "stopKey": "Stop",
+    "saveMediaKeys": "Apply Shortcuts",
+    "resetMediaKeys": "Reset to Default"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -41,7 +133,10 @@
     "queue": "Queue",
     "settings": "Settings",
     "profile": "Profile",
-    "logout": "Log out"
+    "logout": "Log out",
+    "genres": "Genres",
+    "favorites": "Favorites",
+    "server": "Server"
   },
   "player": {
     "nowPlaying": "Now Playing",
@@ -118,7 +213,15 @@
     "error": "An error occurred: {{error}}",
     "addToQueue": "Add to Queue",
     "song": "Song",
-    "playlist": "Playlist"
+    "playlist": "Playlist",
+    "artists": "Artists",
+    "albums": "Albums",
+    "songs": "Songs",
+    "playlists": "Playlists",
+    "filters": "Filters",
+    "recentSearches": "Recent Searches",
+    "clearHistory": "Clear",
+    "noResults": "No results found"
   },
   "queue": {
     "title": "Queue",
@@ -214,5 +317,23 @@
     "checkForUpdates": "Check for Updates",
     "restart": "Restart Now",
     "later": "Later"
+  },
+  "favorites": {
+    "title": "My Library",
+    "liked": "Liked",
+    "disliked": "Disliked",
+    "topRated": "Top Rated",
+    "noLikedSongs": "No liked songs yet. Click the heart icon on any song to add it here.",
+    "noDislikedSongs": "No disliked songs.",
+    "noTopRated": "No top rated songs yet. Rate songs with 4+ stars to see them here."
+  },
+  "genres": {
+    "title": "Browse by Genre",
+    "noGenres": "No genres found. Genre browsing requires server support.",
+    "backToGenres": "← All Genres",
+    "artists": "Artists",
+    "albums": "Albums",
+    "songs": "Songs",
+    "noContent": "No content found for this genre."
   }
 }

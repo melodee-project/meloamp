@@ -1,6 +1,7 @@
-import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider, Button } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider, Button, TextField, Divider, Alert } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { MediaKeyConfig } from '../types/global.d';
 
 const themes = [
   { label: 'Acid Pop', value: 'acidPop' },
@@ -25,8 +26,50 @@ const themes = [
 
 const sortedThemes = themes.slice().sort((a, b) => a.label.localeCompare(b.label));
 
+// Default media key shortcuts
+const defaultMediaKeys: MediaKeyConfig = {
+  playPause: 'MediaPlayPause',
+  next: 'MediaNextTrack',
+  previous: 'MediaPreviousTrack',
+  stop: 'MediaStop'
+};
+
 export default function UserSettings({ settings, onChange }: any) {
   const { t, i18n } = useTranslation();
+  const [mediaKeys, setMediaKeys] = useState<MediaKeyConfig>(defaultMediaKeys);
+  const [mediaKeysLoading, setMediaKeysLoading] = useState(false);
+  const isElectron = !!window.meloampAPI;
+
+  // Load media key configuration on mount
+  useEffect(() => {
+    if (window.meloampAPI?.getMediaKeys) {
+      window.meloampAPI.getMediaKeys().then(config => {
+        setMediaKeys(config);
+      }).catch(err => {
+        console.error('Failed to load media key config:', err);
+      });
+    }
+  }, []);
+
+  const handleMediaKeyChange = (key: keyof MediaKeyConfig, value: string) => {
+    const updated = { ...mediaKeys, [key]: value };
+    setMediaKeys(updated);
+  };
+
+  const handleSaveMediaKeys = () => {
+    if (window.meloampAPI?.updateMediaKeys) {
+      setMediaKeysLoading(true);
+      window.meloampAPI.updateMediaKeys(mediaKeys);
+      setTimeout(() => setMediaKeysLoading(false), 500);
+    }
+  };
+
+  const handleRestoreDefaultMediaKeys = () => {
+    setMediaKeys(defaultMediaKeys);
+    if (window.meloampAPI?.updateMediaKeys) {
+      window.meloampAPI.updateMediaKeys(defaultMediaKeys);
+    }
+  };
 
   const handleRestoreDefaults = () => {
     const defaults = {
@@ -107,6 +150,67 @@ export default function UserSettings({ settings, onChange }: any) {
           valueLabelDisplay="auto"
         />
       </Box>
+
+      {/* Media Keys Settings (Electron only) */}
+      {isElectron && (
+        <>
+          <Divider sx={{ my: 3 }} />
+          <Typography variant="h6" gutterBottom>
+            {t('settings.mediaKeys', 'Media Keys')}
+          </Typography>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {t('settings.mediaKeysInfo', 'Configure global keyboard shortcuts for playback control. Use Electron accelerator format (e.g., MediaPlayPause, CommandOrControl+Shift+P).')}
+          </Alert>
+          <TextField
+            fullWidth
+            label={t('settings.playPauseKey', 'Play/Pause')}
+            value={mediaKeys.playPause || ''}
+            onChange={e => handleMediaKeyChange('playPause', e.target.value)}
+            sx={{ mb: 2 }}
+            size="small"
+          />
+          <TextField
+            fullWidth
+            label={t('settings.nextKey', 'Next Track')}
+            value={mediaKeys.next || ''}
+            onChange={e => handleMediaKeyChange('next', e.target.value)}
+            sx={{ mb: 2 }}
+            size="small"
+          />
+          <TextField
+            fullWidth
+            label={t('settings.previousKey', 'Previous Track')}
+            value={mediaKeys.previous || ''}
+            onChange={e => handleMediaKeyChange('previous', e.target.value)}
+            sx={{ mb: 2 }}
+            size="small"
+          />
+          <TextField
+            fullWidth
+            label={t('settings.stopKey', 'Stop')}
+            value={mediaKeys.stop || ''}
+            onChange={e => handleMediaKeyChange('stop', e.target.value)}
+            sx={{ mb: 2 }}
+            size="small"
+          />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button 
+              variant="contained" 
+              onClick={handleSaveMediaKeys}
+              disabled={mediaKeysLoading}
+            >
+              {t('settings.saveMediaKeys', 'Apply Shortcuts')}
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={handleRestoreDefaultMediaKeys}
+            >
+              {t('settings.resetMediaKeys', 'Reset to Default')}
+            </Button>
+          </Box>
+        </>
+      )}
+
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
         <Button variant="outlined" color="secondary" onClick={handleRestoreDefaults}>
           {t('settings.restoreDefaults', 'Restore Defaults')}

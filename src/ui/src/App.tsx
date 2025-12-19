@@ -1,7 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton, InputBase, Menu, MenuItem, Avatar, Box, Button, Tooltip, ThemeProvider, CssBaseline } from '@mui/material';
-import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info, QueueMusic } from '@mui/icons-material';
+import { Brightness4, Brightness7, Search, AccountCircle, Settings, Logout, Info, QueueMusic, Dns } from '@mui/icons-material';
 import logo from './logo.svg';
 import './App.css';
 import Badge from '@mui/material/Badge';
@@ -31,6 +31,8 @@ import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
 import PlaylistDetailView from './detailViews/PlaylistDetailView';
 import SongDetailView from './detailViews/SongDetailView';
+import FavoritesPage from './pages/FavoritesPage';
+import GenresPage from './pages/GenresPage';
 import getAuroraTheme from './themes/auroraTheme';
 import getMonoContrastTheme from './themes/monoContrastTheme';
 import getBerryTwilightTheme from './themes/berryTwilightTheme';
@@ -42,6 +44,8 @@ import scarlettTheme from './themes/scarlettTheme';
 import winAmpTheme from './themes/winAmpTheme';
 import { useTranslation } from 'react-i18next';
 import { createTheme } from '@mui/material/styles';
+import CommandPalette, { useDefaultCommands } from './components/CommandPalette';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 const themeMap: any = {
   classic: classicTheme,
@@ -82,12 +86,14 @@ function NavBar({ user }: { user: any }) {
         <img src={logo} alt="MeloAmp Logo" style={{ height: 40, marginRight: 12 }} />
         <Typography variant="h6" noWrap>MeloAmp</Typography>
       </Link>
-      <Box sx={{ ml: 4, display: 'flex', gap: 2 }}>
+      <Box sx={{ ml: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <Button color={location.pathname === '/' ? 'primary' : 'inherit'} component={Link} to="/">{t('nav.dashboard')}</Button>
         <Button color={location.pathname === '/artists' ? 'primary' : 'inherit'} component={Link} to="/artists">{t('nav.artists')}</Button>
         <Button color={location.pathname === '/albums' ? 'primary' : 'inherit'} component={Link} to="/albums">{t('nav.albums')}</Button>
         <Button color={location.pathname === '/playlists' ? 'primary' : 'inherit'} component={Link} to="/playlists">{t('nav.playlists')}</Button>
-        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs">{t('nav.songs')}</Button>        
+        <Button color={location.pathname === '/songs' ? 'primary' : 'inherit'} component={Link} to="/songs">{t('nav.songs')}</Button>
+        <Button color={location.pathname.startsWith('/genres') ? 'primary' : 'inherit'} component={Link} to="/genres">{t('nav.genres', 'Genres')}</Button>
+        <Button color={location.pathname === '/favorites' ? 'primary' : 'inherit'} component={Link} to="/favorites">{t('nav.favorites', 'Favorites')}</Button>
       </Box>
     </Box>
   );
@@ -207,8 +213,119 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   const [searchValue, setSearchValue] = React.useState('');
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const [searchParams] = useSearchParams();
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Command palette state
+  const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
+  const [isPlaying, setIsPlaying] = React.useState(false);
 
   const { t } = useTranslation();
+
+  // Playback control callbacks for command palette and shortcuts
+  const handleTogglePlay = React.useCallback(() => {
+    window.dispatchEvent(new CustomEvent('meloamp-toggle-play'));
+  }, []);
+
+  const handleNextTrack = React.useCallback(() => {
+    window.dispatchEvent(new CustomEvent('meloamp-next-track'));
+  }, []);
+
+  const handlePrevTrack = React.useCallback(() => {
+    window.dispatchEvent(new CustomEvent('meloamp-prev-track'));
+  }, []);
+
+  const handleOpenSearch = React.useCallback(() => {
+    searchInputRef.current?.focus();
+  }, []);
+
+  const handleOpenQueue = React.useCallback(() => {
+    navigate('/queue');
+  }, [navigate]);
+
+  // Listen for player state updates
+  React.useEffect(() => {
+    const handlePlayerState = (e: CustomEvent) => {
+      if (e.detail && typeof e.detail.playing === 'boolean') {
+        setIsPlaying(e.detail.playing);
+      }
+    };
+    window.addEventListener('meloamp-player-state', handlePlayerState as EventListener);
+    return () => window.removeEventListener('meloamp-player-state', handlePlayerState as EventListener);
+  }, []);
+
+  // Get default commands for the command palette
+  const commands = useDefaultCommands({
+    onTogglePlay: handleTogglePlay,
+    onNextTrack: handleNextTrack,
+    onPrevTrack: handlePrevTrack,
+    onOpenSearch: handleOpenSearch,
+    onOpenQueue: handleOpenQueue,
+    isPlaying,
+  });
+
+  // Global keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'ctrl+k',
+      description: t('shortcuts.focusSearch', 'Focus search'),
+      action: handleOpenSearch,
+      category: 'navigation',
+    },
+    {
+      key: 'ctrl+shift+p',
+      description: t('shortcuts.openCommandPalette', 'Open command palette'),
+      action: () => setCommandPaletteOpen(true),
+      category: 'general',
+    },
+    {
+      key: 'space',
+      description: t('shortcuts.playPause', 'Play/Pause'),
+      action: handleTogglePlay,
+      category: 'playback',
+    },
+    {
+      key: 'ctrl+ArrowRight',
+      description: t('shortcuts.nextTrack', 'Next track'),
+      action: handleNextTrack,
+      category: 'playback',
+    },
+    {
+      key: 'ctrl+ArrowLeft',
+      description: t('shortcuts.prevTrack', 'Previous track'),
+      action: handlePrevTrack,
+      category: 'playback',
+    },
+    {
+      key: 'ctrl+q',
+      description: t('shortcuts.goToQueue', 'Go to queue'),
+      action: handleOpenQueue,
+      category: 'navigation',
+    },
+    {
+      key: 'ctrl+,',
+      description: t('shortcuts.goToSettings', 'Go to settings'),
+      action: () => navigate('/settings'),
+      category: 'navigation',
+    },
+    {
+      key: 'Escape',
+      description: t('commandPalette.close', 'Close'),
+      action: () => setCommandPaletteOpen(false),
+      enabled: commandPaletteOpen,
+      category: 'general',
+    },
+  ], { enabled: isAuthenticated });
+
+  // Sync search value from URL when navigating to /search with ?q= parameter
+  React.useEffect(() => {
+    if (location.pathname === '/search') {
+      const urlQuery = searchParams.get('q') || '';
+      if (urlQuery !== searchValue) {
+        setSearchValue(urlQuery);
+      }
+    }
+  }, [location.pathname, searchParams]);
 
   React.useEffect(() => {
     localStorage.setItem('userSettings', JSON.stringify(settings));
@@ -325,8 +442,11 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     setSearchLoading(true);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      // If not already on /search, navigate there
-      if (location.pathname !== '/search') {
+      // Navigate with query param
+      const query = e.target.value.trim();
+      if (query) {
+        navigate(`/search?q=${encodeURIComponent(query)}`);
+      } else if (location.pathname === '/search') {
         navigate('/search');
       }
       setSearchLoading(false);
@@ -336,7 +456,10 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
-      if (location.pathname !== '/search') {
+      const query = searchValue.trim();
+      if (query) {
+        navigate(`/search?q=${encodeURIComponent(query)}`);
+      } else {
         navigate('/search');
       }
       setSearchLoading(false);
@@ -378,6 +501,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
                 value={searchValue}
                 onChange={handleSearchInput}
                 onKeyDown={handleSearchKeyDown}
+                inputRef={searchInputRef}
               />
               {searchLoading && (
                 <Box sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
@@ -421,6 +545,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
               <MenuItem divider disabled style={{ margin: '4px 0', padding: 0, minHeight: 0, height: 0, background: 'transparent' }}>
                 <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', width: '100%' }} />
               </MenuItem>
+              <MenuItem disabled><Dns sx={{ mr: 1 }} />{localStorage.getItem('serverUrl') || 'localhost'}</MenuItem>
               <MenuItem disabled><Info sx={{ mr: 1 }} />MeloAmp {user?.version || 'v0.1.0'}</MenuItem>
               <MenuItem disabled><Info sx={{ mr: 1 }} />API v{apiVersion}</MenuItem>
             </Menu>
@@ -441,6 +566,9 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
             <Route path="/albums/:id" element={<AlbumDetailView />} />
             <Route path="/playlists/:id" element={<PlaylistDetailView />} />
             <Route path="/songs/:id" element={<SongDetailView />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/genres" element={<GenresPage />} />
+            <Route path="/genres/:genreId" element={<GenresPage />} />
           </Routes>
       </Box>
       {/* Sticky Player at bottom if queue is not empty */}
@@ -449,6 +577,13 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
           <Player src={queue[current]?.url || ''} />
         </Box>
       )}
+      {/* Command Palette */}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        commands={commands}
+        isPlaying={isPlaying}
+      />
     </>
   );
 }

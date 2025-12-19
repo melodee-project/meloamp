@@ -1,5 +1,5 @@
 // main.js - Electron Main Process
-const { app, BrowserWindow, ipcMain, Notification, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, Menu, dialog, globalShortcut, Tray, nativeImage } = require('electron');
 const path = require('path');
 const express = require('express');
 const mpris = require('mpris-service');
@@ -17,6 +17,16 @@ let currentPosition = 0;
 let lastPositionUpdate = Date.now();
 let lastTrackId = null;
 let mainWindow = null;
+let tray = null;
+let mediaShortcutsRegistered = false;
+
+// Default media key shortcuts (can be customized via settings)
+let mediaKeyConfig = {
+  playPause: 'MediaPlayPause',
+  next: 'MediaNextTrack',
+  previous: 'MediaPreviousTrack',
+  stop: 'MediaStop'
+};
 
 // Auto-updater configuration
 autoUpdater.autoDownload = false; // Don't auto-download, let user choose
@@ -314,6 +324,205 @@ ipcMain.on('meloamp-position-update', (event, position) => {
   }
 });
 
+// ============================================
+// Global Media Keys
+// ============================================
+
+function registerMediaKeys() {
+  if (mediaShortcutsRegistered) {
+    unregisterMediaKeys();
+  }
+
+  try {
+    // Play/Pause
+    if (mediaKeyConfig.playPause) {
+      globalShortcut.register(mediaKeyConfig.playPause, () => {
+        console.log('Media key: Play/Pause');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'playPause');
+        }
+      });
+    }
+
+    // Next Track
+    if (mediaKeyConfig.next) {
+      globalShortcut.register(mediaKeyConfig.next, () => {
+        console.log('Media key: Next');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'next');
+        }
+      });
+    }
+
+    // Previous Track
+    if (mediaKeyConfig.previous) {
+      globalShortcut.register(mediaKeyConfig.previous, () => {
+        console.log('Media key: Previous');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'previous');
+        }
+      });
+    }
+
+    // Stop
+    if (mediaKeyConfig.stop) {
+      globalShortcut.register(mediaKeyConfig.stop, () => {
+        console.log('Media key: Stop');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'stop');
+        }
+      });
+    }
+
+    mediaShortcutsRegistered = true;
+    console.log('Global media keys registered');
+  } catch (err) {
+    console.error('Failed to register media keys:', err);
+  }
+}
+
+function unregisterMediaKeys() {
+  globalShortcut.unregisterAll();
+  mediaShortcutsRegistered = false;
+  console.log('Global media keys unregistered');
+}
+
+// IPC: Update media key configuration
+ipcMain.on('meloamp-update-media-keys', (event, config) => {
+  console.log('Updating media key configuration:', config);
+  mediaKeyConfig = { ...mediaKeyConfig, ...config };
+  registerMediaKeys();
+});
+
+// IPC: Get current media key configuration
+ipcMain.handle('meloamp-get-media-keys', () => {
+  return mediaKeyConfig;
+});
+
+// ============================================
+// System Tray
+// ============================================
+
+function createTray() {
+  // Set icon path for tray
+  let iconPath;
+  if (app.isPackaged) {
+    iconPath = path.join(process.resourcesPath, 'resources', 'logo.png');
+  } else {
+    iconPath = path.join(__dirname, 'resources', 'logo.png');
+  }
+
+  // Create tray icon (use smaller icon for tray on some platforms)
+  let trayIcon;
+  try {
+    trayIcon = nativeImage.createFromPath(iconPath);
+    // Resize for tray (16x16 or 22x22 depending on platform)
+    if (process.platform === 'darwin') {
+      trayIcon = trayIcon.resize({ width: 16, height: 16 });
+    } else {
+      trayIcon = trayIcon.resize({ width: 22, height: 22 });
+    }
+  } catch (err) {
+    console.error('Failed to load tray icon:', err);
+    return;
+  }
+
+  tray = new Tray(trayIcon);
+  tray.setToolTip('MeloAmp');
+
+  updateTrayMenu();
+
+  // Click behavior
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.focus();
+      } else {
+        mainWindow.show();
+      }
+    }
+  });
+
+  console.log('System tray created');
+}
+
+function updateTrayMenu(nowPlaying = null) {
+  if (!tray) return;
+
+  const contextMenu = Menu.buildFromTemplate([
+    // Now playing info (if available)
+    ...(nowPlaying ? [
+      { label: nowPlaying.title || 'Unknown Track', enabled: false },
+      { label: nowPlaying.artist || 'Unknown Artist', enabled: false },
+      { type: 'separator' }
+    ] : []),
+    // Playback controls
+    {
+      label: 'Play/Pause',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'playPause');
+        }
+      }
+    },
+    {
+      label: 'Next',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'next');
+        }
+      }
+    },
+    {
+      label: 'Previous',
+      click: () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('meloamp-media-key', 'previous');
+        }
+      }
+    },
+    { type: 'separator' },
+    // Window controls
+    {
+      label: mainWindow?.isVisible() ? 'Hide Window' : 'Show Window',
+      click: () => {
+        if (mainWindow) {
+          if (mainWindow.isVisible()) {
+            mainWindow.hide();
+          } else {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+          // Update menu after toggle
+          updateTrayMenu(nowPlaying);
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
+}
+
+// IPC: Update tray with now playing info
+ipcMain.on('meloamp-tray-update', (event, nowPlaying) => {
+  updateTrayMenu(nowPlaying);
+  
+  // Update tray tooltip with current track
+  if (tray && nowPlaying) {
+    const tooltip = nowPlaying.title 
+      ? `MeloAmp - ${nowPlaying.title}${nowPlaying.artist ? ` - ${nowPlaying.artist}` : ''}`
+      : 'MeloAmp';
+    tray.setToolTip(tooltip);
+  }
+});
+
 // Global error handling
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
@@ -325,8 +534,19 @@ process.on('unhandledRejection', (reason, promise) => {
 
 app.whenReady().then(() => {
   createWindow();
+  createTray();
+  registerMediaKeys();
   setupAutoUpdater();
   setupApplicationMenu();
+});
+
+// Clean up on quit
+app.on('will-quit', () => {
+  unregisterMediaKeys();
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 });
 
 app.on('window-all-closed', () => {

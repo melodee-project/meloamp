@@ -1,17 +1,67 @@
 import { debugLog, debugError } from '../debug';
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, InputAdornment, IconButton, CircularProgress, Button, ListItem, ListItemText } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  InputAdornment, 
+  IconButton, 
+  CircularProgress, 
+  Button, 
+  ListItem, 
+  ListItemText,
+  Chip,
+  Stack,
+  Paper,
+  List,
+  ListItemButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Collapse
+} from '@mui/material';
+import { Search, History, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
 import api from '../api';
 import { SearchResultData, Song, Artist, Album, Playlist } from '../apiModels';
 import ArtistCard from '../components/ArtistCard';
 import AlbumCard from '../components/AlbumCard';
 import SongCard from '../components/SongCard';
+import PlaylistCard from '../components/PlaylistCard';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 
+// Recent searches helper
+const RECENT_SEARCHES_KEY = 'meloamp_recent_searches';
+const MAX_RECENT_SEARCHES = 10;
+
+const getRecentSearches = (): string[] => {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const addRecentSearch = (query: string) => {
+  if (!query.trim()) return;
+  const searches = getRecentSearches();
+  // Remove if already exists, then add to front
+  const filtered = searches.filter(s => s.toLowerCase() !== query.toLowerCase());
+  const updated = [query, ...filtered].slice(0, MAX_RECENT_SEARCHES);
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+};
+
+const clearRecentSearches = () => {
+  localStorage.removeItem(RECENT_SEARCHES_KEY);
+};
+
+// Filter types
+type FilterType = 'artists' | 'albums' | 'songs' | 'playlists';
+type SortOption = 'relevance' | 'name' | 'recent';
+
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const paramQ = searchParams.get('q') || undefined;
   const [search, setSearch] = useState(() => query ?? paramQ ?? '');
@@ -19,6 +69,15 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const [results, setResults] = useState<SearchResultData | null>(null);
   const [error, setError] = useState('');
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Filter and sort state
+  const [activeFilters, setActiveFilters] = useState<FilterType[]>(['artists', 'albums', 'songs', 'playlists']);
+  const [sortBy, setSortBy] = useState<SortOption>('relevance');
+  const [showFilters, setShowFilters] = useState(true);
+
+  // Recent searches state
+  const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches());
+  const [showRecent, setShowRecent] = useState(true);
 
   // Pagination state for each type
   const [artistPage, setArtistPage] = useState(1);
@@ -85,6 +144,9 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           const searchResults = (res.data as any).data || res.data;
           setResults(searchResults as SearchResultData);
           setLoading(false);
+          // Add to recent searches
+          addRecentSearch(search);
+          setRecentSearches(getRecentSearches());
           // Update URL to reflect current search (replace to avoid history spam)
           try {
             const target = search ? `${location.pathname}?q=${encodeURIComponent(search)}` : location.pathname;
@@ -113,8 +175,35 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
     setPlaylistPage(1);
   }, [search]);
 
+  // Toggle filter
+  const toggleFilter = (filter: FilterType) => {
+    setActiveFilters(prev => 
+      prev.includes(filter) 
+        ? prev.filter(f => f !== filter)
+        : [...prev, filter]
+    );
+  };
+
+  // Handle clicking on a recent search
+  const handleRecentSearchClick = (searchQuery: string) => {
+    setSearch(searchQuery);
+    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+  };
+
+  // Handle clearing recent searches
+  const handleClearRecentSearches = () => {
+    clearRecentSearches();
+    setRecentSearches([]);
+  };
+
+  // Check if a section should be shown based on filters
+  const shouldShowSection = (type: FilterType): boolean => {
+    return activeFilters.includes(type);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
+      {/* Search Input */}
       <Box sx={{ position: 'relative' }}>
         <TextField
           fullWidth
@@ -123,6 +212,12 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           onChange={e => {
             debugLog('SearchPage', 'Search input changed:', e.target.value);
             setSearch(e.target.value);
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && search.trim()) {
+              addRecentSearch(search);
+              setRecentSearches(getRecentSearches());
+            }
           }}
           InputProps={{
             startAdornment: (
@@ -135,13 +230,85 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           }}
         />
       </Box>
+
+      {/* Filters and Sort */}
+      <Box sx={{ mt: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Button 
+            size="small" 
+            onClick={() => setShowFilters(!showFilters)}
+            endIcon={showFilters ? <ExpandLess /> : <ExpandMore />}
+          >
+            {t('search.filters', 'Filters')}
+          </Button>
+        </Box>
+        <Collapse in={showFilters}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
+            <Chip
+              label={t('search.artists', 'Artists')}
+              color={activeFilters.includes('artists') ? 'primary' : 'default'}
+              onClick={() => toggleFilter('artists')}
+              variant={activeFilters.includes('artists') ? 'filled' : 'outlined'}
+            />
+            <Chip
+              label={t('search.albums', 'Albums')}
+              color={activeFilters.includes('albums') ? 'primary' : 'default'}
+              onClick={() => toggleFilter('albums')}
+              variant={activeFilters.includes('albums') ? 'filled' : 'outlined'}
+            />
+            <Chip
+              label={t('search.songs', 'Songs')}
+              color={activeFilters.includes('songs') ? 'primary' : 'default'}
+              onClick={() => toggleFilter('songs')}
+              variant={activeFilters.includes('songs') ? 'filled' : 'outlined'}
+            />
+            <Chip
+              label={t('search.playlists', 'Playlists')}
+              color={activeFilters.includes('playlists') ? 'primary' : 'default'}
+              onClick={() => toggleFilter('playlists')}
+              variant={activeFilters.includes('playlists') ? 'filled' : 'outlined'}
+            />
+          </Stack>
+        </Collapse>
+      </Box>
+
+      {/* Recent Searches */}
+      {!search && recentSearches.length > 0 && (
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <History fontSize="small" color="action" />
+              <Typography variant="subtitle2">{t('search.recentSearches', 'Recent Searches')}</Typography>
+            </Box>
+            <Button 
+              size="small" 
+              startIcon={<Clear />} 
+              onClick={handleClearRecentSearches}
+            >
+              {t('search.clearHistory', 'Clear')}
+            </Button>
+          </Box>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {recentSearches.map((recentQuery, index) => (
+              <Chip
+                key={index}
+                label={recentQuery}
+                onClick={() => handleRecentSearchClick(recentQuery)}
+                size="small"
+                sx={{ mb: 0.5 }}
+              />
+            ))}
+          </Stack>
+        </Paper>
+      )}
+
       {onClose && <Button onClick={onClose} sx={{ mt: 2 }}>{t('common.close', 'Close')}</Button>}
       {loading && <CircularProgress sx={{ mt: 2 }} />}
       {error && <Typography color="error" sx={{ mt: 2 }}>{t('search.error', { error })}</Typography>}
       {results && (
         <Box sx={{ mt: 4 }}>
           {/* Artists Grid */}
-          {results.artists?.length > 0 && (
+          {shouldShowSection('artists') && results.artists?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.artists', 'Artists')}</Typography>
               {((results.totalArtists ?? results.artists.length) > pageSize) && (
@@ -167,7 +334,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             </Box>
           )}
           {/* Albums Grid */}
-          {results.albums?.length > 0 && (
+          {shouldShowSection('albums') && results.albums?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.albums', 'Albums')}</Typography>
               {((results.totalAlbums ?? results.albums.length) > pageSize) && (
@@ -193,7 +360,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             </Box>
           )}
           {/* Songs Grid */}
-          {results.songs?.length > 0 && (
+          {shouldShowSection('songs') && results.songs?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.songs', 'Songs')}</Typography>
               {((results.totalSongs ?? results.songs.length) > pageSize) && (
@@ -219,7 +386,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
             </Box>
           )}
           {/* Playlists Grid */}
-          {results.playlists?.length > 0 && (
+          {shouldShowSection('playlists') && results.playlists?.length > 0 && (
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('search.playlists', 'Playlists')}</Typography>
               {((results.totalPlaylists ?? results.playlists.length) > pageSize) && (
@@ -232,9 +399,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'flex-start' }}>
                 {results.playlists.map((p: Playlist) => (
                   <Box key={p.id} sx={{ flex: '1 1 250px', maxWidth: 350, minWidth: 220, display: 'flex', justifyContent: 'center' }}>
-                    <ListItem disableGutters sx={{ width: '100%' }}>
-                      <ListItemText primary={p.name} secondary={t('search.playlist')} />
-                    </ListItem>
+                    <PlaylistCard playlist={p} compact />
                   </Box>
                 ))}
               </Box>

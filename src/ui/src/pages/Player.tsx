@@ -580,6 +580,150 @@ export default function Player({ src }: { src: string }) {
     window.meloampAPI.sendPlaybackInfo(info);
   }, [current, duration, playing, queue]);
 
+  // Web Media Session API for Windows SMTC and macOS Now Playing
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    
+    const currentSong = queue[current];
+    if (!currentSong) {
+      navigator.mediaSession.metadata = null;
+      return;
+    }
+
+    // Extract artist name
+    const artistName = typeof currentSong.artist === 'object' && currentSong.artist?.name 
+      ? currentSong.artist.name 
+      : (Array.isArray(currentSong.artist) 
+          ? currentSong.artist.map((a: any) => typeof a === 'object' ? a.name : a).join(', ')
+          : currentSong.artist || '');
+    
+    // Extract album name
+    const albumName = typeof currentSong.album === 'object' && currentSong.album?.name 
+      ? currentSong.album.name 
+      : currentSong.album || '';
+
+    // Get artwork URL
+    const artworkUrl = currentSong.artwork || currentSong.artUrl || 
+      (typeof currentSong.album === 'object' && currentSong.album?.imageUrl) || '';
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.title || 'Unknown Track',
+        artist: artistName || 'Unknown Artist',
+        album: albumName || '',
+        artwork: artworkUrl ? [
+          { src: artworkUrl, sizes: '96x96', type: 'image/png' },
+          { src: artworkUrl, sizes: '128x128', type: 'image/png' },
+          { src: artworkUrl, sizes: '192x192', type: 'image/png' },
+          { src: artworkUrl, sizes: '256x256', type: 'image/png' },
+          { src: artworkUrl, sizes: '384x384', type: 'image/png' },
+          { src: artworkUrl, sizes: '512x512', type: 'image/png' }
+        ] : []
+      });
+    } catch (err) {
+      console.error('Failed to set media session metadata:', err);
+    }
+  }, [current, queue]);
+
+  // Media Session action handlers for Windows/macOS media controls
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    const actionHandlers: [MediaSessionAction, MediaSessionActionHandler][] = [
+      ['play', () => {
+        if (audioRef.current) {
+          audioRef.current.play().then(() => setPlaying(true)).catch(console.error);
+        }
+      }],
+      ['pause', () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setPlaying(false);
+        }
+      }],
+      ['previoustrack', () => {
+        if (audioRef.current && audioRef.current.currentTime > 3) {
+          audioRef.current.currentTime = 0;
+        } else if (current > 0) {
+          setCurrent(current - 1);
+        } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+          setCurrent(queue.length - 1);
+        }
+      }],
+      ['nexttrack', () => {
+        if (current < queue.length - 1) {
+          setCurrent(current + 1);
+        } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+          setCurrent(0);
+        }
+      }],
+      ['stop', () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          setPlaying(false);
+        }
+      }],
+      ['seekto', (details) => {
+        if (audioRef.current && details.seekTime !== undefined) {
+          audioRef.current.currentTime = details.seekTime;
+        }
+      }],
+      ['seekbackward', (details) => {
+        if (audioRef.current) {
+          const skipTime = details.seekOffset || 10;
+          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - skipTime);
+        }
+      }],
+      ['seekforward', (details) => {
+        if (audioRef.current) {
+          const skipTime = details.seekOffset || 10;
+          audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + skipTime);
+        }
+      }]
+    ];
+
+    // Register action handlers
+    for (const [action, handler] of actionHandlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (err) {
+        console.warn(`Media session action '${action}' not supported:`, err);
+      }
+    }
+
+    // Cleanup: remove action handlers
+    return () => {
+      for (const [action] of actionHandlers) {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+  }, [current, queue.length, setCurrent, duration, repeatMode]);
+
+  // Update media session playback state and position
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+
+    // Update position state if supported
+    if ('setPositionState' in navigator.mediaSession && duration > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: duration,
+          playbackRate: audioRef.current?.playbackRate || 1,
+          position: audioRef.current?.currentTime || 0
+        });
+      } catch {
+        // Ignore errors (some browsers don't fully support this)
+      }
+    }
+  }, [playing, duration, progress]);
+
   // Send position updates for MPRIS during playback
   useEffect(() => {
     if (!window.meloampAPI || !playing || !audioRef.current) return;
@@ -650,6 +794,118 @@ export default function Player({ src }: { src: string }) {
       }
     };
   }, [playing, current, queue.length, setCurrent, duration]);
+
+  // Listen for global media key events from Electron
+  useEffect(() => {
+    if (!window.electron || !window.electron.ipcRenderer) return;
+    
+    const mediaKeyHandler = (_event: any, command: string) => {
+      debugLog('Player', 'Media key received:', command);
+      switch (command) {
+        case 'playPause':
+          if (playing && audioRef.current) {
+            audioRef.current.pause();
+            setPlaying(false);
+          } else if (!playing && audioRef.current) {
+            audioRef.current.play().then(() => setPlaying(true)).catch(console.error);
+          }
+          break;
+        case 'next':
+          if (current < queue.length - 1) {
+            setCurrent(current + 1);
+          } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+            setCurrent(0);
+          }
+          break;
+        case 'previous':
+          // If more than 3 seconds into track, restart it. Otherwise go to previous
+          if (audioRef.current && audioRef.current.currentTime > 3) {
+            audioRef.current.currentTime = 0;
+          } else if (current > 0) {
+            setCurrent(current - 1);
+          } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+            setCurrent(queue.length - 1);
+          }
+          break;
+        case 'stop':
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            setPlaying(false);
+          }
+          break;
+      }
+    };
+
+    window.electron.ipcRenderer.on('meloamp-media-key', mediaKeyHandler);
+    return () => {
+      if (window.electron && window.electron.ipcRenderer) {
+        window.electron.ipcRenderer.removeListener('meloamp-media-key', mediaKeyHandler);
+      }
+    };
+  }, [playing, current, queue.length, setCurrent, repeatMode]);
+
+  // Listen for keyboard shortcut events from App component
+  useEffect(() => {
+    const handleTogglePlay = () => {
+      if (playing && audioRef.current) {
+        audioRef.current.pause();
+        setPlaying(false);
+      } else if (!playing && audioRef.current) {
+        audioRef.current.play().then(() => setPlaying(true)).catch(console.error);
+      }
+    };
+
+    const handleNextTrack = () => {
+      if (current < queue.length - 1) {
+        setCurrent(current + 1);
+      } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+        setCurrent(0);
+      }
+    };
+
+    const handlePrevTrack = () => {
+      if (audioRef.current && audioRef.current.currentTime > 3) {
+        audioRef.current.currentTime = 0;
+      } else if (current > 0) {
+        setCurrent(current - 1);
+      } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+        setCurrent(queue.length - 1);
+      }
+    };
+
+    window.addEventListener('meloamp-toggle-play', handleTogglePlay);
+    window.addEventListener('meloamp-next-track', handleNextTrack);
+    window.addEventListener('meloamp-prev-track', handlePrevTrack);
+
+    return () => {
+      window.removeEventListener('meloamp-toggle-play', handleTogglePlay);
+      window.removeEventListener('meloamp-next-track', handleNextTrack);
+      window.removeEventListener('meloamp-prev-track', handlePrevTrack);
+    };
+  }, [playing, current, queue.length, setCurrent, repeatMode]);
+
+  // Update system tray with now playing info
+  useEffect(() => {
+    if (!window.meloampAPI?.updateTray) return;
+    
+    const currentSong = queue[current];
+    if (currentSong) {
+      const artistName = typeof currentSong.artist === 'object' && currentSong.artist?.name 
+        ? currentSong.artist.name 
+        : (Array.isArray(currentSong.artist) 
+            ? currentSong.artist.map((a: any) => typeof a === 'object' ? a.name : a).join(', ')
+            : currentSong.artist || '');
+      
+      window.meloampAPI.updateTray({
+        title: currentSong.title || '',
+        artist: artistName,
+        playing: playing
+      });
+    } else {
+      window.meloampAPI.updateTray(null);
+    }
+  }, [queue, current, playing]);
 
   return (
     <>

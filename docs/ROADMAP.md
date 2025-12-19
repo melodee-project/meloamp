@@ -34,22 +34,22 @@ It is intentionally implementation-oriented: each feature includes acceptance cr
 - [x] **L2.4 Playlist import/export** (M3U) 
 
 ### Milestone 3 — Search & Browse
-- [ ] **S3.1 Unified search query propagation** (top-bar search should set `/search?q=` reliably)
-- [ ] **S3.2 Search filters** (Artists/Albums/Songs/Playlists toggles + sort)
-- [ ] **S3.3 Recent searches** (local history, clear button)
-- [ ] **B3.1 Browse by genre** (list genres + drilldown to artists/albums/songs)
-- [ ] **B3.2 Favorites & ratings library pages** (Liked/Disliked/Top rated)
+- [x] **S3.1 Unified search query propagation** (top-bar search should set `/search?q=` reliably)
+- [x] **S3.2 Search filters** (Artists/Albums/Songs/Playlists toggles + sort)
+- [x] **S3.3 Recent searches** (local history, clear button)
+- [x] **B3.1 Browse by genre** (list genres + drilldown to artists/albums/songs)
+- [x] **B3.2 Favorites & ratings library pages** (Liked/Disliked/Top rated)
 
 ### Milestone 4 — Desktop Integration (Cross-Platform)
 - [x] **D4.1 “Now Playing” desktop notifications** (track change toasts)
-- [ ] **D4.2 Global media keys** (Play/Pause/Next/Previous) and configurable shortcuts
-- [ ] **D4.3 System tray controls** (mini controls + quick access to Queue)
-- [ ] **D4.4 Windows SMTC + macOS media integration** (parity with Linux MPRIS)
+- [x] **D4.2 Global media keys** (Play/Pause/Next/Previous) and configurable shortcuts
+- [x] **D4.3 System tray controls** (mini controls + quick access to Queue)
+- [x] **D4.4 Windows SMTC + macOS media integration** (parity with Linux MPRIS)
 
 ### Milestone 5 — UX Consistency & Accessibility
-- [ ] **U5.1 Standard loading/empty/error components** used everywhere
-- [ ] **U5.2 Keyboard shortcuts & command palette-lite** (focus search, play/pause, queue)
-- [ ] **U5.3 Better localization coverage** (fill missing keys, consistent phrasing)
+- [x] **U5.1 Standard loading/empty/error components** used everywhere
+- [x] **U5.2 Keyboard shortcuts & command palette-lite** (focus search, play/pause, queue)
+- [x] **U5.3 Better localization coverage** (fill missing keys, consistent phrasing)
 
 ---
 
