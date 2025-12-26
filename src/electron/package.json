@@ -27,6 +27,9 @@
     "got": "^11.8.6",
     "mpris-service": "^2.1.2"
   },
+  "overrides": {
+    "xml2js": "^0.6.2"
+  },
   "build": {
     "productName": "MeloAmp",
     "executableName": "MeloAmp",
@@ -45,6 +48,12 @@
       "target": [
         {
           "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
           "arch": [
             "x64"
           ]

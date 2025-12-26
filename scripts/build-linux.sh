@@ -41,7 +41,7 @@ yarn_install_if_needed() {
     return 0
   fi
 
-  (cd "$dir" && yarn install --frozen-lockfile --prefer-offline)
+  (cd "$dir" && yarn install --frozen-lockfile)
 }
 
 main() {
@@ -83,9 +83,8 @@ main() {
   export ELECTRON_CACHE="${ELECTRON_CACHE:-$HOME/.cache/electron}"
   export ELECTRON_BUILDER_CACHE="${ELECTRON_BUILDER_CACHE:-$HOME/.cache/electron-builder}"
 
-  # Build AppImage + tar.gz in ONE run (much faster than two separate runs)
-  # If you also want deb/rpm, add them after tar.gz.
-  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux AppImage tar.gz)
+  # Build AppImage + deb + tar.gz in ONE run (much faster than separate runs)
+  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux AppImage deb tar.gz)
 
   log "Done. Artifacts should be in: $DIST_DIR"
 }

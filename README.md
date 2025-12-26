@@ -19,7 +19,7 @@
 - 🌈 **Modern UI** with multiple color themes + high-contrast mode + font scaling
 - 🌍 **Multi-language UI** (en, de, es, fr, it, ja, pt, ru, zh-CN)
 - 🔒 **JWT authentication**
-- 📦 **Linux builds** via electron-builder (AppImage, deb, tar.gz)
+- 📦 **Linux builds** via electron-builder (AppImage, tar.gz)
 - ⚡ **Scrobbling** (Now Playing + Played)
 - 🖥️ **Electron desktop app** with Linux MPRIS media integration
 - 🛠️ **Accessible** and keyboard-friendly
@@ -129,7 +129,7 @@ Tip: In packaged builds, the Electron DevTools console is disabled by default. Y
 ./scripts/build-linux.sh
 ```
 - Packages will be output to `src/electron/dist/`
-- Produces: AppImage, deb, tar.gz
+- Produces: AppImage, deb tar.gz
 - Uses yarn and will install dependencies as needed
 
 ---
@@ -151,7 +151,7 @@ Contributions are welcome! Please:
 
 ## License
 
-This project is licensed under the [ISC License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
