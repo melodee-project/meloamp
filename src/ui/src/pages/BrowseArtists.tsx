@@ -56,7 +56,10 @@ export default function BrowseArtists() {
               labelId="artist-sort-label"
               value={sortBy}
               label={t('sort.sortBy')}
-              onChange={(e) => handleSortChange(e.target.value as ArtistSortField)}
+              onChange={(e) => {
+                e.preventDefault();
+                handleSortChange(e.target.value as ArtistSortField);
+              }}
             >
               <MenuItem value="Name">{t('sort.name')}</MenuItem>
               <MenuItem value="AlbumCount">{t('sort.albumCount')}</MenuItem>

@@ -31,6 +31,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -69,11 +70,11 @@
     "@types/react-router-dom": "^5.3.3",
     "ajv": "^8.18.0",
     "ajv-keywords": "^5.1.0",
-    "axios-mock-adapter": "^2.1.0"
+    "axios-mock-adapter": "^2.1.0",
+    "webpack-dev-server": "^4.15.2"
   },
   "overrides": {
     "nth-check": "^2.1.1",
-    "postcss": "^8.4.31",
-    "webpack-dev-server": "^5.0.0"
+    "postcss": "^8.4.31"
   }
 }
