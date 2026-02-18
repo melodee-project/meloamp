@@ -5,6 +5,8 @@ import { Song as ApiSong, Artist, Album } from '../apiModels';
 const EMPTY_ARTIST: Artist = {
   id: '',
   name: 'Unknown Artist',
+  thumbnailUrl: '',
+  imageUrl: '',
   userStarred: false,
   userRating: 0,
   albumCount: 0,
@@ -17,6 +19,8 @@ const EMPTY_ALBUM: Album = {
   id: '',
   artist: EMPTY_ARTIST,
   name: 'Unknown Album',
+  thumbnailUrl: '',
+  imageUrl: '',
   releaseYear: 0,
   userStarred: false,
   userRating: 0,
@@ -25,7 +29,7 @@ const EMPTY_ALBUM: Album = {
   durationFormatted: '',
   createdAt: '',
   updatedAt: '',
-  genre: '',
+  genre: null,
 };
 
 export function toQueueSong(song: ApiSong) {
