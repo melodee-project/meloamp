@@ -3,6 +3,8 @@
  * Tests recent searches and filter toggling
  */
 
+export {};
+
 // Test recent searches localStorage helper
 describe('Recent Searches', () => {
   const RECENT_SEARCHES_KEY = 'meloamp_recent_searches';
