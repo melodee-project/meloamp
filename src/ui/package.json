@@ -71,7 +71,7 @@
     "ajv": "^8.18.0",
     "ajv-keywords": "^5.1.0",
     "axios-mock-adapter": "^2.1.0",
-    "webpack-dev-server": "^4.15.2"
+    "webpack-dev-server": "^5.2.1"
   },
   "overrides": {
     "nth-check": "^2.1.1",
