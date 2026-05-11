@@ -1,17 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, IconButton, InputBase, Box, Tooltip, ThemeProvider, CssBaseline } from '@mui/material';
-import { 
-  Brightness4, 
-  Brightness7, 
-  Search, 
-  QueueMusic, 
+import {
+  Brightness4,
+  Brightness7,
+  Search,
+  QueueMusic,
   Menu as MenuIcon,
 } from '@mui/icons-material';
 import logo from './logo.svg';
 import './App.css';
 import Badge from '@mui/material/Badge';
-import UserSettings from './pages/UserSettings';
+import UserSettingsPage from './pages/UserSettings';
 import LoginPage from './pages/LoginPage';
 import { apiRequest } from './api';
 import classicTheme from './themes/classicTheme';
@@ -31,7 +31,7 @@ import SearchPage from './pages/SearchPage';
 import Player from './pages/Player';
 import QueueView from './pages/QueueView';
 import '../src/pages/QueueView.css';
-import { useQueueStore } from './queueStore';
+import { useQueueStore, Song, RepeatMode } from './queueStore';
 import DashboardWrapper from './pages/Dashboard';
 import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
@@ -56,12 +56,17 @@ import fiestaTheme from './themes/fiestaTheme';
 import scarlettTheme from './themes/scarlettTheme';
 import winAmpTheme from './themes/winAmpTheme';
 import { useTranslation } from 'react-i18next';
-import { createTheme } from '@mui/material/styles';
+import { createTheme, Theme } from '@mui/material/styles';
 import CommandPalette, { useDefaultCommands } from './components/CommandPalette';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import Sidebar, { DRAWER_WIDTH } from './components/Sidebar';
+import { User } from './apiModels';
+import ErrorBoundary from './components/ErrorBoundary';
+import { UserSettings } from './types/settings';
 
-const themeMap: any = {
+type ThemeValue = Theme | ((mode: 'light' | 'dark') => Theme);
+
+const themeMap: Record<string, ThemeValue> = {
   classic: classicTheme,
   ocean: oceanTheme,
   sunset: sunsetTheme,
@@ -82,56 +87,83 @@ const themeMap: any = {
   winAmp: winAmpTheme,
 };
 
-// Removed unused Dashboard function
-
 function Albums() { return <BrowseAlbums />; }
 function Playlists() { return <PlaylistManager />; }
 function Artists() { return <BrowseArtists />; }
 function Songs() { return <BrowseSongs />; }
 function Queue() { return <QueueView />; }
 
-export default function App() {
-  // Move theme logic here so <ThemeProvider> wraps AppContent, which uses router hooks
-  const [settings, setSettings] = React.useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('userSettings') || '') || {
-        theme: 'classic',
-        language: 'en',
-        highContrast: false,
-        fontScale: 1,
-        caching: false,
-        mode: 'light',
-      };
-    } catch {
+function getInitialSettings(): UserSettings {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('userSettings') || '');
+    if (parsed && typeof parsed === 'object') {
       return {
-        theme: 'classic',
-        language: 'en',
-        highContrast: false,
-        fontScale: 1,
-        caching: false,
-        mode: 'light',
+        theme: parsed.theme || 'classic',
+        language: parsed.language || 'en',
+        highContrast: parsed.highContrast || false,
+        fontScale: parsed.fontScale || 1,
+        caching: parsed.caching || false,
+        mode: parsed.mode || 'light',
       };
     }
+  } catch {}
+  return {
+    theme: 'classic',
+    language: 'en',
+    highContrast: false,
+    fontScale: 1,
+    caching: false,
+    mode: 'light',
+  };
+}
+
+function getHighContrastTheme(baseTheme: Theme): Theme {
+  return createTheme({
+    ...baseTheme,
+    palette: {
+      ...baseTheme.palette,
+      background: { default: '#000', paper: '#111' },
+      text: { primary: '#fff', secondary: '#ff0' },
+      primary: { main: '#fff', contrastText: '#000' },
+      secondary: { main: '#ff0', contrastText: '#000' },
+      divider: '#fff',
+      error: { main: '#ff1744' },
+      warning: { main: '#ffd600' },
+      info: { main: '#00eaff' },
+      success: { main: '#76ff03' },
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            color: '#000',
+            backgroundColor: '#fff',
+            border: '2px solid #ff0',
+            fontWeight: 700,
+          },
+        },
+      },
+    },
   });
+}
+
+export default function App() {
+  const [settings, setSettings] = React.useState<UserSettings>(getInitialSettings);
   const baseTheme = typeof themeMap[settings.theme] === 'function'
-    ? themeMap[settings.theme](settings.mode || 'light')
-    : themeMap[settings.theme] || classicTheme;
-  
-  // Apply mode override to static themes that don't accept mode parameter
+    ? (themeMap[settings.theme] as (mode: 'light' | 'dark') => Theme)(settings.mode || 'light')
+    : (themeMap[settings.theme] || classicTheme) as Theme;
+
   const themedWithMode = React.useMemo(() => {
     const mode = settings.mode || 'light';
-    // If theme is already a function (mode-aware), it's handled above
     if (typeof themeMap[settings.theme] === 'function') {
       return baseTheme;
     }
-    // For static themes, create a new theme with mode override
     return createTheme({
       ...baseTheme,
       palette: {
         ...baseTheme.palette,
         mode,
-        // Adjust background colors based on mode
-        background: mode === 'dark' 
+        background: mode === 'dark'
           ? { default: '#121212', paper: '#1e1e1e' }
           : baseTheme.palette.background,
         text: mode === 'dark'
@@ -140,54 +172,33 @@ export default function App() {
       },
     });
   }, [baseTheme, settings.theme, settings.mode]);
-  
-  function getHighContrastTheme(baseTheme: any) {
-    return createTheme({
-      ...baseTheme,
-      palette: {
-        ...baseTheme.palette,
-        background: { default: '#000', paper: '#111' },
-        text: { primary: '#fff', secondary: '#ff0' },
-        primary: { main: '#fff', contrastText: '#000' },
-        secondary: { main: '#ff0', contrastText: '#000' },
-        divider: '#fff',
-        error: { main: '#ff1744' },
-        warning: { main: '#ffd600' },
-        info: { main: '#00eaff' },
-        success: { main: '#76ff03' },
-      },
-      components: {
-        MuiButton: {
-          styleOverrides: {
-            root: {
-              color: '#000',
-              backgroundColor: '#fff',
-              border: '2px solid #ff0',
-              fontWeight: 700,
-            },
-          },
-        },
-      },
-    });
-  }
+
   const theme = React.useMemo(() => (
     settings.highContrast ? getHighContrastTheme(themedWithMode) : themedWithMode
   ), [settings.highContrast, themedWithMode]);
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <AppContent settings={settings} setSettings={setSettings} />
-      </Router>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <AppContent settings={settings} setSettings={setSettings} />
+        </Router>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
-function AppContent({ settings, setSettings }: { settings: any, setSettings: (s: any) => void }) {
+interface AppContentProps {
+  settings: UserSettings;
+  setSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
+}
+
+function AppContent({ settings, setSettings }: AppContentProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
-  const [user, setUser] = React.useState(() => {
+  const [user, setUser] = React.useState<User | null>(() => {
     try {
       const persistedUser = localStorage.getItem('user');
       if (persistedUser) return JSON.parse(persistedUser);
@@ -208,7 +219,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
 
   const { t } = useTranslation();
 
-  // Playback control callbacks for command palette and shortcuts
   const handleTogglePlay = React.useCallback(() => {
     window.dispatchEvent(new CustomEvent('meloamp-toggle-play'));
   }, []);
@@ -229,18 +239,17 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     navigate('/queue');
   }, [navigate]);
 
-  // Listen for player state updates
   React.useEffect(() => {
-    const handlePlayerState = (e: CustomEvent) => {
-      if (e.detail && typeof e.detail.playing === 'boolean') {
-        setIsPlaying(e.detail.playing);
+    const handlePlayerState = (e: Event) => {
+      const customEvent = e as CustomEvent<{ playing?: boolean }>;
+      if (customEvent.detail && typeof customEvent.detail.playing === 'boolean') {
+        setIsPlaying(customEvent.detail.playing);
       }
     };
-    window.addEventListener('meloamp-player-state', handlePlayerState as EventListener);
-    return () => window.removeEventListener('meloamp-player-state', handlePlayerState as EventListener);
+    window.addEventListener('meloamp-player-state', handlePlayerState);
+    return () => window.removeEventListener('meloamp-player-state', handlePlayerState);
   }, []);
 
-  // Get default commands for the command palette
   const commands = useDefaultCommands({
     onTogglePlay: handleTogglePlay,
     onNextTrack: handleNextTrack,
@@ -250,7 +259,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     isPlaying,
   });
 
-  // Global keyboard shortcuts
   useKeyboardShortcuts([
     {
       key: 'ctrl+k',
@@ -303,7 +311,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     },
   ], { enabled: isAuthenticated });
 
-  // Sync search value from URL when navigating to /search with ?q= parameter
   React.useEffect(() => {
     if (location.pathname === '/search') {
       const urlQuery = searchParams.get('q') || '';
@@ -331,54 +338,46 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
-  // Always load user from storage on mount and when authentication changes
-  // Also validates the JWT token is still valid by fetching user profile
   React.useEffect(() => {
     const loadUser = async () => {
       try {
-        // First check localStorage (persistent across Electron restarts)
-        let storedUser = null;
+        let storedUser: User | null = null;
         try {
           storedUser = JSON.parse(localStorage.getItem('user') || 'null');
         } catch {}
-        
-        // Fallback to sessionStorage
+
         if (!storedUser) {
           try {
             storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
           } catch {}
         }
-        
-        // If there's a JWT, validate it by fetching the user profile
+
         const jwt = localStorage.getItem('jwt');
         if (jwt) {
           try {
-            const res: any = await apiRequest('/user/me');
+            const res = await apiRequest('/user/me');
             const userFromApi = res && res.data ? res.data : null;
             if (userFromApi) {
-              // Token is valid, update stored user data
               localStorage.setItem('user', JSON.stringify(userFromApi));
               sessionStorage.setItem('user', JSON.stringify(userFromApi));
               setUser(userFromApi);
               return;
             }
-          } catch (e: any) {
-            // If 401, token is expired - this will be handled by axios interceptor
-            // For other errors, use cached user if available
-            if (e?.response?.status !== 401 && storedUser) {
+          } catch (e: unknown) {
+            const err = e as { response?: { status?: number } };
+            if (err?.response?.status !== 401 && storedUser) {
               setUser(storedUser);
               return;
             }
             console.error('Failed to fetch user profile', e);
           }
         }
-        
-        // Use cached user if available and no JWT validation needed
+
         if (storedUser && !jwt) {
           setUser(storedUser);
           return;
         }
-        
+
         setUser(null);
       } catch {
         setUser(null);
@@ -390,13 +389,12 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     return () => window.removeEventListener('storage', storageHandler);
   }, [isAuthenticated]);
 
-  const queue = useQueueStore((state: any) => state.queue);
-  const current = useQueueStore((state: any) => state.current);
+  const queue = useQueueStore((state) => state.queue);
+  const current = useQueueStore((state) => state.current);
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={() => {
       setIsAuthenticated(true);
-      // Update user state after login (check localStorage first, then sessionStorage)
       try {
         const persistedUser = localStorage.getItem('user');
         if (persistedUser) {
@@ -415,7 +413,6 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
     setSearchLoading(true);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      // Navigate with query param
       const query = e.target.value.trim();
       if (query) {
         navigate(`/search?q=${encodeURIComponent(query)}`);
@@ -446,7 +443,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
           user={user}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
-          onThemeToggle={() => setSettings((s: any) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))}
+          onThemeToggle={() => setSettings((s: UserSettings) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))}
           themeMode={settings.mode}
         />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -505,12 +502,12 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
                   )}
                 </Box>
                 <Tooltip title={`Switch to ${settings.mode === 'dark' ? 'light' : 'dark'} mode`}>
-                  <IconButton color="inherit" onClick={() => setSettings((s: any) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))} aria-label="toggle mode">
+                  <IconButton color="inherit" onClick={() => setSettings((s: UserSettings) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))} aria-label="toggle mode">
                     {settings.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('nav.queue')}>
-                  <Badge badgeContent={queue.filter((song: any) => !song.played).length} color="primary">
+                  <Badge badgeContent={queue.filter((song: Song) => !song.played).length} color="primary">
                     <IconButton color="inherit" component={Link} to="/queue" aria-label="queue">
                       <QueueMusic />
                     </IconButton>
@@ -527,7 +524,7 @@ function AppContent({ settings, setSettings }: { settings: any, setSettings: (s:
               <Route path="/playlists" element={<Playlists />} />
               <Route path="/songs" element={<Songs />} />
               <Route path="/search" element={<SearchPage query={searchValue} />} />
-              <Route path="/settings" element={<UserSettings settings={settings} onChange={setSettings} />} />
+              <Route path="/settings" element={<UserSettingsPage settings={settings} onChange={setSettings} />} />
               <Route path="/queue" element={<Queue />} />
               <Route path="/artists/:id" element={<ArtistDetailView />} />
               <Route path="/albums/:id" element={<AlbumDetailView />} />

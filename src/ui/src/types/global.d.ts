@@ -11,8 +11,19 @@ export interface TrayNowPlaying {
   playing?: boolean;
 }
 
+export interface PlaybackInfo {
+  trackId?: string;
+  length: number;
+  artUrl: string;
+  title: string;
+  album: string | { name?: string };
+  artist: string | { name?: string } | { name?: string; imageUrl?: string }[];
+  status: 'Playing' | 'Paused' | 'Stopped';
+  position: number;
+}
+
 export interface MeloampAPI {
-  sendPlaybackInfo: (info: any) => void;
+  sendPlaybackInfo: (info: PlaybackInfo) => void;
   sendPosition: (position: number) => void;
   checkForUpdates: () => void;
   updateMediaKeys: (config: MediaKeyConfig) => void;
@@ -21,16 +32,16 @@ export interface MeloampAPI {
 }
 
 export interface ElectronAPI {
-  versions: any;
+  versions: NodeJS.ProcessVersions;
   ipcRenderer: {
-    on: (channel: string, listener: (...args: any[]) => void) => void;
-    removeListener: (channel: string, listener: (...args: any[]) => void) => void;
+    on: (channel: string, callback: (_event: any, ...args: any[]) => void) => void;
+    removeListener: (channel: string, callback: (_event: any, ...args: any[]) => void) => void;
   };
 }
 
 declare global {
   interface Window {
-    meloampAPI?: MeloampAPI;
-    electron?: ElectronAPI;
+    meloampAPI: MeloampAPI;
+    electron: ElectronAPI;
   }
 }

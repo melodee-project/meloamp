@@ -18,15 +18,11 @@ import {
 import { Check, Download, Upload, Warning } from '@mui/icons-material';
 import { apiRequest } from '../api';
 import { ThemePackInfo } from '../apiModels';
-
-interface ThemeSettings {
-  theme: string;
-  mode: 'light' | 'dark';
-}
+import { UserSettings } from '../types/settings';
 
 interface ThemesPageProps {
-  settings: ThemeSettings;
-  onChange: (settings: ThemeSettings) => void;
+  settings: UserSettings;
+  onChange: (settings: UserSettings) => void;
 }
 
 export default function ThemesPage({ settings, onChange }: ThemesPageProps) {

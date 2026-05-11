@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider, Button, TextField, Divider, Alert } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { MediaKeyConfig } from '../types/global.d';
+import { UserSettings as UserSettingsType } from '../types/settings';
+
+interface UserSettingsProps {
+  settings: UserSettingsType;
+  onChange: (settings: UserSettingsType) => void;
+}
 
 const themes = [
   { label: 'Acid Pop', value: 'acidPop' },
@@ -34,7 +40,7 @@ const defaultMediaKeys: MediaKeyConfig = {
   stop: 'MediaStop'
 };
 
-export default function UserSettings({ settings, onChange }: any) {
+export default function UserSettings({ settings, onChange }: UserSettingsProps) {
   const { t, i18n } = useTranslation();
   const [mediaKeys, setMediaKeys] = useState<MediaKeyConfig>(defaultMediaKeys);
   const [mediaKeysLoading, setMediaKeysLoading] = useState(false);
@@ -72,13 +78,13 @@ export default function UserSettings({ settings, onChange }: any) {
   };
 
   const handleRestoreDefaults = () => {
-    const defaults = {
+    const defaults: UserSettingsType = {
       theme: 'berryTwilight',
       language: 'en',
       highContrast: false,
       fontScale: 1,
       caching: false,
-      mode: 'light',
+      mode: 'light' as const,
       dashboardRecentLimit: 10
     };
     document.documentElement.style.setProperty('--meloamp-font-scale', String(defaults.fontScale));

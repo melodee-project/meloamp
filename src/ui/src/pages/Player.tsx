@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, IconButton, Slider, Typography, Popover, Snackbar, CircularProgress, Dialog, Rating, Tooltip } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious, Equalizer, Favorite, FavoriteBorder, Fullscreen, FullscreenExit, Repeat, RepeatOne, Shuffle } from '@mui/icons-material';
-import { useQueueStore, RepeatMode } from '../queueStore';
+import { useQueueStore, RepeatMode, Song } from '../queueStore';
 import api from '../api';
 import { ScrobbleRequest, ScrobbleType } from '../apiModels';
 import { useTranslation } from 'react-i18next';
@@ -45,14 +45,14 @@ export default function Player({ src }: { src: string }) {
   // Ref to store actual progress for scrobbling without causing re-renders
   const progressRef = useRef<number>(0);
   
-  const queue = useQueueStore((state: any) => state.queue);
-  const current = useQueueStore((state: any) => state.current);
-  const setCurrent = useQueueStore((state: any) => state.setCurrent);
-  const updateSong = useQueueStore((state: any) => state.updateSong);
-  const repeatMode = useQueueStore((state: any) => state.repeatMode);
-  const shuffleEnabled = useQueueStore((state: any) => state.shuffleEnabled);
-  const setRepeatMode = useQueueStore((state: any) => state.setRepeatMode);
-  const toggleShuffle = useQueueStore((state: any) => state.toggleShuffle);
+  const queue = useQueueStore((state) => state.queue);
+  const current = useQueueStore((state) => state.current);
+  const setCurrent = useQueueStore((state) => state.setCurrent);
+  const updateSong = useQueueStore((state) => state.updateSong);
+  const repeatMode = useQueueStore((state) => state.repeatMode);
+  const shuffleEnabled = useQueueStore((state) => state.shuffleEnabled);
+  const setRepeatMode = useQueueStore((state) => state.setRepeatMode);
+  const toggleShuffle = useQueueStore((state) => state.toggleShuffle);
   const { t } = useTranslation();
 
   // Equalizer setup
@@ -448,7 +448,7 @@ export default function Player({ src }: { src: string }) {
       queue.length > 0 &&
       current === 0 &&
       audioRef.current.src &&
-      audioRef.current.src.includes(queue[0]?.url)
+      audioRef.current.src.includes(queue[0]?.url || '')
     ) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
@@ -567,14 +567,23 @@ export default function Player({ src }: { src: string }) {
   // Send playback info to Electron for MPRIS integration
   useEffect(() => {
     if (!window.meloampAPI || !queue[current]) return;
-    const info = {
+    const info: {
+      trackId?: string;
+      length: number;
+      artUrl: string;
+      title: string;
+      album: string | { name?: string };
+      artist: string | { name?: string } | { name?: string; imageUrl?: string }[];
+      status: 'Playing' | 'Paused' | 'Stopped';
+      position: number;
+    } = {
       trackId: queue[current]?.id?.toString() || undefined,
-      length: duration, // duration in seconds
+      length: duration,
       artUrl: queue[current]?.artwork || '',
       title: queue[current]?.title || '',
-      album: queue[current]?.album || '',
+      album: typeof queue[current]?.album === 'object' ? queue[current].album.name || '' : (queue[current]?.album || ''),
       artist: queue[current]?.artist || '',
-      status: playing ? 'Playing' : (duration > 0 ? 'Paused' : 'Stopped'),
+      status: playing ? 'Playing' : (duration > 0 ? 'Paused' : 'Stopped') as 'Playing' | 'Paused' | 'Stopped',
       position: audioRef.current?.currentTime || 0
     };
     window.meloampAPI.sendPlaybackInfo(info);
@@ -593,14 +602,12 @@ export default function Player({ src }: { src: string }) {
     // Extract artist name
     const artistName = typeof currentSong.artist === 'object' && currentSong.artist?.name 
       ? currentSong.artist.name 
-      : (Array.isArray(currentSong.artist) 
-          ? currentSong.artist.map((a: any) => typeof a === 'object' ? a.name : a).join(', ')
-          : currentSong.artist || '');
+      : '';
     
     // Extract album name
     const albumName = typeof currentSong.album === 'object' && currentSong.album?.name 
       ? currentSong.album.name 
-      : currentSong.album || '';
+      : '';
 
     // Get artwork URL
     const artworkUrl = currentSong.artwork || currentSong.artUrl || 
@@ -742,7 +749,7 @@ export default function Player({ src }: { src: string }) {
   useEffect(() => {
     if (!window.electron || !window.electron.ipcRenderer) return;
     
-    const handler = (_event: any, command: string, ...args: any[]) => {
+    const handler = (_event: unknown, command: string, ...args: unknown[]) => {
       switch (command) {
         case 'play':
           if (!playing && audioRef.current) {
@@ -774,13 +781,13 @@ export default function Player({ src }: { src: string }) {
           break;
         case 'seek':
           if (audioRef.current && args[0] !== undefined) {
-            const offsetSeconds = args[0] / 1000000; // Convert from microseconds
+            const offsetSeconds = (args[0] as number) / 1000000; // Convert from microseconds
             audioRef.current.currentTime = Math.max(0, Math.min(duration, audioRef.current.currentTime + offsetSeconds));
           }
           break;
         case 'position':
           if (audioRef.current && args[0] !== undefined) {
-            const positionSeconds = args[0] / 1000000; // Convert from microseconds
+            const positionSeconds = (args[0] as number) / 1000000; // Convert from microseconds
             audioRef.current.currentTime = Math.max(0, Math.min(duration, positionSeconds));
           }
           break;
@@ -799,7 +806,7 @@ export default function Player({ src }: { src: string }) {
   useEffect(() => {
     if (!window.electron || !window.electron.ipcRenderer) return;
     
-    const mediaKeyHandler = (_event: any, command: string) => {
+    const mediaKeyHandler = (_event: unknown, command: string) => {
       debugLog('Player', 'Media key received:', command);
       switch (command) {
         case 'playPause':
@@ -893,9 +900,7 @@ export default function Player({ src }: { src: string }) {
     if (currentSong) {
       const artistName = typeof currentSong.artist === 'object' && currentSong.artist?.name 
         ? currentSong.artist.name 
-        : (Array.isArray(currentSong.artist) 
-            ? currentSong.artist.map((a: any) => typeof a === 'object' ? a.name : a).join(', ')
-            : currentSong.artist || '');
+        : '';
       
       window.meloampAPI.updateTray({
         title: currentSong.title || '',
@@ -1083,7 +1088,7 @@ export default function Player({ src }: { src: string }) {
             <Box sx={{ flex: 1, minWidth: 200, maxWidth: 400, bgcolor: 'background.default', borderRadius: 2, p: 2, boxShadow: 1, height: { xs: '60vh', md: '70vh' }, maxHeight: { xs: '60vh', md: '70vh' }, alignSelf: 'center', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" sx={{ mb: 2 }}>{t('player.queue')}</Typography>
               <Box sx={{ flex: 1, overflow: 'auto' }}>
-                {queue.map((song: any, idx: number) => (
+                {queue.map((song: Song, idx: number) => (
                   <Box key={song.id} sx={{ display: 'flex', alignItems: 'center', mb: 1, bgcolor: idx === current ? 'primary.light' : 'transparent', borderRadius: 1, p: 1, cursor: 'pointer' }} onClick={() => setCurrent(idx)}>
                     {song.imageUrl && <Box component="img" src={song.imageUrl} alt={song.title} sx={{ width: 32, height: 32, borderRadius: 1, mr: 1, objectFit: 'cover' }} />}
                     <Typography variant="body2" noWrap sx={{ flex: 1 }}>{song.title}</Typography>

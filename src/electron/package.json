@@ -15,7 +15,7 @@
   "keywords": [],
   "author": "Melodee Team <info@melodee.org>",
   "homepage": "https://melodee.org",
-  "license": "ISC",
+  "license": "MIT",
   "description": "MeloAmp: Cross-platform streaming client for the Melodee.",
   "devDependencies": {
     "electron": "^40.4.1",

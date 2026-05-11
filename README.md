@@ -70,9 +70,9 @@ If you want to iterate on UI changes quickly and test them in a browser before p
 
 1) Start the UI dev server
 
-For fish shell (copy-paste as-is):
+For bash shell (copy-paste as-is):
 
-```fish
+```bash
 cd src/ui
 yarn install
 yarn start
@@ -108,7 +108,7 @@ location.reload();
 
 Once you are happy with the UI changes in the browser, build the UI and run Electron so the desktop app serves the local build:
 
-```fish
+```bash
 cd src/ui
 yarn build
 cd ../electron

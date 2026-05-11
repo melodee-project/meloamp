@@ -6,8 +6,8 @@ import '@testing-library/jest-dom';
 
 // Polyfill TextEncoder/TextDecoder for Jest environment (needed by react-router v7)
 import { TextEncoder, TextDecoder } from 'util';
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+(global as { TextEncoder: typeof TextEncoder }).TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder;
 
 // Mock window.matchMedia for MUI components
 Object.defineProperty(window, 'matchMedia', {
