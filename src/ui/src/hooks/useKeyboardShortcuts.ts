@@ -26,7 +26,7 @@ interface UseKeyboardShortcutsOptions {
  * Parse a key combination string into its components.
  * Supports: ctrl, alt, shift, meta (cmd on Mac)
  */
-function parseKeyCombination(combo: string): { 
+export function parseKeyCombination(combo: string): { 
   key: string; 
   ctrl: boolean; 
   alt: boolean; 
@@ -48,7 +48,7 @@ function parseKeyCombination(combo: string): {
 /**
  * Check if a keyboard event matches a key combination.
  */
-function matchesKeyCombination(
+export function matchesKeyCombination(
   event: KeyboardEvent, 
   combo: ReturnType<typeof parseKeyCombination>
 ): boolean {
@@ -74,12 +74,12 @@ function matchesKeyCombination(
 /**
  * Check if the event target is an input element where shortcuts should be ignored.
  */
-function isInputElement(target: EventTarget | null): boolean {
+export function isInputElement(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) return false;
   
   const tagName = target.tagName.toLowerCase();
   const isInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
-  const isContentEditable = target.isContentEditable;
+  const isContentEditable = target.contentEditable === 'true';
   
   return isInput || isContentEditable;
 }
