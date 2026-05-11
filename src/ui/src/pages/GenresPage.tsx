@@ -113,7 +113,7 @@ export default function GenresPage() {
         // Fetch genre-specific content using the new API
         // API returns GenreSongsResponse: { songs: Song[], totalCount, page, limit }
         const songsRes = await api.get<{ songs: Song[], totalCount: number, page: number, limit: number }>(
-          `/Genres/${genreId}/songs`, 
+          `/genres/${genreId}/songs`, 
           { params: { limit: 50 } }
         );
         

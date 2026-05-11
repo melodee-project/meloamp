@@ -20,6 +20,11 @@ export interface User {
   updatedAt: string;
 }
 
+export interface UserSummary {
+  apiKey: string;
+  userName: string;
+}
+
 export interface Artist {
   id: string;
   thumbnailUrl: string;
@@ -101,6 +106,11 @@ export interface SearchResultData {
   totalPlaylists: number;
 }
 
+export interface SearchResultResponse {
+  meta: Meta;
+  data: SearchResultData;
+}
+
 export interface SearchRequest {
   query: string;
   type?: 'artists' | 'albums' | 'songs' | 'playlists';
@@ -111,6 +121,16 @@ export interface SearchRequest {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   filterByArtistId?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+  types?: Array<'artists' | 'albums' | 'songs' | 'playlists'>;
+  artistApiKey?: string;
+  filterByArtistApiKey?: string;
+  filterByAlbumApiKey?: string;
+  albumPageValue?: number | string;
+  artistPageValue?: number | string;
+  songPageValue?: number | string;
 };
 
 export interface LoginResponse {
@@ -276,14 +296,17 @@ export interface ListeningStatistics {
 export interface TopContentItem {
   id: string;
   name: string;
-  type: string;
   playCount: number;
-  imageUrl: string | null;
+  playTime: number;
+  rank: number;
+  type?: string;
+  imageUrl?: string | null;
 }
 
 export interface TopContentResponse {
   items: TopContentItem[];
   period: string;
+  type: string;
 }
 
 export interface EqualizerBand {
@@ -384,8 +407,9 @@ export interface UpdateSmartPlaylistRequest {
 }
 
 export interface SmartPlaylistEvaluateResponse {
-  results: Song[];
-  resultCount: number;
+  playlist: SmartPlaylistModel;
+  meta: Meta;
+  data: Song[];
 }
 
 export interface CreatePlaylistRequest {
@@ -408,9 +432,11 @@ export interface ReorderPlaylistSongsRequest {
 }
 
 export interface PlaylistImportResult {
-  imported: number;
-  skipped: number;
-  playlist: Playlist;
+  playlistApiKey: string;
+  totalEntries: number | string;
+  matchedCount: number | string;
+  missingCount: number | string;
+  missingReferences: string[];
 }
 
 export interface SimilarItem {
@@ -418,51 +444,62 @@ export interface SimilarItem {
   name: string;
   type: string;
   artist?: string;
-  similarity: number;
+  similarityScore: number | string;
   imageUrl?: string;
 }
 
 export interface SimilarResponse {
-  items: SimilarItem[];
+  similar: SimilarItem[];
+  items?: SimilarItem[];
 }
 
 export interface SearchSuggestion {
-  text: string;
+  id: string;
+  name: string;
   type: string;
+  thumbnailUrl: string;
 }
 
 export interface SearchSuggestResponse {
-  suggestions: SearchSuggestion[];
+  artists: SearchSuggestion[];
+  albums: SearchSuggestion[];
+  songs: SearchSuggestion[];
+  playlists: SearchSuggestion[];
+}
+
+export type SearchSuggestionResponse = SearchSuggestResponse;
+
+export interface SearchNumericRangeFilter {
+  min?: number | string | null;
+  max?: number | string | null;
 }
 
 export interface AdvancedSearchFilters {
-  query?: string;
-  artistId?: string;
-  albumId?: string;
-  genre?: string;
-  yearFrom?: number;
-  yearTo?: number;
-  durationFrom?: number;
-  durationTo?: number;
-  bitrateFrom?: number;
-  bitrateTo?: number;
-  userStarred?: boolean;
-  userRatingMin?: number;
-  userRatingMax?: number;
+  year?: SearchNumericRangeFilter | null;
+  bpm?: SearchNumericRangeFilter | null;
+  duration?: SearchNumericRangeFilter | null;
+  genre?: string[] | null;
+  mood?: string[] | null;
+  key?: string | null;
+  artist?: string | null;
+  album?: string | null;
 }
 
 export interface AdvancedSearchRequest {
-  filters: AdvancedSearchFilters;
-  page?: number;
-  pageSize?: number;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
+  query?: string | null;
+  filters?: AdvancedSearchFilters | null;
+  types?: string[] | null;
+  sortBy?: string | null;
+  sortOrder?: string | null;
+  page?: number | string | null;
+  limit?: number | string | null;
 }
 
 export interface AdvancedSearchResults {
   songs: Song[];
   albums: Album[];
   artists: Artist[];
+  playlists: Playlist[];
 }
 
 export interface AdvancedSearchResponse {
@@ -470,12 +507,18 @@ export interface AdvancedSearchResponse {
   meta: Meta;
 }
 
+export interface SongPagedResponse {
+  data: Song[];
+  meta: Meta;
+}
+
 export interface UserStatsResponse {
-  totalPlayTime: number;
-  totalTracksPlayed: number;
-  uniqueArtistsPlayed: number;
-  uniqueAlbumsPlayed: number;
-  averageDailyPlayTime: number;
+  periodDays: number | string;
+  totalPlays: number;
+  favoriteSongs: number;
+  favoriteAlbums: number;
+  favoriteArtists: number;
+  ratedSongs: number;
 }
 
 export interface HistoryItem {
@@ -518,111 +561,345 @@ export interface ChartPagedResponse {
 
 export interface RequestSummary {
   apiKey: string;
-  title: string;
   category: RequestCategory;
   status: RequestStatus;
+  description: string;
+  artistName: string | null;
+  albumTitle: string | null;
+  songTitle: string | null;
+  releaseYear: number | string | null;
   createdAt: string;
   updatedAt: string;
+  lastActivityAt: string;
+  lastActivityType: string;
+  commentCount: number | string;
+  createdByUser: UserSummary;
 }
 
 export interface RequestDetail {
   apiKey: string;
-  title: string;
-  description?: string;
+  description: string;
   category: RequestCategory;
   status: RequestStatus;
+  artistName: string | null;
+  targetArtistApiKey: string | null;
+  albumTitle: string | null;
+  targetAlbumApiKey: string | null;
+  songTitle: string | null;
+  targetSongApiKey: string | null;
+  releaseYear: number | string | null;
+  externalUrl: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
-  comments: RequestCommentDto[];
+  lastActivityAt: string;
+  lastActivityType: string;
+  commentCount: number | string;
+  createdByUser: UserSummary;
+  lastActivityUser: UserSummary | null;
 }
 
 export interface RequestCommentDto {
-  id: string;
-  content: string;
+  apiKey: string;
+  parentCommentApiKey: string | null;
+  body: string;
+  isSystem: boolean;
   createdAt: string;
-  author: User;
+  createdByUser: UserSummary | null;
+}
+
+export interface UnreadRequestSummary {
+  apiKey: string;
+  category: RequestCategory;
+  status: RequestStatus;
+  description: string;
+  lastActivityAt: string;
+  lastActivityType: string;
+  lastActivityUser: UserSummary | null;
+}
+
+export interface RequestPagedResponse {
+  meta: Meta;
+  data: RequestSummary[];
+}
+
+export interface CommentPagedResponse {
+  meta: Meta;
+  data: RequestCommentDto[];
 }
 
 export interface CreateRequestRequest {
-  title: string;
-  description?: string;
+  description: string;
   category: RequestCategory;
+  artistName?: string | null;
+  targetArtistApiKey?: string | null;
+  albumTitle?: string | null;
+  targetAlbumApiKey?: string | null;
+  songTitle?: string | null;
+  targetSongApiKey?: string | null;
+  releaseYear?: number | string | null;
+  externalUrl?: string | null;
+  notes?: string | null;
 }
 
 export interface UpdateRequestRequest {
-  title?: string;
   description?: string;
-  category?: RequestCategory;
-  status?: RequestStatus;
+  artistName?: string | null;
+  targetArtistApiKey?: string | null;
+  albumTitle?: string | null;
+  targetAlbumApiKey?: string | null;
+  songTitle?: string | null;
+  targetSongApiKey?: string | null;
+  releaseYear?: number | string | null;
+  externalUrl?: string | null;
+  notes?: string | null;
 }
 
-export enum RequestCategory {
-  Feature = 'Feature',
-  Bug = 'Bug',
-  Content = 'Content',
-  Other = 'Other',
+export interface CreateCommentRequest {
+  body: string;
+  parentCommentApiKey?: string | null;
 }
 
-export enum RequestStatus {
-  Open = 'Open',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Closed = 'Closed',
+export interface PagedResponseOfUnreadRequestSummary {
+  meta: Meta;
+  data: UnreadRequestSummary[];
+}
+
+export interface ActivityCheckResponse {
+  hasUnread: boolean;
+}
+
+export type RequestCategory = string | number;
+export type RequestStatus = string | number;
+
+export interface LinkedProviderInfo {
+  provider: string;
+  email: string | null;
+  linkedAt: string | null;
+  lastLoginAt: string | null;
+}
+
+export interface GoogleLinkRequest {
+  idToken: string;
 }
 
 export interface PublicShareResponse {
-  share: Share;
-  resource: PublicAlbumInfo | PublicArtistInfo | PublicPlaylistInfo | PublicSongInfo;
+  shareType: string;
+  resourceName: string;
+  description: string | null;
+  thumbnailUrl: string;
+  imageUrl: string;
+  isDownloadable: boolean;
+  createdAt: string;
+  expiresAt: string | null;
+  artist: PublicArtistInfo | null;
+  album: PublicAlbumInfo | null;
+  song: PublicSongInfo | null;
+  playlist: PublicPlaylistInfo | null;
 }
 
 export interface PublicAlbumInfo {
-  type: 'Album';
   id: string;
   name: string;
-  artist: PublicArtistInfo;
-  songs: Song[];
-  imageUrl: string;
+  artistName: string;
+  releaseYear: number | string;
+  songs: PublicSongInfo[];
 }
 
 export interface PublicArtistInfo {
-  type: 'Artist';
   id: string;
   name: string;
-  imageUrl: string;
 }
 
 export interface PublicPlaylistInfo {
-  type: 'Playlist';
   id: string;
   name: string;
-  description: string;
-  songs: Song[];
-  imageUrl: string;
+  description: string | null;
+  songs: PublicSongInfo[];
 }
 
 export interface PublicSongInfo {
-  type: 'Song';
   id: string;
   title: string;
-  artist: PublicArtistInfo;
-  album: PublicAlbumInfo;
+  trackNumber: number | string;
+  durationMs: number;
   streamUrl: string;
-  imageUrl: string;
 }
 
 export interface ArtistLookupRequest {
-  name: string;
+  artistName: string;
   limit?: number;
+  providerIds?: string[] | null;
 }
 
 export interface ArtistLookupCandidate {
+  providerDisplayName: string;
+  providerId?: string | null;
   name: string;
-  disambiguation?: string;
-  imageUrl?: string;
-  externalId: string;
-  source: string;
+  sortName?: string | null;
+  imageUrl?: string | null;
+  thumbnailUrl?: string | null;
+  musicBrainzId?: string | null;
+  spotifyId?: string | null;
+  discogsId?: string | null;
+  amgId?: string | null;
+  wikiDataId?: string | null;
+  itunesId?: string | null;
+  lastFmId?: string | null;
+}
+
+export interface ProviderInfo {
+  id: string;
+  displayName: string;
+  isEnabled?: boolean;
 }
 
 export interface ArtistLookupResponse {
   candidates: ArtistLookupCandidate[];
+  hasPartialFailures: boolean;
+  providers: ProviderInfo[];
 }
+
+export interface BpmTrackItem {
+  song: Song;
+  bpm: number;
+}
+
+export interface BpmTracksResponse {
+  tracks: BpmTrackItem[];
+  meta: Meta;
+}
+
+export interface UserStatsHistoryEntry {
+  date: string;
+  plays: number;
+}
+
+export interface UserStatsHistoryResponse {
+  periodDays?: number;
+  items: UserStatsHistoryEntry[];
+}
+
+export interface TopItemResponse {
+  name: string;
+  playCount: number;
+  songId: string | null;
+}
+
+export interface UserStatsPlaysPerDay {
+  day: string;
+  playCount: number;
+}
+
+export interface UserStatsPlaysPerDayResponse {
+  days: UserStatsPlaysPerDay[];
+}
+
+export interface UserTopGenreItem {
+  name: string;
+  playCount: number;
+  songId?: string | null;
+}
+
+export interface UserStatsTopGenresResponse {
+  items: TopItemResponse[];
+}
+
+export interface UserTopSongItem {
+  name: string;
+  playCount: number;
+  songId: string | null;
+}
+
+export interface UserStatsTopSongsResponse {
+  items: TopItemResponse[];
+}
+
+export interface TimeSeriesDataPoint {
+  date: string;
+  plays: number;
+}
+
+export interface TimeSeriesResponse {
+  periodDays: number | string;
+  data: TimeSeriesDataPoint[];
+}
+
+export interface PlaybackSettings {
+  crossfadeDuration: number | string;
+  gaplessPlayback: boolean;
+  volumeNormalization: boolean;
+  replayGain: string;
+  audioQuality: string;
+  equalizerPreset: string | null;
+  lastUsedDevice: string | null;
+}
+
+export interface UpdatePlaybackSettingsRequest {
+  crossfadeDuration?: number | string | null;
+  gaplessPlayback?: boolean | null;
+  volumeNormalization?: boolean | null;
+  replayGain?: string | null;
+  audioQuality?: string | null;
+  equalizerPreset?: string | null;
+}
+
+export interface BackendCapabilities {
+  canPlay?: boolean;
+  canPause?: boolean;
+  canStop?: boolean;
+  canSeek?: boolean;
+  canSkip?: boolean;
+  canSetVolume?: boolean;
+  canReportPosition?: boolean;
+  isAvailable?: boolean;
+  backendInfo?: string | null;
+}
+
+export interface BackendStatus {
+  isPlaying: boolean;
+  positionSeconds: number | string;
+  volume: number | string | null;
+  currentItemApiKey: string | null;
+  isConnected: boolean;
+  statusMessage: string | null;
+  errorMessage: string | null;
+}
+
+export interface Endpoint {
+  apiKey: string;
+  name: string;
+  type: string;
+  isShared: boolean;
+  room: string | null;
+  lastSeenAt: string | null;
+  capabilitiesJson: string | null;
+  isOwner: boolean;
+}
+
+export interface EndpointDto {
+  apiKey: string;
+  name: string;
+  type: string;
+  isShared: boolean;
+  room: string | null;
+  lastSeenAt: string | null;
+  capabilitiesJson: string | null;
+  isOwner: boolean;
+}
+
+export interface AttachEndpointRequest {
+  sessionApiKey: string;
+}
+
+export interface AdminUserInfo {
+  id: string;
+  username: string;
+  email: string | null;
+  isAdmin: boolean;
+  isEnabled: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export type AdminUser = AdminUserInfo;

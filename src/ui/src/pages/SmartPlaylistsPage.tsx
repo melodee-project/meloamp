@@ -118,9 +118,21 @@ export default function SmartPlaylistsPage() {
   const handlePlay = async (playlist: SmartPlaylistModel) => {
     try {
       const response = await apiRequest(`/playlists/smart/${playlist.apiKey}/evaluate`);
-      const data: SmartPlaylistEvaluateResponse = response.data?.data || response.data;
-      if (data?.results && Array.isArray(data.results) && data.results.length > 0) {
-        data.results.forEach((song: Song) => {
+      const responseData: any = response.data?.data ?? response.data;
+      const playlistSongs = Array.isArray(responseData)
+        ? responseData
+        : responseData?.data;
+
+      if (Array.isArray(playlistSongs)) {
+        playlistSongs.forEach((song: Song) => {
+          addToQueue(toQueueSong(song));
+        });
+        return;
+      }
+
+      const fallbackResponse: SmartPlaylistEvaluateResponse = responseData as SmartPlaylistEvaluateResponse;
+      if (fallbackResponse?.data && Array.isArray(fallbackResponse.data)) {
+        fallbackResponse.data.forEach((song: Song) => {
           addToQueue(toQueueSong(song));
         });
       }

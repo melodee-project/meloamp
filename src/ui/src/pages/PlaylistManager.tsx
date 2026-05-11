@@ -105,7 +105,7 @@ export default function PlaylistManager() {
 
     setIsCreating(true);
     try {
-      const response = await api.post('/Playlists', {
+      const response = await api.post('/playlists', {
         name: newPlaylistName.trim(),
         comment: newPlaylistDescription.trim(),
         isPublic: newPlaylistPublic,
@@ -174,7 +174,7 @@ export default function PlaylistManager() {
       const playlistName = importFile.name.replace(/\.m3u8?$/i, '');
       
       // Create playlist with name from file
-      const response = await api.post('/Playlists', {
+      const response = await api.post('/playlists', {
         name: playlistName,
         comment: `Imported from ${importFile.name}`,
         isPublic: false,

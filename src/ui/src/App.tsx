@@ -46,6 +46,13 @@ import HistoryPage from './pages/HistoryPage';
 import EqualizerPage from './pages/EqualizerPage';
 import ThemesPage from './pages/ThemesPage';
 import SharesPage from './pages/SharesPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import SearchAdvancedPage from './pages/SearchAdvancedPage';
+import RequestsPage from './pages/RequestsPage';
+import PlaybackToolsPage from './pages/PlaybackToolsPage';
+import ArtistLookupPage from './pages/ArtistLookupPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import PublicSharePage from './pages/PublicSharePage';
 import getAuroraTheme from './themes/auroraTheme';
 import getMonoContrastTheme from './themes/monoContrastTheme';
 import getBerryTwilightTheme from './themes/berryTwilightTheme';
@@ -391,8 +398,9 @@ function AppContent({ settings, setSettings }: AppContentProps) {
 
   const queue = useQueueStore((state) => state.queue);
   const current = useQueueStore((state) => state.current);
+  const isPublicShareRoute = location.pathname.startsWith('/shares/public/');
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isPublicShareRoute) {
     return <LoginPage onLogin={() => {
       setIsAuthenticated(true);
       try {
@@ -519,6 +527,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
           <Box sx={{ p: 3, pb: queue.length > 0 ? 10 : 3, flex: 1, overflow: 'auto' }}>
             <Routes>
               <Route path="/" element={<DashboardWrapper />} />
+              <Route path="/dashboard" element={<DashboardWrapper />} />
               <Route path="/artists" element={<Artists />} />
               <Route path="/albums" element={<Albums />} />
               <Route path="/playlists" element={<Playlists />} />
@@ -533,13 +542,21 @@ function AppContent({ settings, setSettings }: AppContentProps) {
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/genres" element={<GenresPage />} />
               <Route path="/genres/:genreId" element={<GenresPage />} />
-              <Route path="/recommendations" element={<RecommendationsPage />} />
+                <Route path="/recommendations" element={<RecommendationsPage />} />
               <Route path="/charts" element={<ChartsPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/smart-playlists" element={<SmartPlaylistsPage />} />
+              <Route path="/search-advanced" element={<SearchAdvancedPage />} />
+              <Route path="/requests" element={<RequestsPage />} />
+              <Route path="/requests/:requestApiKey" element={<RequestsPage />} />
+              <Route path="/playback-tools" element={<PlaybackToolsPage />} />
+              <Route path="/artist-lookup" element={<ArtistLookupPage />} />
+              {user?.isAdmin && <Route path="/admin/users" element={<AdminUsersPage />} />}
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/equalizer" element={<EqualizerPage />} />
               <Route path="/themes" element={<ThemesPage settings={settings} onChange={setSettings} />} />
               <Route path="/shares" element={<SharesPage />} />
+              <Route path="/shares/public/:shareUniqueId" element={<PublicSharePage />} />
             </Routes>
           </Box>
         </Box>

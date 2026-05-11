@@ -250,7 +250,7 @@ export default function QueueView() {
     setIsSaving(true);
     try {
       const songIds = queue.map(song => song.id);
-      const response = await api.post('/Playlists', {
+      const response = await api.post('/playlists', {
         name: playlistName.trim(),
         comment: '',
         isPublic: false,

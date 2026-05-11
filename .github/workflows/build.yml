@@ -28,6 +28,16 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: src/ui/yarn.lock
 
+      - name: Enable and prepare Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.14.1 --activate
+
+      - name: Show Node and Yarn versions
+        run: |
+          node --version
+          yarn --version
+
       - name: Install UI dependencies
         working-directory: src/ui
         run: yarn install --immutable
@@ -58,6 +68,16 @@ jobs:
           node-version: '20'
           cache: 'yarn'
           cache-dependency-path: src/ui/yarn.lock
+
+      - name: Enable and prepare Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.14.1 --activate
+
+      - name: Show Node and Yarn versions
+        run: |
+          node --version
+          yarn --version
 
       - name: Install UI dependencies
         working-directory: src/ui
@@ -90,6 +110,16 @@ jobs:
           node-version: '20'
           cache: 'yarn'
           cache-dependency-path: src/electron/yarn.lock
+
+      - name: Enable and prepare Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.14.1 --activate
+
+      - name: Show Node and Yarn versions
+        run: |
+          node --version
+          yarn --version
 
       - name: Download UI build
         uses: actions/download-artifact@v4
@@ -132,6 +162,16 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: src/electron/yarn.lock
 
+      - name: Enable and prepare Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.14.1 --activate
+
+      - name: Show Node and Yarn versions
+        run: |
+          node --version
+          yarn --version
+
       - name: Download UI build
         uses: actions/download-artifact@v4
         with:
@@ -172,6 +212,16 @@ jobs:
           node-version: '20'
           cache: 'yarn'
           cache-dependency-path: src/electron/yarn.lock
+
+      - name: Enable and prepare Yarn 4
+        run: |
+          corepack enable
+          corepack prepare yarn@4.14.1 --activate
+
+      - name: Show Node and Yarn versions
+        run: |
+          node --version
+          yarn --version
 
       - name: Download UI build
         uses: actions/download-artifact@v4

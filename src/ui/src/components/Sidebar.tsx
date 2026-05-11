@@ -28,7 +28,9 @@ import {
   ExpandMore,
   Lightbulb as RecommendationsIcon,
   BarChart as ChartsIcon,
+  AutoGraph as AnalyticsIcon,
   Share as ShareIcon,
+  Search as SearchIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   SmartToy as SmartPlaylistIcon,
@@ -36,6 +38,9 @@ import {
   Equalizer as EqualizerIcon,
   Palette as ThemeIcon,
   ChevronLeft as ChevronLeftIcon,
+  Public as PublicShareIcon,
+  Rule as PlaybackIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { clearJwt } from '../api';
@@ -118,6 +123,23 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
       items: [
         { label: t('nav.recommendations', 'Recommendations'), path: '/recommendations', icon: <RecommendationsIcon /> },
         { label: t('nav.charts', 'Charts'), path: '/charts', icon: <ChartsIcon /> },
+        { label: t('nav.advancedSearch', 'Advanced Search'), path: '/search-advanced', icon: <SearchIcon /> },
+        { label: t('nav.artistLookup', 'Artist Lookup'), path: '/artist-lookup', icon: <SearchIcon /> },
+      ],
+    },
+    {
+      id: 'insights',
+      label: t('sidebar.insights', 'Insights'),
+      items: [
+        { label: t('nav.analytics', 'Analytics'), path: '/analytics', icon: <AnalyticsIcon /> },
+      ],
+    },
+    {
+      id: 'operations',
+      label: t('sidebar.operations', 'Operations'),
+      items: [
+        { label: t('nav.playbackTools', 'Playback Tools'), path: '/playback-tools', icon: <PlaybackIcon /> },
+        { label: t('nav.requests', 'Requests'), path: '/requests', icon: <PublicShareIcon /> },
       ],
     },
     {
@@ -127,12 +149,23 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
         { label: t('nav.equalizer', 'Equalizer'), path: '/equalizer', icon: <EqualizerIcon /> },
         { label: t('nav.themes', 'Themes'), path: '/themes', icon: <ThemeIcon /> },
         { label: t('nav.shares', 'Shares'), path: '/shares', icon: <ShareIcon /> },
+        { label: t('nav.dashboard', 'Dashboard'), path: '/dashboard', icon: <AdminIcon /> },
       ],
     },
   ];
 
+  const adminSection: NavSection | null = user?.isAdmin ? {
+    id: 'admin',
+    label: t('sidebar.admin', 'Admin'),
+    items: [
+      { label: t('nav.adminUsers', 'Admin Users'), path: '/admin/users', icon: <AdminIcon /> },
+    ],
+  } : null;
+
   const renderNavItem = (item: NavItem) => {
-    const isActive = location.pathname === item.path;
+    const isActive = item.path === '/' ? location.pathname === '/' : (
+      location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)
+    );
     return (
       <ListItem key={item.path} disablePadding sx={{ pl: 1 }}>
         <ListItemButton
@@ -231,6 +264,7 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
 
       <List sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
         {navSections.map(renderSection)}
+        {adminSection && renderSection(adminSection)}
       </List>
 
       <Divider />
