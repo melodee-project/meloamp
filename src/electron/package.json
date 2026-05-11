@@ -40,7 +40,7 @@
     "generateUpdatesFilesForAllChannels": false,
     "publish": {
       "provider": "github",
-      "owner": "melodee",
+      "owner": "melodee-project",
       "repo": "meloamp",
       "releaseType": "release"
     },
