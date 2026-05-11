@@ -36,8 +36,16 @@ SKIP_PACKAGE=1 ./scripts/build-linux.sh             # UI build only, no Electron
 ```
 
 ## Package Manager
+	
+Use **yarn** 4.x (root `package.json` uses `packageManager`).
+Keep installs lockfile-based and deterministic with immutable lockfile installs.
+Do not use npm in `src/ui/` or `src/electron/` — mixing lockfiles breaks CI.
 
-Use **yarn** (classic v1). The root `package.json` enforces `yarn@1.22.22`. Do not use npm in `src/ui/` or `src/electron/` — mixing lockfiles breaks CI. `package-lock.json` is gitignored in both sub-packages.
+Recommended setup:
+```sh
+corepack enable
+corepack prepare yarn@4.14.1 --activate
+```
 
 ## Testing
 
@@ -66,5 +74,5 @@ Use **yarn** (classic v1). The root `package.json` enforces `yarn@1.22.22`. Do n
 GitHub Actions workflow: `.github/workflows/build.yml`
 - Flow: test → build-ui → build-linux / build-windows / build-macos (parallel)
 - Tags matching `v*` trigger a GitHub Release with all platform artifacts
-- Uses Node 20, yarn with frozen lockfile
+- Uses Node 20, yarn with immutable lockfile installs
 - `CI=false` env set during UI build (CRA treats warnings as errors in CI by default)

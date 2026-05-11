@@ -29,6 +29,7 @@ export interface MeloampAPI {
   updateMediaKeys: (config: MediaKeyConfig) => void;
   getMediaKeys: () => Promise<MediaKeyConfig>;
   updateTray: (nowPlaying: TrayNowPlaying | null) => void;
+  openExternal: (url: string) => Promise<void>;
 }
 
 export interface ElectronAPI {

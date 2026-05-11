@@ -11,7 +11,8 @@ contextBridge.exposeInMainWorld('meloampAPI', {
   updateMediaKeys: (config) => ipcRenderer.send('meloamp-update-media-keys', config),
   getMediaKeys: () => ipcRenderer.invoke('meloamp-get-media-keys'),
   // Tray updates
-  updateTray: (nowPlaying) => ipcRenderer.send('meloamp-tray-update', nowPlaying)
+  updateTray: (nowPlaying) => ipcRenderer.send('meloamp-tray-update', nowPlaying),
+  openExternal: (url) => ipcRenderer.invoke('meloamp-open-external', url),
 });
 
 // Expose electron APIs for MPRIS control, updates, and media keys

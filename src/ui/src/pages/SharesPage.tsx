@@ -193,6 +193,19 @@ export default function SharesPage() {
     return new Date(dateStr).toLocaleDateString();
   };
 
+  const openShareLink = async (url: string) => {
+    if (!url) return;
+    if (window.meloampAPI?.openExternal) {
+      try {
+        await window.meloampAPI.openExternal(url);
+        return;
+      } catch (error) {
+        console.error('Failed to open external share link:', error);
+      }
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   if (loading && shares.length === 0) {
     return (
       <Box>
@@ -305,10 +318,10 @@ export default function SharesPage() {
                         <ContentCopy fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Open share link">
+                      <Tooltip title="Open share link">
                       <IconButton
                         size="small"
-                        onClick={() => window.open(share.shareUrl, '_blank')}
+                        onClick={() => openShareLink(share.shareUrl)}
                       >
                         <LinkIcon fontSize="small" />
                       </IconButton>

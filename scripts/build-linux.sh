@@ -5,7 +5,7 @@ set -euo pipefail
 #
 # Key changes vs the original:
 # - Avoid repeated installs when node_modules look up-to-date
-# - Use Yarn offline preference + frozen lockfile (repro + faster when cache is warm)
+# - Use Yarn immutable installs for deterministic builds (repro + faster when cache is warm)
 # - Build both Linux targets in a single electron-builder run (avoids double packaging)
 # - Optional CLEAN=1 to wipe dist/build between runs
 #
@@ -41,7 +41,7 @@ yarn_install_if_needed() {
     return 0
   fi
 
-  (cd "$dir" && yarn install --frozen-lockfile)
+  (cd "$dir" && yarn install --immutable)
 }
 
 main() {

@@ -69,6 +69,14 @@ interface MinimalSong {
 let persistTimeout: ReturnType<typeof setTimeout> | null = null;
 const PERSIST_DEBOUNCE_MS = 1000;
 
+const clampCurrentIndex = (current: number, queueLength: number): number => {
+  if (!Number.isInteger(current) || Number.isNaN(current)) {
+    return 0;
+  }
+  if (queueLength <= 0) return 0;
+  return Math.max(0, Math.min(current, queueLength - 1));
+};
+
 const toMinimal = (queue: Song[]): MinimalSong[] => queue.map(song => ({
   id: song.id,
   title: song.title,
@@ -151,6 +159,7 @@ export const useQueueStore = create<QueueState>((set: (fn: QueueSetFn | Partial<
     if (Array.isArray(saved.queue)) initialQueue = saved.queue as unknown as Song[];
     if (typeof saved.current === 'number') initialCurrent = saved.current;
   } catch {}
+  initialCurrent = clampCurrentIndex(initialCurrent, initialQueue.length);
 
   const playbackSettings = loadPlaybackSettings();
 
@@ -210,12 +219,13 @@ export const useQueueStore = create<QueueState>((set: (fn: QueueSetFn | Partial<
       return { queue: q };
     }),
     setCurrent: (index: number) => set((state: QueueState) => {
+      const safeIndex = clampCurrentIndex(index, state.queue.length);
       let queue = [...state.queue];
-      if (index > state.current && queue[state.current]) {
+      if (safeIndex > state.current && queue[state.current]) {
         queue[state.current] = { ...queue[state.current], played: true };
       }
-      debouncedPersist(queue, index);
-      return { queue, current: index };
+      debouncedPersist(queue, safeIndex);
+      return { queue, current: safeIndex };
     }),
     playNow: (songs: Song | Song[]) => {
       let newQueue: Song[];

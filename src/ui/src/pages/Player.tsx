@@ -54,6 +54,9 @@ export default function Player({ src }: { src: string }) {
   const setRepeatMode = useQueueStore((state) => state.setRepeatMode);
   const toggleShuffle = useQueueStore((state) => state.toggleShuffle);
   const { t } = useTranslation();
+  const currentSong = queue[current];
+  const currentAlbum = currentSong && typeof currentSong.album === 'object' ? currentSong.album : null;
+  const currentArtist = currentSong && typeof currentSong.artist === 'object' ? currentSong.artist : null;
 
   // Equalizer setup
   const eqNodes = useRef<any[]>([]);
@@ -95,7 +98,7 @@ export default function Player({ src }: { src: string }) {
 
   // Preload next track for gapless-ish transitions
   useEffect(() => {
-    if (!queue[current] || current >= queue.length - 1) {
+    if (!currentSong || current >= queue.length - 1) {
       setNextTrackPreloaded(false);
       return;
     }
@@ -130,7 +133,6 @@ export default function Player({ src }: { src: string }) {
 
   // Handle playback errors with retry logic
   const handlePlaybackError = () => {
-    const currentSong = queue[current];
     if (!currentSong) return;
 
     if (retryCountRef.current < MAX_RETRY_ATTEMPTS) {
@@ -237,9 +239,9 @@ export default function Player({ src }: { src: string }) {
   // Use an interval for scrobble checks instead of reacting to every progress change
   // This dramatically reduces the number of effect runs for long playback sessions
   useEffect(() => {
-    if (!queue[current]) return;
+    if (!currentSong) return;
     
-    const songId = queue[current].id;
+    const songId = currentSong.id;
     
     // Reset scrobble state when song changes
     if (scrobbleStateRef.current.lastSongId !== songId) {
@@ -264,7 +266,7 @@ export default function Player({ src }: { src: string }) {
       }
       
       const baseScrobble: Omit<ScrobbleRequest, 'scrobbleType'> = {
-        songId: queue[current].id,
+        songId: currentSong.id,
         playerName: 'MeloAmp',
         timestamp: Date.now(),
         playedDuration: Math.floor(currentProgress * 1000), // Convert seconds to milliseconds
@@ -379,11 +381,11 @@ export default function Player({ src }: { src: string }) {
       queue[current]?.url
     ) {
       debugLog('Player', 'Unified auto-play: Setting src and playing:', {
-        url: queue[current].url,
+        url: currentSong.url,
         currentIndex: current,
-        songTitle: queue[current]?.title
+        songTitle: currentSong?.title
       });
-      audioRef.current.src = queue[current].url;
+      audioRef.current.src = currentSong.url || '';
       audioRef.current.currentTime = 0;
       audioRef.current.play().then(() => {
         debugLog('Player', 'Unified auto-play successful');
@@ -407,10 +409,10 @@ export default function Player({ src }: { src: string }) {
 
   // Update favorite state when song changes
   useEffect(() => {
-  // Keep favorite and rating in sync with the active queue item.
-  // Normalize rating to 0..5 (map negative ratings like -1 to 0 for the star control).
-  setFavorite(queue[current]?.userStarred ?? false);
-  const rawRating = queue[current]?.userRating;
+    // Keep favorite and rating in sync with the active queue item.
+    // Normalize rating to 0..5 (map negative ratings like -1 to 0 for the star control).
+    setFavorite(currentSong?.userStarred ?? false);
+  const rawRating = currentSong?.userRating;
   const normalized = typeof rawRating === 'number' && rawRating > 0 ? Math.min(5, Math.max(0, rawRating)) : 0;
   setRating(normalized);
   }, [current, queue]);
@@ -495,9 +497,9 @@ export default function Player({ src }: { src: string }) {
   };
 
   const handleToggleFavorite = async () => {
-    if (!queue[current]) return;
+    if (!currentSong) return;
     setFavLoading(true);
-    const songId = queue[current].id;
+    const songId = currentSong.id;
     try {
       if (!favorite) {
         await api.post(`/songs/starred/${songId}/true`);
@@ -516,10 +518,10 @@ export default function Player({ src }: { src: string }) {
   };
 
   const handleSetRating = async (newRating: number | null) => {
-    if (!queue[current]) return;
+    if (!currentSong) return;
     // treat null as 0 (remove rating)
     const r = newRating === null ? 0 : newRating;
-    const songId = queue[current].id;
+    const songId = currentSong.id;
     setRatingLoading(true);
     try {
       // endpoint follows existing convention for songs; send rating (0-5)
@@ -566,7 +568,7 @@ export default function Player({ src }: { src: string }) {
 
   // Send playback info to Electron for MPRIS integration
   useEffect(() => {
-    if (!window.meloampAPI || !queue[current]) return;
+    if (!window.meloampAPI || !currentSong) return;
     const info: {
       trackId?: string;
       length: number;
@@ -577,12 +579,12 @@ export default function Player({ src }: { src: string }) {
       status: 'Playing' | 'Paused' | 'Stopped';
       position: number;
     } = {
-      trackId: queue[current]?.id?.toString() || undefined,
+      trackId: currentSong?.id?.toString() || undefined,
       length: duration,
-      artUrl: queue[current]?.artwork || '',
-      title: queue[current]?.title || '',
-      album: typeof queue[current]?.album === 'object' ? queue[current].album.name || '' : (queue[current]?.album || ''),
-      artist: queue[current]?.artist || '',
+      artUrl: currentSong?.artwork || currentSong?.imageUrl || '',
+      title: currentSong?.title || '',
+      album: typeof currentSong?.album === 'object' ? currentSong.album.name || '' : (currentSong?.album || ''),
+      artist: currentSong?.artist || '',
       status: playing ? 'Playing' : (duration > 0 ? 'Paused' : 'Stopped') as 'Playing' | 'Paused' | 'Stopped',
       position: audioRef.current?.currentTime || 0
     };
@@ -921,10 +923,10 @@ export default function Player({ src }: { src: string }) {
             <IconButton onClick={() => setIsFullScreen(false)}><FullscreenExit /></IconButton>
             <Box sx={{ width: 48 }} /> {/* Spacer for symmetry */}
           </Box>
-          <Box sx={{ display: 'flex', flex: 1, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', justifyContent: 'center', gap: 4, p: { xs: 1, md: 4 }, height: '80vh', minHeight: 0 }}>
+        <Box sx={{ display: 'flex', flex: 1, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'stretch', justifyContent: 'center', gap: 4, p: { xs: 1, md: 4 }, height: '80vh', minHeight: 0 }}>
             {/* Large Artwork - prefer album imageUrl for best quality */}
-            {(queue[current]?.album?.imageUrl || queue[current]?.imageUrl) && (
-              <Box component="img" src={queue[current].album?.imageUrl || queue[current].imageUrl} alt={queue[current].title} sx={{ width: { xs: '60vw', md: '70vh' }, height: { xs: '60vw', md: '70vh' }, maxHeight: '70vh', borderRadius: 4, objectFit: 'cover', boxShadow: 6, alignSelf: 'center' }} />
+            {(currentSong?.album?.imageUrl || currentSong?.imageUrl) && (
+              <Box component="img" src={currentSong?.album?.imageUrl || currentSong?.imageUrl} alt={currentSong?.title || ''} sx={{ width: { xs: '60vw', md: '70vh' }, height: { xs: '60vw', md: '70vh' }, maxHeight: '70vh', borderRadius: 4, objectFit: 'cover', boxShadow: 6, alignSelf: 'center' }} />
             )}
             {/* Song Info and Controls */}
             <Box sx={{
@@ -954,12 +956,12 @@ export default function Player({ src }: { src: string }) {
                   overflowWrap: 'break-word',
                 }}
               >
-                {queue[current]?.title}
+                {currentSong?.title}
               </Typography>
               <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', alignItems: 'center', mb: 2, minHeight: 60 }}>
-                {queue[current].album && (
+                {currentAlbum && (
                   <Box
-                    onClick={() => navigate(`/albums/${queue[current].album.id}`)}
+                    onClick={() => navigate(`/albums/${currentAlbum.id}`)}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -977,20 +979,20 @@ export default function Player({ src }: { src: string }) {
                       '&:hover': { boxShadow: 6 },
                     }}
                   >
-                    {queue[current].album.imageUrl && (
-                      <Box component="img" src={queue[current].album.imageUrl} alt={queue[current].album.name} sx={{ width: 40, height: 40, borderRadius: 1, mr: 1, objectFit: 'cover', boxShadow: 1 }} />
+                    {currentAlbum.imageUrl && (
+                      <Box component="img" src={currentAlbum.imageUrl} alt={currentAlbum.name} sx={{ width: 40, height: 40, borderRadius: 1, mr: 1, objectFit: 'cover', boxShadow: 1 }} />
                     )}
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 180 }}>{queue[current].album.name}</Typography>
-                      {queue[current].album.releaseYear && (
-                        <Typography variant="caption" color="text.secondary">{queue[current].album.releaseYear}</Typography>
+                      <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 180 }}>{currentAlbum.name}</Typography>
+                      {currentAlbum.releaseYear && (
+                        <Typography variant="caption" color="text.secondary">{currentAlbum.releaseYear}</Typography>
                       )}
                     </Box>
                   </Box>
                 )}
-                {queue[current].artist && (
+                {currentArtist && (
                   <Box
-                    onClick={() => navigate(`/artists/${queue[current].artist.id}`)}
+                    onClick={() => navigate(`/artists/${currentArtist.id}`)}
                     sx={{
                       display: 'flex',
                       alignItems: 'center',
@@ -1008,10 +1010,10 @@ export default function Player({ src }: { src: string }) {
                       '&:hover': { boxShadow: 6 },
                     }}
                   >
-                    {queue[current].artist.imageUrl && (
-                      <Box component="img" src={queue[current].artist.imageUrl} alt={queue[current].artist.name} sx={{ width: 36, height: 40, borderRadius: '50%', mr: 1, objectFit: 'cover', boxShadow: 1 }} />
+                    {currentArtist.imageUrl && (
+                      <Box component="img" src={currentArtist.imageUrl} alt={currentArtist.name} sx={{ width: 36, height: 40, borderRadius: '50%', mr: 1, objectFit: 'cover', boxShadow: 1 }} />
                     )}
-                    <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 140 }}>{queue[current].artist.name}</Typography>
+                    <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 140 }}>{currentArtist.name}</Typography>
                   </Box>
                 )}
               </Box>
@@ -1101,27 +1103,27 @@ export default function Player({ src }: { src: string }) {
         </Box>
       </Dialog>
       {/* Main Player Bar */}
-      <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', p: 2, display: 'flex', alignItems: 'center', zIndex: 1201 }}>
-        {queue[current] && (
+        <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: 0, bgcolor: 'background.paper', p: 2, display: 'flex', alignItems: 'center', zIndex: 1201 }}>
+        {currentSong && (
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, mr: 2, width: '20vw', maxWidth: '20vw', flexShrink: 0 }}>
-            {queue[current].imageUrl && (
-              <Box component="img" src={queue[current].imageUrl} alt={queue[current].title} sx={{ width: 70, height: 70, borderRadius: 1, mr: 2, objectFit: 'cover', boxShadow: 1 }} />
+            {currentSong.imageUrl && (
+              <Box component="img" src={currentSong.imageUrl} alt={currentSong.title} sx={{ width: 70, height: 70, borderRadius: 1, mr: 2, objectFit: 'cover', boxShadow: 1 }} />
             )}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{queue[current].title}</Typography>
-              {queue[current].album && (
+              <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{currentSong.title}</Typography>
+              {currentAlbum && (
                 <Typography variant="caption" color="text.secondary">
                   <Box component="span" sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }}
-                    onClick={() => navigate(`/albums/${queue[current].album.id}`)}>
-                    {queue[current].album.releaseYear ? `${queue[current].album.releaseYear} • ` : ''}{queue[current].album.name}
+                    onClick={() => navigate(`/albums/${currentAlbum.id}`)}>
+                    {currentAlbum.releaseYear ? `${currentAlbum.releaseYear} • ` : ''}{currentAlbum.name}
                   </Box>
                 </Typography>
               )}
-              {queue[current].artist && (
+              {currentArtist && (
                 <Typography variant="caption" color="text.secondary">
                   <Box component="span" sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }}
-                    onClick={() => navigate(`/artists/${queue[current].artist.id}`)}>
-                    {queue[current].artist.name}
+                    onClick={() => navigate(`/artists/${currentArtist.id}`)}>
+                    {currentArtist.name}
                   </Box>
                 </Typography>
               )}

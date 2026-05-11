@@ -23,11 +23,22 @@ const resources = {
   // Add more languages here
 };
 
+function getStoredLanguage(): string {
+  try {
+    const stored = localStorage.getItem('userSettings');
+    if (!stored) return 'en';
+    const parsed = JSON.parse(stored);
+    return parsed?.language || 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: localStorage.getItem('userSettings') ? JSON.parse(localStorage.getItem('userSettings')!).language || 'en' : 'en',
+    lng: getStoredLanguage(),
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
     react: { useSuspense: false },

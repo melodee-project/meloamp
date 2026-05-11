@@ -9,11 +9,10 @@ Set-Location (Join-Path $PSScriptRoot '..')
 Write-Host "`n[1/5] Building React UI..."
 Set-Location src/ui
 if (Test-Path yarn.lock) {
-    yarn install --check-files --verbose
+    yarn install --immutable
     yarn build
 } else {
-    npm install
-    npm run build
+    throw "src/ui/yarn.lock not found. Install dependencies with Yarn 4 first: yarn install"
 }
 Set-Location ../..
 
@@ -29,9 +28,9 @@ if (Select-String -Path .gitignore -Pattern '^src/electron/build/' -Quiet) {
 Write-Host "`n[3/5] Installing Electron dependencies..."
 Set-Location src/electron
 if (Test-Path yarn.lock) {
-    yarn install --check-files --verbose
+    yarn install --immutable
 } else {
-    npm install
+    throw "src/electron/yarn.lock not found. Install dependencies with Yarn 4 first: yarn install"
 }
 
 Write-Host "`n[4/5] Building Electron App for Windows (nsis, portable, zip)..."
@@ -40,7 +39,7 @@ Write-Host "`n[4/5] Building Electron App for Windows (nsis, portable, zip)..."
 if (Test-Path yarn.lock) {
     yarn run electron-builder --win nsis portable zip
 } else {
-    npx electron-builder --win nsis portable zip
+    throw "src/electron/yarn.lock not found. Install dependencies with Yarn 4 first: yarn install"
 }
 
 # Restore .gitignore if backup exists

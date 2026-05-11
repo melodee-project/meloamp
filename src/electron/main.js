@@ -1,5 +1,5 @@
 // main.js - Electron Main Process
-const { app, BrowserWindow, ipcMain, Notification, Menu, dialog, globalShortcut, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, Menu, dialog, globalShortcut, Tray, nativeImage, shell } = require('electron');
 const path = require('path');
 const express = require('express');
 const mpris = require('mpris-service');
@@ -11,7 +11,7 @@ const got = require('got');
 const { autoUpdater } = require('electron-updater');
 
 let staticServer;
-const SERVER_PORT = 3001;
+let SERVER_PORT = 3001;
 let mprisPlayer;
 let currentPosition = 0;
 let lastPositionUpdate = Date.now();
@@ -33,7 +33,7 @@ autoUpdater.autoDownload = false; // Don't auto-download, let user choose
 autoUpdater.autoInstallOnAppQuit = true;
 
 function startStaticServer() {
-  if (staticServer) return;
+  if (staticServer) return Promise.resolve(SERVER_PORT);
   const server = express();
   // Use the correct path for production (packaged) and development
   const isPackaged = app.isPackaged;
@@ -63,8 +63,41 @@ function startStaticServer() {
   server.get('{*splat}', (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
-  staticServer = server.listen(SERVER_PORT, () => {
-    console.log('Static server running on http://localhost:' + SERVER_PORT);
+
+  const PORT_CANDIDATES = [3001, 3002, 3003, 0];
+  let attempt = 0;
+
+  return new Promise((resolve, reject) => {
+    const tryNext = () => {
+      if (attempt >= PORT_CANDIDATES.length) {
+        reject(new Error('Failed to bind static server on any available port'));
+        return;
+      }
+
+      const nextPort = PORT_CANDIDATES[attempt];
+      attempt += 1;
+
+      const onError = (error) => {
+        server.removeListener('error', onError);
+        if (error?.code === 'EADDRINUSE') {
+          console.warn(`Static server port ${nextPort} is in use. Trying a fallback port.`);
+          tryNext();
+          return;
+        }
+        reject(error);
+      };
+
+      server.once('error', onError);
+      server.listen(nextPort, () => {
+        server.removeListener('error', onError);
+        SERVER_PORT = typeof nextPort === 'number' && nextPort === 0 ? server.address().port : nextPort;
+        staticServer = server;
+        console.log('Static server running on http://localhost:' + SERVER_PORT);
+        resolve(SERVER_PORT);
+      });
+    };
+
+    tryNext();
   });
 }
 
@@ -121,8 +154,6 @@ function setupMpris(win) {
 }
 
 function createWindow() {
-  startStaticServer();
-
   // Enable DevTools (debug console) in development by default.
   // In packaged builds, opt-in via: MELOAMP_DEBUG_CONSOLE=1
   const debugConsoleEnabled = !app.isPackaged || process.env.MELOAMP_DEBUG_CONSOLE === '1';
@@ -523,6 +554,20 @@ ipcMain.on('meloamp-tray-update', (event, nowPlaying) => {
   }
 });
 
+ipcMain.handle('meloamp-open-external', async (event, rawUrl) => {
+  try {
+    const parsed = new URL(rawUrl);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('Unsupported URL protocol');
+    }
+    await shell.openExternal(parsed.toString());
+    return true;
+  } catch (error) {
+    console.error('Failed to open external URL:', error);
+    throw error;
+  }
+});
+
 // Global error handling
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
@@ -532,8 +577,17 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection:', reason);
 });
 
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  try {
+    await startStaticServer();
+    createWindow();
+  } catch (error) {
+    console.error('Failed to start static server:', error);
+    dialog.showErrorBox('Startup Error', 'Failed to start local web server. Please restart MeloAmp.');
+    app.quit();
+    return;
+  }
+
   createTray();
   registerMediaKeys();
   setupAutoUpdater();

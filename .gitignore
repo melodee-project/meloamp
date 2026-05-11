@@ -1,7 +1,10 @@
 # Dependencies
 node_modules/
+/.pnp.cjs
 /.pnp
 .pnp.js
+.yarn
+/yarn.lock
 
 # Testing
 /coverage
