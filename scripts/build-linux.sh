@@ -6,13 +6,13 @@ set -euo pipefail
 # Key changes vs the original:
 # - Avoid repeated installs when node_modules look up-to-date
 # - Use Yarn immutable installs for deterministic builds (repro + faster when cache is warm)
-# - Build both Linux targets in a single electron-builder run (avoids double packaging)
+# - Build AppImage + tar.gz in a single electron-builder run
 # - Optional CLEAN=1 to wipe dist/build between runs
 #
 # Usage:
-#   ./build-linux-fast.sh
-#   CLEAN=1 ./build-linux-fast.sh          # full clean build
-#   SKIP_PACKAGE=1 ./build-linux-fast.sh   # build UI + electron JS only (no packaging)
+#   ./scripts/build-linux.sh
+#   CLEAN=1 ./scripts/build-linux.sh          # full clean build
+#   SKIP_PACKAGE=1 ./scripts/build-linux.sh   # build UI + electron JS only (no packaging)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UI_DIR="$ROOT_DIR/src/ui"
@@ -28,12 +28,12 @@ yarn_install_if_needed() {
   local dir="$1"
   local lock="$dir/yarn.lock"
   local nm="$dir/node_modules"
-  local integrity="$nm/.yarn-integrity"
+  local integrity="$nm/.yarn-state.yml"
 
   if [[ ! -d "$nm" ]]; then
     log "yarn install ($dir) – node_modules missing"
   elif [[ -f "$lock" && ! -f "$integrity" ]]; then
-    log "yarn install ($dir) – .yarn-integrity missing"
+    log "yarn install ($dir) – .yarn-state.yml missing"
   elif [[ -f "$lock" && "$lock" -nt "$integrity" ]]; then
     log "yarn install ($dir) – yarn.lock newer than install"
   else
@@ -42,6 +42,12 @@ yarn_install_if_needed() {
   fi
 
   (cd "$dir" && yarn install --immutable)
+}
+
+run_electron_build() {
+  local targets=("$@")
+
+  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux "${targets[@]}")
 }
 
 main() {
@@ -83,8 +89,8 @@ main() {
   export ELECTRON_CACHE="${ELECTRON_CACHE:-$HOME/.cache/electron}"
   export ELECTRON_BUILDER_CACHE="${ELECTRON_BUILDER_CACHE:-$HOME/.cache/electron-builder}"
 
-  # Build AppImage + deb + tar.gz in ONE run (much faster than separate runs)
-  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux AppImage deb tar.gz)
+  # Build only AppImage and tar.gz (no deb)
+  run_electron_build AppImage tar.gz
 
   log "Done. Artifacts should be in: $DIST_DIR"
 }

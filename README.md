@@ -285,7 +285,6 @@ Artifacts are written to:
 Packages configured in Electron config:
 
 - AppImage
-- deb
 - tar.gz
 
 ### Build for other OSes
@@ -294,7 +293,7 @@ Use electron-builder commands from `src/electron`:
 
 ```bash
 cd src/electron
-yarn electron-builder --linux AppImage deb tar.gz
+yarn electron-builder --linux AppImage tar.gz
 
 yarn electron-builder --win nsis portable zip
 
