@@ -29,9 +29,19 @@ import {
   Lock,
 } from '@mui/icons-material';
 import { apiRequest } from '../api';
-import { SmartPlaylistModel, SmartPlaylistEvaluateResponse, Song } from '../apiModels';
+import { SmartPlaylistModel, SmartPlaylistEvaluateResponse, Song, PaginatedResponse } from '../apiModels';
 import { toQueueSong } from '../components/toQueueSong';
 import { useQueueStore } from '../queueStore';
+
+type SmartPlaylistListPayload = SmartPlaylistModel[] | PaginatedResponse<SmartPlaylistModel> | { data: SmartPlaylistModel[] } | { data: { data: SmartPlaylistModel[] } };
+type SmartPlaylistEvaluatePayload =
+  | Song[]
+  | PaginatedResponse<Song>
+  | { data: Song[] }
+  | { data: { data: Song[] } }
+  | SmartPlaylistEvaluateResponse
+  | { data: SmartPlaylistEvaluateResponse }
+  | { data: { data: SmartPlaylistEvaluateResponse } };
 
 export default function SmartPlaylistsPage() {
   const [playlists, setPlaylists] = React.useState<SmartPlaylistModel[]>([]);
@@ -47,7 +57,7 @@ export default function SmartPlaylistsPage() {
   const fetchPlaylists = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/playlists/smart');
+      const response = await apiRequest<SmartPlaylistListPayload>('/playlists/smart');
       let playlistList: SmartPlaylistModel[] = [];
       if (Array.isArray(response.data)) {
         playlistList = response.data;
@@ -117,24 +127,36 @@ export default function SmartPlaylistsPage() {
 
   const handlePlay = async (playlist: SmartPlaylistModel) => {
     try {
-      const response = await apiRequest(`/playlists/smart/${playlist.apiKey}/evaluate`);
-      const responseData: any = response.data?.data ?? response.data;
-      const playlistSongs = Array.isArray(responseData)
-        ? responseData
-        : responseData?.data;
+      const response = await apiRequest<SmartPlaylistEvaluatePayload>(`/playlists/smart/${playlist.apiKey}/evaluate`);
+      const responseData = response.data as SmartPlaylistEvaluatePayload;
+      let playlistSongs: Song[] = [];
 
-      if (Array.isArray(playlistSongs)) {
+      if (Array.isArray(responseData)) {
+        playlistSongs = responseData;
+      } else if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+        const firstLevel = responseData.data as unknown;
+        if (Array.isArray(firstLevel)) {
+          playlistSongs = firstLevel;
+        } else if (firstLevel && typeof firstLevel === 'object' && 'data' in firstLevel) {
+          const secondLevel = firstLevel.data as unknown;
+          if (Array.isArray(secondLevel)) {
+            playlistSongs = secondLevel;
+          }
+        } else if (firstLevel && typeof firstLevel === 'object' && Array.isArray((firstLevel as SmartPlaylistEvaluateResponse).data)) {
+          playlistSongs = (firstLevel as SmartPlaylistEvaluateResponse).data;
+        }
+      } else if (responseData && typeof responseData === 'object' && 'playlist' in responseData) {
+        const fallbackResponse = responseData as SmartPlaylistEvaluateResponse;
+        if (Array.isArray(fallbackResponse.data)) {
+          playlistSongs = fallbackResponse.data;
+        }
+      }
+
+      if (playlistSongs.length > 0) {
         playlistSongs.forEach((song: Song) => {
           addToQueue(toQueueSong(song));
         });
         return;
-      }
-
-      const fallbackResponse: SmartPlaylistEvaluateResponse = responseData as SmartPlaylistEvaluateResponse;
-      if (fallbackResponse?.data && Array.isArray(fallbackResponse.data)) {
-        fallbackResponse.data.forEach((song: Song) => {
-          addToQueue(toQueueSong(song));
-        });
       }
     } catch (err: any) {
       console.error('Failed to evaluate smart playlist:', err);

@@ -31,7 +31,7 @@ import SearchPage from './pages/SearchPage';
 import Player from './pages/Player';
 import QueueView from './pages/QueueView';
 import '../src/pages/QueueView.css';
-import { useQueueStore, Song, RepeatMode } from './queueStore';
+import { useQueueStore, Song } from './queueStore';
 import DashboardWrapper from './pages/Dashboard';
 import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
@@ -325,7 +325,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
         setSearchValue(urlQuery);
       }
     }
-  }, [location.pathname, searchParams]);
+  }, [location.pathname, searchParams, searchValue]);
 
   React.useEffect(() => {
     localStorage.setItem('userSettings', JSON.stringify(settings));
@@ -362,7 +362,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
         const jwt = localStorage.getItem('jwt');
         if (jwt) {
           try {
-            const res = await apiRequest('/user/me');
+            const res = await apiRequest<User>('/user/me');
             const userFromApi = res && res.data ? res.data : null;
             if (userFromApi) {
               localStorage.setItem('user', JSON.stringify(userFromApi));

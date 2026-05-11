@@ -17,8 +17,10 @@ import {
 } from '@mui/material';
 import { Check, Download, Upload, Warning } from '@mui/icons-material';
 import { apiRequest } from '../api';
-import { ThemePackInfo } from '../apiModels';
+import { ThemePackInfo, PaginatedResponse } from '../apiModels';
 import { UserSettings } from '../types/settings';
+
+type ThemeListPayload = ThemePackInfo[] | PaginatedResponse<ThemePackInfo> | { data: ThemePackInfo[] } | { data: { data: ThemePackInfo[] } };
 
 interface ThemesPageProps {
   settings: UserSettings;
@@ -35,7 +37,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
   const fetchThemes = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/themes');
+      const response = await apiRequest<ThemeListPayload>('/themes');
       let themeList: ThemePackInfo[] = [];
       if (Array.isArray(response.data)) {
         themeList = response.data;

@@ -29,14 +29,42 @@ export default function HistoryPage() {
   const navigate = useNavigate();
   const addToQueue = useQueueStore((state) => state.addToQueue);
 
+  type HistoryPayload = HistoryResponse | { data: HistoryResponse } | { data: { data: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } } };
+
   const fetchHistory = React.useCallback(async (pageNum: number) => {
     try {
       setLoading(true);
-      const response = await apiRequest(`/user/last-played?page=${pageNum}&pageSize=50`);
-      if (response.data?.data) {
-        setHistory(response.data);
-      } else if (Array.isArray(response.data)) {
-        setHistory({ data: response.data, meta: { totalCount: response.data.length, pageSize: 50, currentPage: pageNum, totalPages: 1, hasNext: false, hasPrevious: false } });
+      const response = await apiRequest<HistoryPayload>(`/user/last-played?page=${pageNum}&pageSize=50`);
+      const responseData = response.data as
+        | HistoryResponse
+        | { data: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } }
+        | { data: { data: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } } };
+
+      if ((responseData as HistoryResponse).data && (responseData as HistoryResponse).meta) {
+        setHistory(responseData as HistoryResponse);
+        return;
+      }
+
+      if ((responseData as { data?: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } }).data) {
+        const responseItems = (responseData as { data: HistoryItem[] }).data;
+        if (Array.isArray(responseItems)) {
+          setHistory({
+            data: responseItems,
+            meta: {
+              totalCount: responseItems.length,
+              pageSize: 50,
+              currentPage: pageNum,
+              totalPages: 1,
+              hasNext: false,
+              hasPrevious: false,
+            },
+          });
+        }
+      } else {
+        setHistory({
+          data: [],
+          meta: { totalCount: 0, pageSize: 50, currentPage: pageNum, totalPages: 1, hasNext: false, hasPrevious: false },
+        });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load history');

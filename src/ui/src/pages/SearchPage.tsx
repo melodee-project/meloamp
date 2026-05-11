@@ -1,5 +1,5 @@
 import { debugLog, debugError } from '../debug';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -8,17 +8,9 @@ import {
   IconButton, 
   CircularProgress, 
   Button, 
-  ListItem, 
-  ListItemText,
   Chip,
   Stack,
   Paper,
-  List,
-  ListItemButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Collapse
 } from '@mui/material';
 import { Search, History, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
@@ -58,10 +50,9 @@ const clearRecentSearches = () => {
 
 // Filter types
 type FilterType = 'artists' | 'albums' | 'songs' | 'playlists';
-type SortOption = 'relevance' | 'name' | 'recent';
 
 export default function SearchPage({ query, onClose }: { query?: string, onClose?: () => void }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const paramQ = searchParams.get('q') || undefined;
   const [search, setSearch] = useState(() => query ?? paramQ ?? '');
@@ -72,12 +63,10 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
 
   // Filter and sort state
   const [activeFilters, setActiveFilters] = useState<FilterType[]>(['artists', 'albums', 'songs', 'playlists']);
-  const [sortBy, setSortBy] = useState<SortOption>('relevance');
   const [showFilters, setShowFilters] = useState(true);
 
   // Recent searches state
   const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches());
-  const [showRecent, setShowRecent] = useState(true);
 
   // Pagination state for each type
   const [artistPage, setArtistPage] = useState(1);

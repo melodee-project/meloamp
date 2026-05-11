@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { PlayArrow, Album, Person, MusicNote } from '@mui/icons-material';
 import { apiRequest } from '../api';
-import { RecommendationsResponse, RecommendationItem } from '../apiModels';
+import { RecommendationsResponse, RecommendationItem, Song } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 import { toQueueSong } from '../components/toQueueSong';
 import { useQueueStore } from '../queueStore';
@@ -22,6 +22,11 @@ export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = React.useState<RecommendationsResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  type RecommendationResponsePayload =
+    | RecommendationsResponse
+    | { data: RecommendationsResponse }
+    | { data: { data: RecommendationsResponse } }
+    | { recommendations: RecommendationItem[]; category: string | null };
   const navigate = useNavigate();
   const addToQueue = useQueueStore((state) => state.addToQueue);
 
@@ -29,12 +34,21 @@ export default function RecommendationsPage() {
     const fetchRecommendations = async () => {
       try {
         setLoading(true);
-        const response = await apiRequest('/recommendations');
+        const response = await apiRequest<RecommendationResponsePayload>('/recommendations');
         let recs: RecommendationsResponse | null = null;
-        if (response.data?.recommendations) {
-          recs = response.data;
-        } else if (response.data?.data?.recommendations) {
-          recs = response.data.data;
+        const payload = response.data as RecommendationResponsePayload;
+        if (payload && typeof payload === 'object' && 'recommendations' in payload) {
+          recs = payload as RecommendationsResponse;
+        } else if (
+          payload &&
+          typeof payload === 'object' &&
+          'data' in payload &&
+          payload.data &&
+          typeof payload.data === 'object' &&
+          'recommendations' in (payload.data as Record<string, unknown>)
+        ) {
+          const nested = payload.data as RecommendationsResponse;
+          recs = nested;
         }
         setRecommendations(recs);
       } catch (err: any) {
@@ -59,9 +73,11 @@ export default function RecommendationsPage() {
   const handlePlaySong = async (item: RecommendationItem) => {
     if (item.type === 'Song') {
       try {
-        const response = await apiRequest(`/songs/${item.id}`);
+        const response = await apiRequest<Song | { data: Song }>(`/songs/${item.id}`);
         if (response.data) {
-          addToQueue(toQueueSong(response.data));
+          if ('id' in response.data && 'title' in response.data && 'streamUrl' in response.data) {
+            addToQueue(toQueueSong(response.data));
+          }
         }
       } catch (err) {
         console.error('Failed to play song:', err);

@@ -11,6 +11,7 @@ import {
   Divider,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   MenuItem,
   Paper,
@@ -47,7 +48,11 @@ function unwrapPayload<T>(value: unknown): T | null {
   const hasPayload = (value as { data?: unknown; meta?: unknown; items?: unknown }).data !== undefined;
   if (hasPayload) return value as T;
   const nested = (value as { data?: unknown }).data;
-  if (nested && typeof nested === 'object' && ((nested as { data?: unknown }).data !== undefined || (nested as { results?: unknown }).data !== undefined)) {
+  if (
+    nested &&
+    typeof nested === 'object' &&
+    ((nested as { data?: unknown }).data !== undefined || (nested as { results?: unknown }).results !== undefined)
+  ) {
     return nested as T;
   }
   return null;
@@ -61,7 +66,6 @@ export default function RequestsPage() {
   const [detail, setDetail] = React.useState<RequestDetail | null>(null);
   const [comments, setComments] = React.useState<RequestCommentDto[]>([]);
   const [meta, setMeta] = React.useState({ totalPages: 1, totalCount: 0, currentPage: 1 });
-  const [commentsMeta, setCommentsMeta] = React.useState({ totalPages: 1, totalCount: 0 });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -98,10 +102,11 @@ export default function RequestsPage() {
         const payload = unwrapPayload<PagedResponseOfUnreadRequestSummary>(res.data);
         if (payload) {
           setList((payload as unknown as { data: RequestSummary[] }).data || []);
-          setMeta((payload as unknown as { meta?: { totalPages?: number; totalCount?: number; currentPage?: number } }).meta || {
-            totalPages: 1,
-            totalCount: 0,
-            currentPage: 1,
+          const responseMeta = (payload as { meta?: { totalPages?: number; totalCount?: number; currentPage?: number } }).meta || {};
+          setMeta({
+            totalPages: responseMeta.totalPages ?? 1,
+            totalCount: responseMeta.totalCount ?? 0,
+            currentPage: responseMeta.currentPage ?? 1,
           });
         }
         return;
@@ -153,7 +158,6 @@ export default function RequestsPage() {
       const commentResponse = await apiRequest<CommentPagedResponse>(API_ROUTES.requests.comments.replace('{requestApiKey}', apiKey));
       const commentPayload = unwrapPayload<CommentPagedResponse>(commentResponse.data);
       setComments((commentPayload as CommentPagedResponse)?.data || []);
-      setCommentsMeta((commentPayload as CommentPagedResponse)?.meta || { totalPages: 1, totalCount: 0 });
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
     } finally {
@@ -373,7 +377,8 @@ export default function RequestsPage() {
           label={t('requests.hasUnread', {
             defaultValue: 'Unread Activity',
             count: 0,
-          }, { hasUnread })}
+            hasUnread,
+          })}
           color={hasUnread ? 'warning' : 'default'}
           sx={{ height: 36 }}
         />
@@ -458,7 +463,9 @@ export default function RequestsPage() {
           {list.map((item, index) => (
             <React.Fragment key={item.apiKey}>
               <ListItem
-                button
+                disablePadding
+              >
+                <ListItemButton
                 component={Link}
                 to={`/requests/${item.apiKey}`}
                 alignItems="flex-start"
@@ -466,13 +473,14 @@ export default function RequestsPage() {
                 <ListItemText
                   primary={`${item.artistName || t('requests.unknown', 'Unknown')} · ${item.category}`}
                   secondary={`${item.description} · ${item.createdAt} · ${t('requests.status', 'Status')}: ${item.status}`}
-                />
+                  />
                 <Chip
                   label={String(item.commentCount || 0)}
                   size="small"
                   color="secondary"
                   sx={{ mr: 1 }}
                 />
+                </ListItemButton>
               </ListItem>
               {index < list.length - 1 && <Divider />}
             </React.Fragment>

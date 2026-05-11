@@ -21,7 +21,9 @@ import {
 } from '@mui/material';
 import { Save, Delete, MoreVert, Refresh } from '@mui/icons-material';
 import { apiRequest } from '../api';
-import { EqualizerPreset, EqualizerBand, CreateEqualizerPresetRequest } from '../apiModels';
+import { EqualizerPreset, EqualizerBand, CreateEqualizerPresetRequest, PaginatedResponse } from '../apiModels';
+
+type PresetListPayload = EqualizerPreset[] | PaginatedResponse<EqualizerPreset> | { data: EqualizerPreset[] } | { data: { data: EqualizerPreset[] } };
 
 const FREQUENCY_LABELS: Record<number, string> = {
   32: '32 Hz',
@@ -49,7 +51,7 @@ export default function EqualizerPage() {
   const fetchPresets = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/equalizer/presets');
+      const response = await apiRequest<PresetListPayload>('/equalizer/presets');
       let presetList: EqualizerPreset[] = [];
       if (Array.isArray(response.data)) {
         presetList = response.data;

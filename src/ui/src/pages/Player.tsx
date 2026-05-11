@@ -123,7 +123,7 @@ export default function Player({ src }: { src: string }) {
 
     const interval = setInterval(checkPreload, 1000);
     return () => clearInterval(interval);
-  }, [current, queue, nextTrackPreloaded]);
+  }, [currentSong, current, queue, nextTrackPreloaded]);
 
   // Reset preload state when song changes
   useEffect(() => {
@@ -305,7 +305,7 @@ export default function Player({ src }: { src: string }) {
     }, 2000); // Check every 2 seconds
     
     return () => clearInterval(scrobbleCheckInterval);
-  }, [queue, current]); // Only re-run when song changes, not on progress
+  }, [currentSong, queue, current]); // Only re-run when song changes, not on progress
 
   // Auto-play when src changes
   useEffect(() => {
@@ -396,7 +396,7 @@ export default function Player({ src }: { src: string }) {
       });
       setShouldAutoPlayFirst(false);
     }
-  }, [shouldAutoPlayFirst, queue, current]);
+  }, [currentSong, shouldAutoPlayFirst, queue, current]);
 
   // Keep audio element volume in sync with slider
   useEffect(() => {
@@ -415,7 +415,7 @@ export default function Player({ src }: { src: string }) {
   const rawRating = currentSong?.userRating;
   const normalized = typeof rawRating === 'number' && rawRating > 0 ? Math.min(5, Math.max(0, rawRating)) : 0;
   setRating(normalized);
-  }, [current, queue]);
+  }, [currentSong, current, queue]);
 
   // Load initial EQ from userSettings if present
   useEffect(() => {
@@ -589,7 +589,7 @@ export default function Player({ src }: { src: string }) {
       position: audioRef.current?.currentTime || 0
     };
     window.meloampAPI.sendPlaybackInfo(info);
-  }, [current, duration, playing, queue]);
+  }, [currentSong, current, duration, playing, queue]);
 
   // Web Media Session API for Windows SMTC and macOS Now Playing
   useEffect(() => {

@@ -41,7 +41,6 @@ function formatDuration(totalMs: number) {
 }
 
 function buildQueueSong(song: PublicSongInfo, share: PublicShareResponse): QueueSong {
-  const artistName = song.title ? '' : '';
   const artist = {
     id: share.artist?.id || '',
     thumbnailUrl: '',
@@ -94,6 +93,8 @@ function resolveSharedSongs(share: PublicShareResponse): PublicSongInfo[] {
 }
 
 export default function PublicSharePage() {
+  type PublicSharePayload = PublicShareResponse | { data: PublicShareResponse } | { data: { data: PublicShareResponse } };
+
   const { shareUniqueId = '' } = useParams<{ shareUniqueId: string }>();
   const { t } = useTranslation();
   const [share, setShare] = useState<PublicShareResponse | null>(null);
@@ -107,9 +108,15 @@ export default function PublicSharePage() {
       setError(null);
 
       try {
-        const response = await apiRequest(buildEndpoint(API_ROUTES.shares.public, { shareUniqueId }));
-        const data = response.data?.data ? response.data.data : response.data;
-        setShare(data as PublicShareResponse);
+        const response = await apiRequest<PublicSharePayload>(buildEndpoint(API_ROUTES.shares.public, { shareUniqueId }));
+        const payload = response.data as PublicSharePayload & { data?: unknown };
+        const nestedData = payload && typeof payload === 'object' && 'data' in payload
+          ? (payload as { data?: unknown }).data
+          : undefined;
+        const resolved = nestedData && typeof nestedData === 'object' && 'data' in (nestedData as Record<string, unknown>)
+          ? (nestedData as { data: PublicShareResponse }).data
+          : payload as PublicShareResponse;
+        setShare(resolved);
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || t('common.error'));
       } finally {

@@ -75,7 +75,7 @@ export default function AnalyticsPage() {
   const { t } = useTranslation();
   const [period, setPeriod] = React.useState<Period>('week');
   const [topType, setTopType] = React.useState<TopType>('songs');
-  const [topLimit, setTopLimit] = React.useState(10);
+  const topLimit = 10;
   const [listening, setListening] = React.useState<ListeningStatistics | null>(null);
   const [topContent, setTopContent] = React.useState<TopContentResponse | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -103,7 +103,7 @@ export default function AnalyticsPage() {
     };
 
     load();
-  }, [period, topType, topLimit, t]);
+  }, [period, topType, t]);
 
   const topItems = topContent?.items || [];
 

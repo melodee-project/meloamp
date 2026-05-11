@@ -55,7 +55,7 @@ export default function FavoritesPage() {
 
   // Build endpoint based on entity type and rating filter
   // Uses /user/ endpoints for user-specific data
-  const getEndpoint = (): string => {
+  const getEndpoint = React.useCallback((): string => {
     switch (ratingFilter) {
       case 'liked':
         return `/user/${entityType}/liked`;
@@ -66,7 +66,7 @@ export default function FavoritesPage() {
       case 'rated':
         return `/user/${entityType}/rated`;
     }
-  };
+  }, [ratingFilter, entityType]);
 
   // Fetch data based on current filters
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function FavoritesPage() {
     };
 
     fetchData();
-  }, [ratingFilter, entityType, page, t]);
+  }, [getEndpoint, entityType, page, t, ratingFilter]);
 
   // Update URL when filters change
   const updateUrl = (filter: RatingFilter, entity: EntityType) => {

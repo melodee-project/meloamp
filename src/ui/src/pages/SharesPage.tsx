@@ -36,8 +36,10 @@ import {
   PlaylistPlay,
 } from '@mui/icons-material';
 import { apiRequest } from '../api';
-import { Share as ShareModel, ShareType, CreateShareRequest } from '../apiModels';
+import { Share as ShareModel, ShareType, CreateShareRequest, PaginatedResponse } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
+
+type ShareListPayload = ShareModel[] | PaginatedResponse<ShareModel> | { data: ShareModel[] } | { data: { data: ShareModel[] } };
 
 const SHARE_TYPE_ICONS: Record<string, React.ReactNode> = {
   Album: <Album />,
@@ -68,7 +70,7 @@ export default function SharesPage() {
   const fetchShares = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/shares');
+      const response = await apiRequest<ShareListPayload>('/shares');
       let shareList: ShareModel[] = [];
       if (Array.isArray(response.data)) {
         shareList = response.data;

@@ -17,8 +17,51 @@ import {
 } from '@mui/material';
 import { TrendingUp, TrendingDown, TrendingFlat, Album } from '@mui/icons-material';
 import { apiRequest } from '../api';
-import { ChartListModel, ChartDetailModel, ChartTrackModel } from '../apiModels';
+import { ChartListModel, ChartDetailModel, ChartTrackModel, ChartPagedResponse } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
+
+type ChartListResponsePayload = ChartListModel[] | ChartPagedResponse | { data: ChartListModel[] } | { data: { data: ChartListModel[] } };
+type ChartDetailResponsePayload = ChartDetailModel | { data: ChartDetailModel } | { data: { data: ChartDetailModel } };
+
+function extractChartList(payload: ChartListResponsePayload): ChartListModel[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+  if (
+    payload.data &&
+    typeof payload.data === 'object' &&
+    Array.isArray((payload.data as { data?: unknown }).data)
+  ) {
+    return (payload.data as { data: ChartListModel[] }).data;
+  }
+  return [];
+}
+
+function extractChartDetail(payload: ChartDetailResponsePayload): ChartDetailModel | null {
+  if ('tracks' in payload) {
+    return payload as ChartDetailModel;
+  }
+  if ('data' in payload && typeof payload.data === 'object' && payload.data && 'tracks' in (payload.data as Record<string, unknown>)) {
+    return payload.data as ChartDetailModel;
+  }
+  if (
+    'data' in payload &&
+    payload.data &&
+    typeof payload.data === 'object' &&
+    'data' in (payload.data as Record<string, unknown>) &&
+    (payload.data as Record<string, unknown>).data &&
+    typeof (payload.data as Record<string, unknown>).data === 'object'
+  ) {
+    const nested = (payload.data as { data?: unknown }).data;
+    if (nested && typeof nested === 'object' && 'tracks' in nested) {
+      return nested as ChartDetailModel;
+    }
+  }
+  return null;
+}
 
 export default function ChartsPage() {
   const [charts, setCharts] = React.useState<ChartListModel[]>([]);
@@ -31,15 +74,8 @@ export default function ChartsPage() {
     const fetchCharts = async () => {
       try {
         setLoading(true);
-        const response = await apiRequest('/charts');
-        let chartList: ChartListModel[] = [];
-        if (Array.isArray(response.data)) {
-          chartList = response.data;
-        } else if (Array.isArray(response.data?.data)) {
-          chartList = response.data.data;
-        } else if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
-          chartList = response.data.data.data;
-        }
+        const response = await apiRequest<ChartListResponsePayload>('/charts');
+        const chartList = extractChartList(response.data);
         setCharts(chartList);
       } catch (err: any) {
         setError(err.message || 'Failed to load charts');
@@ -53,8 +89,9 @@ export default function ChartsPage() {
   const handleChartClick = async (chartId: string) => {
     try {
       setLoading(true);
-      const response = await apiRequest(`/charts/${chartId}`);
-      setSelectedChart(response.data?.data || response.data || null);
+      const response = await apiRequest<ChartDetailResponsePayload>(`/charts/${chartId}`);
+      const chart = extractChartDetail(response.data);
+      setSelectedChart(chart);
     } catch (err: any) {
       console.error('Failed to load chart details:', err);
     } finally {

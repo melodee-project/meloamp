@@ -27,6 +27,7 @@ import {
   Sync,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';
 import { API_ROUTES } from '../apiRoutes';
 import apiRequest, { buildEndpoint, unwrapApiResponse } from '../api';
 import {
@@ -58,7 +59,7 @@ type LoadingState = {
   action: boolean;
 };
 
-function boolLabel(value: boolean | undefined | null, t: (key: string, fallback?: string) => string) {
+function boolLabel(value: boolean | undefined | null, t: TFunction<'translation', undefined>) {
   return value ? t('common.yes') : t('common.no');
 }
 

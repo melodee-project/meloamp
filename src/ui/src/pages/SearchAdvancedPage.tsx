@@ -160,8 +160,28 @@ export default function SearchAdvancedPage() {
         },
       });
       const payload = unwrapPayload<SearchSongResponse>(response.data);
-      const fallback = unwrapApiResponse(response.data);
-      const source = (payload || (fallback as SearchSongResponse)) as SearchSongResponse | null;
+      let source: SearchSongResponse | null = null;
+      if (payload && Array.isArray(payload.data)) {
+        source = payload;
+      } else {
+        const fallback = unwrapApiResponse(response.data);
+        if (Array.isArray(fallback)) {
+          source = {
+            data: fallback as Song[],
+            meta: {
+              totalCount: fallback.length,
+              currentPage: page,
+              totalPages: 1,
+            },
+          };
+        } else if (fallback && typeof fallback === 'object' && 'data' in fallback && Array.isArray((fallback as { data?: unknown }).data)) {
+          const candidate = fallback as SearchSongResponse;
+          source = {
+            data: candidate.data,
+            meta: candidate.meta || { totalCount: candidate.data.length, currentPage: page, totalPages: 1 },
+          };
+        }
+      }
       if (source) {
         setSongResponse(source.data || []);
         setSongTotal(source.meta?.totalCount || 0);

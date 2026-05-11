@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   List,
   ListItem,
   ListItemText,

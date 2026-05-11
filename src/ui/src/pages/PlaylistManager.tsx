@@ -54,22 +54,22 @@ export default function PlaylistManager() {
     severity: 'success'
   });
 
-  const fetchPlaylists = () => {
+  const fetchPlaylists = React.useCallback(async () => {
     setLoading(true);
-    api.get<PaginatedResponse<Playlist>>('/user/playlists', { params: { page, pageSize: 20 } })
-      .then((res) => {
-        setPlaylists(res.data.data);
-        setTotal(res.data.meta?.totalCount || 0);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
-  };
+    try {
+      const res = await api.get<PaginatedResponse<Playlist>>('/user/playlists', { params: { page, pageSize: 20 } });
+      setPlaylists(res.data.data);
+      setTotal(res.data.meta?.totalCount || 0);
+    } catch {
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
 
   useEffect(() => {
     fetchPlaylists();
-  }, [page]);
+  }, [fetchPlaylists]);
 
   // Image selection for new playlist
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,7 +174,7 @@ export default function PlaylistManager() {
       const playlistName = importFile.name.replace(/\.m3u8?$/i, '');
       
       // Create playlist with name from file
-      const response = await api.post('/playlists', {
+      await api.post('/playlists', {
         name: playlistName,
         comment: `Imported from ${importFile.name}`,
         isPublic: false,
