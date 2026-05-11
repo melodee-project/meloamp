@@ -64,7 +64,8 @@ beforeAll(() => {
       typeof args[0] === 'string' &&
       (args[0].includes('Warning: ReactDOM.render is no longer supported') ||
        args[0].includes('Not implemented: HTMLFormElement.prototype.submit') ||
-       args[0].includes('Error: Not implemented: navigation'))
+       args[0].includes('Error: Not implemented: navigation') ||
+       args[0].includes('Failed to fetch user profile'))
     ) {
       return;
     }
