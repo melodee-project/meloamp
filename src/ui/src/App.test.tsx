@@ -46,7 +46,7 @@ describe('App Authentication', () => {
     // Should show navigation bar elements (they are links, not buttons)
     expect(screen.getByRole('link', { name: /artists/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /albums/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /playlists/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^playlists$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /songs/i })).toBeInTheDocument();
   });
 
@@ -99,9 +99,10 @@ describe('App Navigation', () => {
       expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument();
     });
     
-    const navLinks = ['Dashboard', 'Artists', 'Albums', 'Playlists', 'Songs'];
+    const navLinks = ['dashboard', 'artists', 'albums', 'playlists', 'songs'];
     for (const linkName of navLinks) {
-      expect(screen.getByRole('link', { name: new RegExp(linkName, 'i') })).toBeInTheDocument();
+      const pattern = new RegExp(`^${linkName}$`, 'i');
+      expect(screen.getByRole('link', { name: pattern })).toBeInTheDocument();
     }
   });
 
@@ -149,4 +150,3 @@ describe('App Error Handling', () => {
     expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument();
   });
 });
-

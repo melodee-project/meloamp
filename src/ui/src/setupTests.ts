@@ -10,18 +10,24 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextDecoder = TextDecoder as unknown as typeof global.TextDecoder;
 
 // Mock window.matchMedia for MUI components
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
+(window as Window & { matchMedia: typeof window.matchMedia }).matchMedia = jest.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: jest.fn(),
+  removeListener: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+}));
+
+jest.mock('@mui/system/useMediaQuery', () => {
+  const actual = jest.requireActual('@mui/system/useMediaQuery');
+  return {
+    ...actual,
+    default: () => false,
+    unstable_createUseMediaQuery: () => () => false,
+  };
 });
 
 // Mock ResizeObserver for components that use it

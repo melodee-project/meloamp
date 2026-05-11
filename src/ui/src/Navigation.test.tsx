@@ -129,19 +129,13 @@ describe('Core Navigation Smoke Tests', () => {
   test('Settings page renders from user menu', async () => {
     render(<App />);
     
-    // Wait for user menu button
+    // Open settings from sidebar
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /user menu/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /^settings$/i })).toBeInTheDocument();
     });
-    
-    // Click user menu
-    fireEvent.click(screen.getByRole('button', { name: /user menu/i }));
-    
-    // Click Settings in menu
-    await waitFor(() => {
-      expect(screen.getByRole('menuitem', { name: /settings/i })).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByRole('menuitem', { name: /settings/i }));
+
+    // Navigate directly to settings
+    fireEvent.click(screen.getByRole('link', { name: /^settings$/i }));
     
     // Settings page should render
     await waitFor(() => {
