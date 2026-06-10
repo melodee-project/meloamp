@@ -29,11 +29,11 @@
     "zustand": "^5.0.11"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "dev": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:coverage": "react-scripts test --watchAll=false --coverage",
+    "start": "BROWSERSLIST_IGNORE_OLD_DATA=1 react-scripts start",
+    "dev": "BROWSERSLIST_IGNORE_OLD_DATA=1 react-scripts start",
+    "build": "BROWSERSLIST_IGNORE_OLD_DATA=1 react-scripts build",
+    "test": "BROWSERSLIST_IGNORE_OLD_DATA=1 react-scripts test",
+    "test:coverage": "BROWSERSLIST_IGNORE_OLD_DATA=1 react-scripts test --watchAll=false --coverage",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
