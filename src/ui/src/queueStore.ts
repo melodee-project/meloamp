@@ -54,17 +54,13 @@ interface QueuePersistState {
   current: number;
 }
 
-interface MinimalSong {
-  id: string;
-  title: string;
-  artist: { id: string; name: string; imageUrl?: string };
-  album: { id: string; name: string; imageUrl?: string; releaseYear?: number };
-  imageUrl?: string;
-  url?: string;
-  played?: boolean;
-  durationMs: number;
-  userRating?: number;
-}
+type MinimalSong = Pick<
+  Song,
+  'id' | 'title' | 'imageUrl' | 'url' | 'played' | 'durationMs' | 'userRating'
+> & {
+  artist: Pick<NonNullable<Song['artist']>, 'id' | 'name' | 'imageUrl'>;
+  album: Pick<NonNullable<Song['album']>, 'id' | 'name' | 'imageUrl' | 'releaseYear'>;
+};
 
 let persistTimeout: ReturnType<typeof setTimeout> | null = null;
 const PERSIST_DEBOUNCE_MS = 1000;

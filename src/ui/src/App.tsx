@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, IconButton, InputBase, Box, Tooltip, ThemeProvider, CssBaseline } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, InputBase, Box, Tooltip, ThemeProvider, CssBaseline, CircularProgress } from '@mui/material';
 import {
   Brightness4,
   Brightness7,
@@ -70,6 +70,7 @@ import Sidebar, { DRAWER_WIDTH } from './components/Sidebar';
 import { User } from './apiModels';
 import ErrorBoundary from './components/ErrorBoundary';
 import { UserSettings } from './types/settings';
+import { readUser, writeUser } from './storage';
 
 type ThemeValue = Theme | ((mode: 'light' | 'dark') => Theme);
 
@@ -206,13 +207,8 @@ function AppContent({ settings, setSettings }: AppContentProps) {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
   const [user, setUser] = React.useState<User | null>(() => {
-    try {
-      const persistedUser = localStorage.getItem('user');
-      if (persistedUser) return JSON.parse(persistedUser);
-      return JSON.parse(sessionStorage.getItem('user') || 'null');
-    } catch {
-      return null;
-    }
+    const persisted = readUser() as User | null;
+    return persisted ?? null;
   });
   const [searchValue, setSearchValue] = React.useState('');
   const [searchLoading, setSearchLoading] = React.useState(false);
@@ -348,25 +344,14 @@ function AppContent({ settings, setSettings }: AppContentProps) {
   React.useEffect(() => {
     const loadUser = async () => {
       try {
-        let storedUser: User | null = null;
-        try {
-          storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-        } catch {}
-
-        if (!storedUser) {
-          try {
-            storedUser = JSON.parse(sessionStorage.getItem('user') || 'null');
-          } catch {}
-        }
-
+        const storedUser = readUser() as User | null;
         const jwt = localStorage.getItem('jwt');
         if (jwt) {
           try {
             const res = await apiRequest<User>('/user/me');
             const userFromApi = res && res.data ? res.data : null;
             if (userFromApi) {
-              localStorage.setItem('user', JSON.stringify(userFromApi));
-              sessionStorage.setItem('user', JSON.stringify(userFromApi));
+              writeUser(userFromApi);
               setUser(userFromApi);
               return;
             }
@@ -403,16 +388,8 @@ function AppContent({ settings, setSettings }: AppContentProps) {
   if (!isAuthenticated && !isPublicShareRoute) {
     return <LoginPage onLogin={() => {
       setIsAuthenticated(true);
-      try {
-        const persistedUser = localStorage.getItem('user');
-        if (persistedUser) {
-          setUser(JSON.parse(persistedUser));
-        } else {
-          setUser(JSON.parse(sessionStorage.getItem('user') || 'null'));
-        }
-      } catch {
-        setUser(null);
-      }
+      const persisted = readUser() as User | null;
+      if (persisted) setUser(persisted);
     }} />;
   }
 
@@ -502,11 +479,10 @@ function AppContent({ settings, setSettings }: AppContentProps) {
                     inputRef={searchInputRef}
                   />
                   {searchLoading && (
-                    <Box sx={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
-                      <span className="MuiCircularProgress-root MuiCircularProgress-colorPrimary MuiCircularProgress-indeterminate" style={{ width: 20, height: 20 }}>
-                        <svg className="MuiCircularProgress-svg" viewBox="22 22 44 44"><circle className="MuiCircularProgress-circle" cx="44" cy="44" r="20.2" fill="none" strokeWidth="3.6" /></svg>
-                      </span>
-                    </Box>
+                    <CircularProgress
+                      size={20}
+                      sx={{ position: 'absolute', right: 1, top: '50%', transform: 'translateY(-50%)' }}
+                    />
                   )}
                 </Box>
                 <Tooltip title={`Switch to ${settings.mode === 'dark' ? 'light' : 'dark'} mode`}>

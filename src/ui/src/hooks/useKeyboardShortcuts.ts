@@ -139,11 +139,19 @@ export function useKeyboardShortcuts(
   return { shortcuts: parsedShortcuts };
 }
 
+const detectMac = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const uaDataPlatform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform;
+  if (uaDataPlatform) return /Mac/i.test(uaDataPlatform);
+  if (navigator.platform) return /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  return /Mac/i.test(navigator.userAgent || '');
+};
+
 /**
  * Format a key combination for display.
  */
 export function formatShortcut(key: string): string {
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const isMac = detectMac();
   
   return key
     .split('+')

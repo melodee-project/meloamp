@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, TextField, Alert } from '@mui/material';
 import { setJwt, setApiBaseUrl, authenticate } from '../api';
 import { LoginRequest, LoginResponse } from '../apiModels';
+import { writeUser } from '../storage';
 import logo from '../logo.svg';
 import { useTranslation } from 'react-i18next';
 
@@ -87,10 +88,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       const token = loginData.token;
       if (!token) throw new Error('Invalid response from authentication');
       setJwt(token);
-      // Store user in localStorage for persistence across app restarts (Electron)
-      localStorage.setItem('user', JSON.stringify(loginData.user));
-      // Also keep in sessionStorage for backward compatibility
-      sessionStorage.setItem('user', JSON.stringify(loginData.user));
+      writeUser(loginData.user);
       if (loginData.serverVersion !== undefined && loginData.serverVersion !== null) {
         localStorage.setItem('apiVersion', loginData.serverVersion.toString());
       } else {

@@ -1,5 +1,6 @@
 import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { LoginRequest, LoginResponse } from './apiModels';
+import { clearUser } from './storage';
 
 let API_BASE = localStorage.getItem('serverUrl') || process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
@@ -17,8 +18,7 @@ export function setJwt(token: string) {
 export function clearJwt() {
   jwt = null;
   localStorage.removeItem('jwt');
-  localStorage.removeItem('user');
-  sessionStorage.removeItem('user');
+  clearUser();
 }
 
 export function getJwt(): string | null {
@@ -36,12 +36,60 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+let refreshInFlight: Promise<string | null> | null = null;
+
+const isAuthEndpoint = (url?: string): boolean => {
+  if (!url) return false;
+  return (
+    url.includes('/auth/authenticate') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/password-reset') ||
+    url.includes('/auth/revoke') ||
+    url.includes('/auth/logout')
+  );
+};
+
+const performRefresh = async (): Promise<string | null> => {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const res = await api.post<{ token?: string }>('/auth/refresh');
+      const newToken = res.data?.token;
+      if (newToken) {
+        setJwt(newToken);
+        return newToken;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
+};
+
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: any) => {
-    if (error.response && error.response.status === 401) {
+  async (error: any) => {
+    const status = error?.response?.status;
+    const originalRequest = error?.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+
+    if (status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint(originalRequest.url)) {
+      const newToken = await performRefresh();
+      if (newToken) {
+        originalRequest._retry = true;
+        originalRequest.headers = originalRequest.headers ?? ({} as any);
+        (originalRequest.headers as any).Authorization = `Bearer ${newToken}`;
+        return api.request(originalRequest);
+      }
+    }
+
+    if (status === 401) {
       clearJwt();
-      window.location.href = '/';
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }

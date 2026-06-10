@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { ArtistCardProps } from './ArtistCard';
 import ArtistCard from './ArtistCard';
 import { createMockArtist } from '../test/testUtils';
 
@@ -31,8 +30,9 @@ describe('ArtistCard', () => {
 
   test('navigates on click', () => {
     const artist = createMockArtist({ id: 'a1' });
-    render(<ArtistCard artist={artist} />);
-    screen.getByText('Test Artist').closest('.MuiCard-root')!.click();
+    const { container } = render(<ArtistCard artist={artist} />);
+    const card = container.querySelector('.MuiCard-root') as HTMLElement;
+    card.click();
     expect(mockNavigate).toHaveBeenCalledWith('/artists/a1');
   });
 });

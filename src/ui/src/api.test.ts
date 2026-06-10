@@ -104,6 +104,39 @@ describe('apiRequest', () => {
     await expect(apiRequest('/user/me')).rejects.toThrow();
     expect(getJwt()).toBeNull();
   });
+
+  test('refreshes token on 401 and retries the request', async () => {
+    setJwt('expired');
+    let authedRequests = 0;
+    mockApi.onPost('/auth/refresh').reply(() => [200, { token: 'new-token' }]);
+    mockApi.onGet('/user/me').reply((config) => {
+      const header = (config.headers as Record<string, string> | undefined)?.Authorization;
+      if (header === 'Bearer new-token') {
+        authedRequests += 1;
+        return [200, { id: 'u1' }];
+      }
+      return [401, { message: 'Unauthorized' }];
+    });
+    const res = await apiRequest('/user/me');
+    expect(res.data).toEqual({ id: 'u1' });
+    expect(authedRequests).toBe(1);
+    expect(getJwt()).toBe('new-token');
+  });
+
+  test('clears JWT when refresh also fails on 401', async () => {
+    setJwt('expired');
+    mockApi.onPost('/auth/refresh').reply(401);
+    mockApi.onGet('/user/me').reply(401);
+    await expect(apiRequest('/user/me')).rejects.toThrow();
+    expect(getJwt()).toBeNull();
+  });
+
+  test('does not loop refreshing auth endpoints', async () => {
+    setJwt('expired');
+    mockApi.onPost('/auth/refresh').reply(401);
+    await expect(refreshSession()).rejects.toThrow();
+    expect(mockApi.history.post.filter((h) => h.url === '/auth/refresh').length).toBe(1);
+  });
 });
 
 describe('authenticate', () => {

@@ -19,6 +19,7 @@ let lastTrackId = null;
 let mainWindow = null;
 let tray = null;
 let mediaShortcutsRegistered = false;
+let lastNowPlaying = null;
 
 // Default media key shortcuts (can be customized via settings)
 let mediaKeyConfig = {
@@ -61,6 +62,7 @@ function startStaticServer() {
   // For all other routes (SPA routing), serve index.html
   // Express 5 requires named wildcard parameters: {*splat} matches any path
   server.get('{*splat}', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 
@@ -143,9 +145,7 @@ function setupMpris(win) {
     // Listen for D-Bus errors and clean up
     mprisPlayer.on('error', (err) => {
       console.error('MPRIS D-Bus error:', err);
-      mprisPlayer = null;
-      ipcMain.removeAllListeners('meloamp-playback-info');
-      ipcMain.removeAllListeners('meloamp-position-update');
+      teardownMpris();
     });
   } catch (err) {
     console.error('Failed to set up MPRIS:', err);
@@ -177,6 +177,9 @@ function createWindow() {
       devTools: debugConsoleEnabled,
     },
   });
+
+  mainWindow.on('show', () => updateTrayMenu(lastNowPlaying));
+  mainWindow.on('hide', () => updateTrayMenu(lastNowPlaying));
 
   // Load the React build output via HTTP server
   mainWindow.loadURL('http://localhost:' + SERVER_PORT);
@@ -225,28 +228,6 @@ async function cacheArtUrl(url) {
   return formatArtUrl(cachedArtPath);
 }
 
-// Helper function to convert image URL to proper format for MPRIS
-function formatArtUrl(url) {
-  if (!url) return '';
-  
-  // If it's already a file:// URL, return as is
-  if (url.startsWith('file://')) return url;
-  
-  // If it's an HTTP/HTTPS URL, we need to handle it properly
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    // For remote images, MPRIS spec recommends local caching
-    // This is now handled by cacheArtUrl, but we'll leave this for safety
-    return url;
-  }
-  
-  // If it's a local path, convert to file:// URL
-  if (path.isAbsolute(url)) {
-    return 'file://' + url;
-  }
-  
-  return url;
-}
-
 // Helper function to generate proper MPRIS track ID
 function generateTrackId(trackId) {
   if (!trackId) return '/org/mpris/MediaPlayer2/track/0';
@@ -256,8 +237,7 @@ function generateTrackId(trackId) {
   return `/org/mpris/MediaPlayer2/track/${sanitized}`;
 }
 
-// IPC: Receive playback info from renderer and update MPRIS
-ipcMain.on('meloamp-playback-info', async (event, info) => {
+async function handleMprisPlaybackInfo(event, info) {
   if (!mprisPlayer || mprisPlayer.closed) return;
   
   // Extract correct metadata fields for MPRIS
@@ -301,17 +281,6 @@ ipcMain.on('meloamp-playback-info', async (event, info) => {
     }
   }
 
-  // Log the metadata being sent to MPRIS for debugging
-  console.log('Sending MPRIS metadata:', {
-    'mpris:trackid': trackId,
-    'mpris:length': lengthMicroseconds,
-    'mpris:artUrl': artUrl,
-    'xesam:title': info.title || '',
-    'xesam:album': albumName,
-    'xesam:artist': artistNames,
-    status: info.status || 'Stopped'
-  });
-  
   try {
     mprisPlayer.metadata = {
       'mpris:trackid': trackId,
@@ -322,28 +291,23 @@ ipcMain.on('meloamp-playback-info', async (event, info) => {
       'xesam:artist': artistNames,
     };
     
-    if (mprisPlayer) {
-      mprisPlayer.playbackStatus = info.status || 'Stopped';
-      
-      // Update position if provided
-      if (typeof info.position === 'number') {
-        currentPosition = Math.floor(info.position * 1000000); // Convert to microseconds
-        lastPositionUpdate = Date.now();
-        mprisPlayer.position = currentPosition;
-      }
+    mprisPlayer.playbackStatus = info.status || 'Stopped';
+    
+    // Update position if provided
+    if (typeof info.position === 'number') {
+      currentPosition = Math.floor(info.position * 1000000); // Convert to microseconds
+      lastPositionUpdate = Date.now();
+      mprisPlayer.position = currentPosition;
     }
   } catch (err) {
     console.error('Error updating MPRIS properties:', err);
     if (mprisPlayer && mprisPlayer.closed) {
-      mprisPlayer = null;
-      ipcMain.removeAllListeners('meloamp-playback-info');
-      ipcMain.removeAllListeners('meloamp-position-update');
+      teardownMpris();
     }
   }
-});
+}
 
-// IPC: Handle position updates for MPRIS
-ipcMain.on('meloamp-position-update', (event, position) => {
+function handleMprisPositionUpdate(event, position) {
   if (!mprisPlayer || mprisPlayer.closed) return;
   
   try {
@@ -353,7 +317,20 @@ ipcMain.on('meloamp-position-update', (event, position) => {
   } catch (err) {
     console.error('Error updating MPRIS position:', err);
   }
-});
+}
+
+function teardownMpris() {
+  ipcMain.removeListener('meloamp-playback-info', handleMprisPlaybackInfo);
+  ipcMain.removeListener('meloamp-position-update', handleMprisPositionUpdate);
+  if (mprisPlayer) {
+    try { mprisPlayer.close?.(); } catch {}
+  }
+  mprisPlayer = null;
+}
+
+// IPC: Receive playback info from renderer and update MPRIS
+ipcMain.on('meloamp-playback-info', handleMprisPlaybackInfo);
+ipcMain.on('meloamp-position-update', handleMprisPositionUpdate);
 
 // ============================================
 // Global Media Keys
@@ -515,17 +492,15 @@ function updateTrayMenu(nowPlaying = null) {
     { type: 'separator' },
     // Window controls
     {
-      label: mainWindow?.isVisible() ? 'Hide Window' : 'Show Window',
+      label: mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() ? 'Hide Window' : 'Show Window',
       click: () => {
-        if (mainWindow) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
           if (mainWindow.isVisible()) {
             mainWindow.hide();
           } else {
             mainWindow.show();
             mainWindow.focus();
           }
-          // Update menu after toggle
-          updateTrayMenu(nowPlaying);
         }
       }
     },
@@ -543,12 +518,13 @@ function updateTrayMenu(nowPlaying = null) {
 
 // IPC: Update tray with now playing info
 ipcMain.on('meloamp-tray-update', (event, nowPlaying) => {
-  updateTrayMenu(nowPlaying);
+  lastNowPlaying = nowPlaying || null;
+  updateTrayMenu(lastNowPlaying);
   
   // Update tray tooltip with current track
-  if (tray && nowPlaying) {
-    const tooltip = nowPlaying.title 
-      ? `MeloAmp - ${nowPlaying.title}${nowPlaying.artist ? ` - ${nowPlaying.artist}` : ''}`
+  if (tray) {
+    const tooltip = lastNowPlaying?.title
+      ? `MeloAmp - ${lastNowPlaying.title}${lastNowPlaying.artist ? ` - ${lastNowPlaying.artist}` : ''}`
       : 'MeloAmp';
     tray.setToolTip(tooltip);
   }
@@ -645,7 +621,7 @@ function setupAutoUpdater() {
     }
 
     // Ask user if they want to download
-    dialog.showMessageBox(mainWindow, {
+    showOwnerSafeDialog({
       type: 'info',
       title: 'Update Available',
       message: `A new version (${info.version}) is available.`,
@@ -680,7 +656,7 @@ function setupAutoUpdater() {
     sendUpdateStatus('downloaded', info);
     
     // Ask user to restart
-    dialog.showMessageBox(mainWindow, {
+    showOwnerSafeDialog({
       type: 'info',
       title: 'Update Ready',
       message: 'Update downloaded successfully.',
@@ -707,6 +683,11 @@ function sendUpdateStatus(status, data = {}) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('meloamp-update-status', { status, ...data });
   }
+}
+
+function showOwnerSafeDialog(options) {
+  const owner = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined;
+  return dialog.showMessageBox(owner, options);
 }
 
 // IPC handler for manual update check
@@ -738,7 +719,7 @@ function setupApplicationMenu() {
           label: 'Check for Updates...',
           click: () => {
             if (!app.isPackaged) {
-              dialog.showMessageBox(mainWindow, {
+              showOwnerSafeDialog({
                 type: 'info',
                 title: 'Development Mode',
                 message: 'Auto-updates are only available in packaged builds.',
@@ -811,7 +792,7 @@ function setupApplicationMenu() {
         {
           label: 'About MeloAmp',
           click: () => {
-            dialog.showMessageBox(mainWindow, {
+            showOwnerSafeDialog({
               type: 'info',
               title: 'About MeloAmp',
               message: `MeloAmp v${app.getVersion()}`,
@@ -826,7 +807,7 @@ function setupApplicationMenu() {
             label: 'Check for Updates...',
             click: () => {
               if (!app.isPackaged) {
-                dialog.showMessageBox(mainWindow, {
+                showOwnerSafeDialog({
                   type: 'info',
                   title: 'Development Mode',
                   message: 'Auto-updates are only available in packaged builds.',

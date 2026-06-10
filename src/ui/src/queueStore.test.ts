@@ -1,10 +1,10 @@
-import { useQueueStore, RepeatMode } from './queueStore';
+import { useQueueStore, RepeatMode, Song } from './queueStore';
 
-const mockSong = (id: string, title?: string) => ({
+const mockSong = (id: string, title?: string): Song => ({
   id,
   title: title || `Song ${id}`,
-  artist: { id: 'a1', name: 'Artist 1', imageUrl: '' },
-  album: { id: 'al1', name: 'Album 1', imageUrl: '' },
+  artist: { id: 'a1', name: 'Artist 1', imageUrl: '', thumbnailUrl: '', userStarred: false, userRating: 0, albumCount: 0, songCount: 0, createdAt: '', updatedAt: '' } as any,
+  album: { id: 'al1', name: 'Album 1', imageUrl: '', releaseYear: 0 } as any,
   durationMs: 240000,
 });
 
