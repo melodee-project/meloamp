@@ -1055,7 +1055,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-builder@npm:*":
+"electron-builder@npm:^26.15.6":
   version: 26.15.6
   resolution: "electron-builder@npm:26.15.6"
   dependencies:
@@ -1093,7 +1093,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-updater@npm:*":
+"electron-updater@npm:^6.8.9":
   version: 6.8.9
   resolution: "electron-updater@npm:6.8.9"
   dependencies:
@@ -1109,7 +1109,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron@npm:*":
+"electron@npm:^43.1.1":
   version: 43.1.1
   resolution: "electron@npm:43.1.1"
   dependencies:
@@ -1259,7 +1259,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express@npm:*":
+"express@npm:^5.2.1":
   version: 5.2.1
   resolution: "express@npm:5.2.1"
   dependencies:
@@ -1995,11 +1995,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "meloamp@workspace:."
   dependencies:
-    electron: "npm:*"
-    electron-builder: "npm:*"
-    electron-updater: "npm:*"
-    express: "npm:*"
-    mpris-service: "npm:*"
+    electron: "npm:^43.1.1"
+    electron-builder: "npm:^26.15.6"
+    electron-updater: "npm:^6.8.9"
+    express: "npm:^5.2.1"
+    mpris-service: "npm:^2.1.2"
   languageName: unknown
   linkType: soft
 
@@ -2124,7 +2124,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mpris-service@npm:*":
+"mpris-service@npm:^2.1.2":
   version: 2.1.2
   resolution: "mpris-service@npm:2.1.2"
   dependencies:
