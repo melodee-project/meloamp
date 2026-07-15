@@ -274,6 +274,12 @@ export default function CommandPalette({
                   <Search />
                 </InputAdornment>
               ),
+              sx: {
+                '& fieldset': { border: 'none' },
+                borderBottom: 1,
+                borderColor: 'divider',
+                borderRadius: 0,
+              },
             },
           }}
           autoFocus

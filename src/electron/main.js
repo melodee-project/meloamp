@@ -214,9 +214,19 @@ async function cacheArtUrl(url) {
   if (!fs.existsSync(cachedArtPath)) {
     try {
       await new Promise((resolve, reject) => {
+        const cleanupPartialCacheFile = () => {
+          try {
+            if (fs.existsSync(cachedArtPath)) {
+              fs.unlinkSync(cachedArtPath);
+            }
+          } catch (cleanupError) {
+            console.error(`Failed to clean up partial album art cache file ${cachedArtPath}:`, cleanupError);
+          }
+        };
         const client = url.startsWith('https') ? https : http;
         client.get(url, (response) => {
           if (response.statusCode < 200 || response.statusCode >= 300) {
+            response.resume();
             reject(new Error(`HTTP ${response.statusCode}`));
             return;
           }
@@ -226,10 +236,27 @@ async function cacheArtUrl(url) {
             fileStream.close();
             resolve();
           });
-          fileStream.on('error', reject);
-        }).on('error', reject);
+          fileStream.on('error', (error) => {
+            cleanupPartialCacheFile();
+            reject(error);
+          });
+          response.on('error', (error) => {
+            cleanupPartialCacheFile();
+            reject(error);
+          });
+        }).on('error', (error) => {
+          cleanupPartialCacheFile();
+          reject(error);
+        });
       });
     } catch (error) {
+      try {
+        if (fs.existsSync(cachedArtPath)) {
+          fs.unlinkSync(cachedArtPath);
+        }
+      } catch (cleanupError) {
+        console.error(`Failed to clean up failed album art cache file ${cachedArtPath}:`, cleanupError);
+      }
       console.error(`Failed to download and cache album art from ${url}:`, error);
       return ''; // Return empty string if download fails
     }

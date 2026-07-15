@@ -427,9 +427,9 @@ export default function Player({ src }: { src: string }) {
                 audioRef.current.play().catch(() => setPlaying(false));
               }
             } else if (current < queue.length - 1) {
-              setCurrent(current + 1);
+              playSongAtIndex(current + 1);
             } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
-              setCurrent(0);
+              playSongAtIndex(0);
             } else {
               setPlaying(false);
             }

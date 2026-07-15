@@ -78,9 +78,16 @@ function extractColors(entry: ThemeEntry, currentMode: 'light' | 'dark') {
 }
 
 function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const normalized = hex.replace('#', '');
+  const expanded = normalized.length === 3
+    ? normalized.split('').map((char) => char + char).join('')
+    : normalized;
+  if (!/^[0-9a-fA-F]{6}$/.test(expanded)) {
+    return `rgba(0, 0, 0, ${alpha})`;
+  }
+  const r = parseInt(expanded.slice(0, 2), 16);
+  const g = parseInt(expanded.slice(2, 4), 16);
+  const b = parseInt(expanded.slice(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
@@ -92,6 +99,7 @@ interface ThemeCardProps {
 }
 
 function ThemeCard({ entry, isActive, currentMode, onApply }: ThemeCardProps) {
+  const { t } = useTranslation();
   const colors = extractColors(entry, currentMode);
   const isLight = colors.mode === 'light';
   const textColor = isLight ? '#333' : '#eee';
@@ -164,7 +172,7 @@ function ThemeCard({ entry, isActive, currentMode, onApply }: ThemeCardProps) {
       <CardActionArea onClick={() => onApply(entry.id)}>
         <CardContent sx={{ bgcolor: colors.paper, color: textColor }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>
-            {entry.name}
+            {t(`localThemeGallery.themes.${entry.id}.name`, entry.name)}
           </Typography>
           <Typography variant="caption" color={hexToRgba(textColor, 0.6)} sx={{
             display: '-webkit-box',
@@ -174,13 +182,13 @@ function ThemeCard({ entry, isActive, currentMode, onApply }: ThemeCardProps) {
             minHeight: 32,
             mt: 0.5,
           }}>
-            {entry.description}
+            {t(`localThemeGallery.themes.${entry.id}.description`, entry.description)}
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
             <Chip
               size="small"
               icon={colors.mode === 'light' ? <WbSunny sx={{ fontSize: 14 }} /> : <NightsStay sx={{ fontSize: 14 }} />}
-              label={colors.mode === 'light' ? 'Light' : 'Dark'}
+              label={colors.mode === 'light' ? t('settings.light', 'Light') : t('settings.dark', 'Dark')}
               sx={{ bgcolor: labelBg, height: 22, '& .MuiChip-icon': { ml: 0.5 }, fontSize: 11 }}
             />
             <Chip
@@ -192,7 +200,7 @@ function ThemeCard({ entry, isActive, currentMode, onApply }: ThemeCardProps) {
               <Chip
                 size="small"
                 icon={<Palette sx={{ fontSize: 14 }} />}
-                label="Bold"
+                label={t('localThemeGallery.bold', 'Bold')}
                 sx={{ bgcolor: labelBg, height: 22, '& .MuiChip-icon': { ml: 0.5 }, fontSize: 11 }}
               />
             )}
@@ -212,10 +220,10 @@ export default function LocalThemeGallery({ settings, onChange }: Props) {
   const { t } = useTranslation();
 
   const categories = [
-    { id: 'classic' as const, label: 'Classic', icon: '◉' },
-    { id: 'dark' as const, label: 'Dark', icon: '◉' },
-    { id: 'colorful' as const, label: 'Colorful', icon: '◉' },
-    { id: 'wild' as const, label: 'Wild', icon: '◉' },
+    { id: 'classic' as const, icon: '◉' },
+    { id: 'dark' as const, icon: '◉' },
+    { id: 'colorful' as const, icon: '◉' },
+    { id: 'wild' as const, icon: '◉' },
   ];
 
   return (
@@ -224,8 +232,10 @@ export default function LocalThemeGallery({ settings, onChange }: Props) {
         {t('settings.theme', 'Themes')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 600 }}>
-        Choose from 18 hand-crafted themes — from clean classics to bold, wild designs.
-        Themes are stored locally and don't depend on the server.
+        {t(
+          'localThemeGallery.intro',
+          'Choose from 18 hand-crafted themes — from clean classics to bold, wild designs. Themes are stored locally and do not depend on the server.'
+        )}
       </Typography>
 
       {categories.map((cat) => {
@@ -234,9 +244,9 @@ export default function LocalThemeGallery({ settings, onChange }: Props) {
         return (
           <Box key={cat.id} sx={{ mb: 4 }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              {cat.label}
+              {t(`localThemeGallery.categories.${cat.id}`, `${cat.id.charAt(0).toUpperCase()}${cat.id.slice(1)}`)}
               <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                ({items.length} themes)
+                {t('localThemeGallery.themeCount', '({{count}} themes)', { count: items.length })}
               </Typography>
             </Typography>
             <Grid container spacing={2}>
