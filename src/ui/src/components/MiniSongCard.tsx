@@ -130,7 +130,7 @@ const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
         </Typography>
       </Box>
       <Box sx={{ flex: 1, minWidth: 0, pr: 1 }}>
-        <Typography variant="subtitle2" noWrap fontWeight={600}>
+        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
           {song.title}
         </Typography>
         <Typography variant="body2" color="text.secondary" noWrap>

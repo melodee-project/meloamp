@@ -189,10 +189,9 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
           </ListItemIcon>
           <ListItemText 
             primary={item.label} 
-            primaryTypographyProps={{ 
-              fontSize: '0.875rem',
-              fontWeight: isActive ? 600 : 400,
-            }} 
+            slotProps={{ primary: { 
+              sx: { fontSize: '0.875rem', fontWeight: isActive ? 600 : 400 },
+            } }} 
           />
         </ListItemButton>
       </ListItem>
@@ -209,12 +208,14 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
         >
           <ListItemText
             primary={section.label}
-            primaryTypographyProps={{
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              color: 'text.secondary',
-            }}
+            slotProps={{ primary: {
+              sx: {
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                color: 'text.secondary',
+              },
+            } }}
           />
           {isExpanded ? (
             <ExpandLess fontSize="small" sx={{ color: 'text.secondary' }} />
@@ -246,7 +247,7 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
           {user?.username?.[0]?.toUpperCase() || 'U'}
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle2" noWrap fontWeight={600}>
+          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
             {user?.username || 'User'}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>

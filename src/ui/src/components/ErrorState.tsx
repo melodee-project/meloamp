@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, Alert, AlertTitle } from '@mui/material';
-import { ErrorOutline, Refresh, WifiOff, LockOutlined } from '@mui/icons-material';
+import { Error as ErrorOutline, Refresh, WifiOff, LockOutlined } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 
 export type ErrorType = 'generic' | 'network' | 'notFound' | 'unauthorized' | 'forbidden';
@@ -89,7 +89,7 @@ export default function ErrorState({
         <AlertTitle>{displayTitle}</AlertTitle>
         {displayMessage}
         {details && process.env.NODE_ENV === 'development' && (
-          <Typography variant="caption" display="block" sx={{ mt: 1, fontFamily: 'monospace' }}>
+          <Typography variant="caption" sx={{ display: 'block', mt: 1, fontFamily: 'monospace' }}>
             {details}
           </Typography>
         )}

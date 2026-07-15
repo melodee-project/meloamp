@@ -221,7 +221,7 @@ export default function SearchAdvancedPage() {
               onChange={(event) => setQuery(event.target.value)}
               label={t('searchAdvanced.query', 'Query')}
               placeholder={t('search.placeholder', 'Search artists, albums, tracks...')}
-              InputProps={{ startAdornment: <Search fontSize="small" sx={{ mr: 1, opacity: 0.6 }} /> }}
+              slotProps={{ input: { startAdornment: <Search fontSize="small" sx={{ mr: 1, opacity: 0.6 }} /> } }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   loadAdvancedResults();
@@ -229,7 +229,7 @@ export default function SearchAdvancedPage() {
               }}
             />
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems="flex-start" flexWrap="wrap">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <TextField value={artist} onChange={(event) => setArtist(event.target.value)} size="small" label={t('searchAdvanced.artist', 'Artist')} />
               <TextField value={album} onChange={(event) => setAlbum(event.target.value)} size="small" label={t('searchAdvanced.album', 'Album')} />
               <TextField value={genres} onChange={(event) => setGenres(event.target.value)} size="small" label={t('searchAdvanced.genres', 'Genres')} />
@@ -237,7 +237,7 @@ export default function SearchAdvancedPage() {
               <TextField value={key} onChange={(event) => setKey(event.target.value)} size="small" label={t('searchAdvanced.key', 'Musical Key')} />
             </Stack>
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} flexWrap="wrap">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ flexWrap: 'wrap' }}>
               <TextField value={yearFrom} onChange={(event) => setYearFrom(event.target.value)} size="small" label={t('searchAdvanced.yearFrom', 'Year from')} type="number" />
               <TextField value={yearTo} onChange={(event) => setYearTo(event.target.value)} size="small" label={t('searchAdvanced.yearTo', 'Year to')} type="number" />
               <TextField value={bpmFrom} onChange={(event) => setBpmFrom(event.target.value)} size="small" label={t('searchAdvanced.bpmFrom', 'BPM from')} type="number" />
@@ -246,7 +246,7 @@ export default function SearchAdvancedPage() {
               <TextField value={durationTo} onChange={(event) => setDurationTo(event.target.value)} size="small" label={t('searchAdvanced.durationTo', 'Duration max (ms)')} type="number" />
             </Stack>
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems="center" flexWrap="wrap">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
               <Button variant="outlined" size="small" startIcon={<FilterList />} onClick={() => setActiveTypes(['songs', 'albums', 'artists'])}>
                 {t('searchAdvanced.toggleContent', 'Clear Types')}
               </Button>
@@ -305,7 +305,7 @@ export default function SearchAdvancedPage() {
               />
             </Stack>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
               <Button variant="contained" startIcon={<Search />} onClick={loadAdvancedResults}>
                 {t('searchAdvanced.execute', 'Run advanced search')}
               </Button>

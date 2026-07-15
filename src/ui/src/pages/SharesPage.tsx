@@ -277,7 +277,7 @@ export default function SharesPage() {
                       onClick={() => handleNavigate(share)}
                     >
                       {SHARE_TYPE_ICONS[share.shareType]}
-                      <Typography variant="subtitle1" noWrap fontWeight={600}>
+                      <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
                         {share.resourceName}
                       </Typography>
                     </Box>
@@ -331,11 +331,11 @@ export default function SharesPage() {
                   </Box>
 
                   <Box sx={{ mt: 1 }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Created: {formatDate(share.createdAt)}
                     </Typography>
                     {share.expiresAt && (
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         Expires: {formatDate(share.expiresAt)}
                       </Typography>
                     )}
@@ -405,7 +405,7 @@ export default function SharesPage() {
             fullWidth
             value={formData.expiresAt}
             onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             sx={{ mb: 2 }}
           />
           <FormControlLabel
@@ -444,7 +444,7 @@ export default function SharesPage() {
             fullWidth
             value={formData.expiresAt}
             onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             sx={{ mb: 2 }}
           />
           <FormControlLabel

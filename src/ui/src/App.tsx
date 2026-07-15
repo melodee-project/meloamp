@@ -44,7 +44,7 @@ import ChartsPage from './pages/ChartsPage';
 import SmartPlaylistsPage from './pages/SmartPlaylistsPage';
 import HistoryPage from './pages/HistoryPage';
 import EqualizerPage from './pages/EqualizerPage';
-import ThemesPage from './pages/ThemesPage';
+import LocalThemeGallery from './pages/LocalThemeGallery';
 import SharesPage from './pages/SharesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SearchAdvancedPage from './pages/SearchAdvancedPage';
@@ -530,7 +530,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
               {user?.isAdmin && <Route path="/admin/users" element={<AdminUsersPage />} />}
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/equalizer" element={<EqualizerPage />} />
-              <Route path="/themes" element={<ThemesPage settings={settings} onChange={setSettings} />} />
+              <Route path="/themes" element={<LocalThemeGallery settings={settings} onChange={setSettings} />} />
               <Route path="/shares" element={<SharesPage />} />
               <Route path="/shares/public/:shareUniqueId" element={<PublicSharePage />} />
             </Routes>
