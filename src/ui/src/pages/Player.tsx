@@ -296,7 +296,7 @@ export default function Player({ src }: { src: string }) {
                       <Box component="img" src={currentAlbum.imageUrl} alt={currentAlbum.name} sx={{ width: 40, height: 40, borderRadius: 1, mr: 1, objectFit: 'cover', boxShadow: 1 }} />
                     )}
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 180 }}>{currentAlbum.name}</Typography>
+                      <Typography variant="subtitle1" noWrap sx={{ maxWidth: 180, fontWeight: 600 }}>{currentAlbum.name}</Typography>
                       {currentAlbum.releaseYear && (
                         <Typography variant="caption" color="text.secondary">{currentAlbum.releaseYear}</Typography>
                       )}
@@ -308,7 +308,7 @@ export default function Player({ src }: { src: string }) {
                     {currentArtist.imageUrl && (
                       <Box component="img" src={currentArtist.imageUrl} alt={currentArtist.name} sx={{ width: 36, height: 40, borderRadius: '50%', mr: 1, objectFit: 'cover', boxShadow: 1 }} />
                     )}
-                    <Typography variant="subtitle1" fontWeight={600} noWrap sx={{ maxWidth: 140 }}>{currentArtist.name}</Typography>
+                    <Typography variant="subtitle1" noWrap sx={{ maxWidth: 140, fontWeight: 600 }}>{currentArtist.name}</Typography>
                   </Box>
                 )}
               </Box>
@@ -366,7 +366,7 @@ export default function Player({ src }: { src: string }) {
               <Box component="img" src={currentSong.imageUrl} alt={currentSong.title} sx={{ width: 70, height: 70, borderRadius: 1, mr: 2, objectFit: 'cover', boxShadow: 1 }} />
             )}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <Typography variant="subtitle1" noWrap fontWeight={600} sx={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{currentSong.title}</Typography>
+              <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '100%' }}>{currentSong.title}</Typography>
               {currentAlbum && (
                 <Typography variant="caption" color="text.secondary">
                   <Box component="span" sx={{ cursor: 'pointer', color: 'primary.main', textDecoration: 'underline' }} onClick={() => navigate(`/albums/${currentAlbum.id}`)}>
@@ -420,6 +420,20 @@ export default function Player({ src }: { src: string }) {
           onLoadedMetadata={(e) => { setDuration((e.target as HTMLAudioElement).duration); }}
           onPlaying={() => handlePlaybackSuccess()}
           onError={() => handlePlaybackError()}
+          onEnded={() => {
+            if (repeatMode === RepeatMode.ONE) {
+              if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(() => setPlaying(false));
+              }
+            } else if (current < queue.length - 1) {
+              setCurrent(current + 1);
+            } else if (repeatMode === RepeatMode.ALL && queue.length > 0) {
+              setCurrent(0);
+            } else {
+              setPlaying(false);
+            }
+          }}
         />
         <Popover open={Boolean(eqAnchor)} anchorEl={eqAnchor} onClose={handleEqClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
           <Box sx={{ p: 2, minWidth: 320 }}>

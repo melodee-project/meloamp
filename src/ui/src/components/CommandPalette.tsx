@@ -180,7 +180,7 @@ export default function CommandPalette({
     return (
       <React.Fragment key={category}>
         <Box sx={{ px: 2, py: 1, bgcolor: 'action.hover' }}>
-          <Typography variant="caption" color="text.secondary" fontWeight="medium">
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium' }}>
             {categoryLabels[category]}
           </Typography>
         </Box>
@@ -210,8 +210,7 @@ export default function CommandPalette({
               <ListItemText
                 primary={cmd.title}
                 secondary={cmd.description}
-                primaryTypographyProps={{ variant: 'body2' }}
-                secondaryTypographyProps={{ variant: 'caption' }}
+                slotProps={{ primary: { variant: 'body2' }, secondary: { variant: 'caption' } }}
               />
               {cmd.shortcut && (
                 <ListItemSecondaryAction>
@@ -248,12 +247,14 @@ export default function CommandPalette({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          position: 'fixed',
-          top: '15%',
-          m: 0,
-          maxHeight: '70vh',
+      slotProps={{
+        paper: {
+          sx: {
+            position: 'fixed',
+            top: '15%',
+            m: 0,
+            maxHeight: '70vh',
+          },
         },
       }}
     >
@@ -266,17 +267,13 @@ export default function CommandPalette({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           variant="outlined"
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-            sx: {
-              '& fieldset': { border: 'none' },
-              borderBottom: 1,
-              borderColor: 'divider',
-              borderRadius: 0,
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
             },
           }}
           autoFocus

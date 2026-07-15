@@ -191,7 +191,7 @@ export default function ChartsPage() {
                         <Typography variant="h6" color="primary" sx={{ minWidth: 24 }}>
                           {track.position}
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={600}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                           {track.song.title}
                         </Typography>
                       </Box>

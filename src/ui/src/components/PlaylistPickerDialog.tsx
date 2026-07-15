@@ -157,13 +157,13 @@ export default function PlaylistPickerDialog({
           placeholder={t('playlist.searchPlaylists')}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          InputProps={{
+          slotProps={{ input: {
             startAdornment: (
               <InputAdornment position="start">
                 <Search />
               </InputAdornment>
-            )
-          }}
+            ),
+          } }}
           sx={{ mb: 2 }}
         />
 

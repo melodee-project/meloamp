@@ -426,7 +426,7 @@ export default function PlaybackToolsPage() {
         <Typography variant="h6" sx={{ mb: 1 }}>
           {t('playbackTools.sessionControl', 'Session control')}
         </Typography>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mb: 2 }} flexWrap="wrap">
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
           <Button variant="contained" onClick={initializeBackend} disabled={loading.action} startIcon={<PowerSettingsNew />}>
             {t('playbackTools.initialize', 'Initialize backend')}
           </Button>
@@ -443,7 +443,7 @@ export default function PlaybackToolsPage() {
             {t('playbackTools.loadForSession', 'Load for session')}
           </Button>
         </Stack>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mb: 2 }} flexWrap="wrap">
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
           <TextField
             size="small"
             label={t('playbackTools.heartbeatSessionId', 'Heartbeat session ID')}
@@ -469,7 +469,7 @@ export default function PlaybackToolsPage() {
           <Typography color="text.secondary">{t('playbackTools.noSettings', 'Settings are unavailable until loaded.')}</Typography>
         ) : (
           <Stack spacing={2}>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} flexWrap="wrap">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ flexWrap: 'wrap' }}>
               <TextField
                 type="number"
                 size="small"
@@ -514,7 +514,7 @@ export default function PlaybackToolsPage() {
                 sx={{ width: 220 }}
               />
             </Stack>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} flexWrap="wrap">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ flexWrap: 'wrap' }}>
               <FormControlLabel
                 control={(
                   <Switch
@@ -554,7 +554,7 @@ export default function PlaybackToolsPage() {
             {t('playbackTools.registerEndpoint', 'Register endpoint')}
           </Button>
         </Box>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mb: 2 }} flexWrap="wrap">
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
           <TextField
             size="small"
             label={t('playbackTools.sessionApiKey', 'Session API key')}
@@ -601,7 +601,7 @@ export default function PlaybackToolsPage() {
                             {endpoint.room || t('playbackTools.noRoom', 'No room')}
                           </Typography>
                           {capabilitiesText && (
-                            <Typography variant="caption" color="text.secondary" display="block">
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               {capabilitiesText}
                             </Typography>
                           )}

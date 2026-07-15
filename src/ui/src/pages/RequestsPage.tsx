@@ -338,7 +338,7 @@ export default function RequestsPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'flex-end' }} sx={{ mb: 2 }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'flex-end' }, mb: 2 }}>
         <TextField
           fullWidth
           label={t('requests.query', 'Search')}
@@ -362,7 +362,7 @@ export default function RequestsPage() {
         <TextField value={songApiKey} onChange={(event) => setSongApiKey(event.target.value)} label={t('requests.songFilter', 'Song API key')} />
       </Stack>
 
-      <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="center" flexWrap="wrap">
+      <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <Button variant={mineOnly ? 'contained' : 'outlined'} onClick={() => setMineOnly((value) => !value)}>
           {t('requests.mineOnly', 'Mine only')}
         </Button>
@@ -487,7 +487,7 @@ export default function RequestsPage() {
           ))}
         </List>
       </Paper>
-      <Stack direction="row" spacing={1} sx={{ mt: 2 }} alignItems="center">
+      <Stack direction="row" spacing={1} sx={{ mt: 2, alignItems: 'center' }}>
         <TextField
           label={t('common.page', 'Page')}
           type="number"

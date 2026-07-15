@@ -147,7 +147,7 @@ export default function AnalyticsPage() {
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 3 }}>
               <Card sx={{ flex: 1 }}>
                 <CardContent>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <AccessTime color="primary" />
                     <Typography variant="h6">
                       {t('analytics.totalPlayTime', 'Total play time')}
@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
               </Card>
               <Card sx={{ flex: 1 }}>
                 <CardContent>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <BarChart color="primary" />
                     <Typography variant="h6">
                       {t('analytics.totalPlays', 'Total plays')}
@@ -173,7 +173,7 @@ export default function AnalyticsPage() {
               </Card>
               <Card sx={{ flex: 1 }}>
                 <CardContent>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                     <LibraryMusic color="primary" />
                     <Typography variant="h6">
                       {t('analytics.periodLabel', 'Period')}
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
           )}
 
           <Paper sx={{ p: 2 }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="h6">
                 {t('analytics.topContent', 'Top Content')}
               </Typography>

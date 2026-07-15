@@ -162,7 +162,7 @@ export default function RecommendationsPage() {
                     {getTypeIcon(item.type)}
                     <Chip label={item.type} size="small" />
                   </Box>
-                  <Typography variant="subtitle1" noWrap fontWeight={600}>
+                  <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
                     {item.name}
                   </Typography>
                   {item.artist && (

@@ -65,7 +65,7 @@ function VirtualizedRow({
         <ListItemText
           primary={song.title}
           secondary={song.artist?.name || t('queue.unknownArtist')}
-          primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
+          slotProps={{ primary: { sx: { fontWeight: song.played ? 'normal' : 'bold' } } }}
         />
       </ListItem>
     </div>
@@ -343,7 +343,7 @@ export default function QueueView() {
       <ListItemText 
         primary={song.title} 
         secondary={song.artist?.name || t('queue.unknownArtist')} 
-        primaryTypographyProps={{ fontWeight: song.played ? 'normal' : 'bold' }}
+        slotProps={{ primary: { sx: { fontWeight: song.played ? 'normal' : 'bold' } } }}
       />
     </ListItem>
   );
@@ -475,7 +475,7 @@ export default function QueueView() {
                 </Button>
               </label>
             )}
-            <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+            <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
               {t('queue.imageHint')}
             </Typography>
           </Box>

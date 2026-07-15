@@ -5,9 +5,8 @@ const express = require('express');
 const mpris = require('mpris-service');
 const fs = require('fs');
 const crypto = require('crypto');
-const stream = require('stream');
-const { promisify } = require('util');
-const got = require('got');
+const https = require('https');
+const http = require('http');
 const { autoUpdater } = require('electron-updater');
 
 let staticServer;
@@ -214,11 +213,22 @@ async function cacheArtUrl(url) {
 
   if (!fs.existsSync(cachedArtPath)) {
     try {
-      const pipelineAsync = promisify(stream.pipeline);
-      await pipelineAsync(
-        got.stream(url),
-        fs.createWriteStream(cachedArtPath)
-      );
+      await new Promise((resolve, reject) => {
+        const client = url.startsWith('https') ? https : http;
+        client.get(url, (response) => {
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            reject(new Error(`HTTP ${response.statusCode}`));
+            return;
+          }
+          const fileStream = fs.createWriteStream(cachedArtPath);
+          response.pipe(fileStream);
+          fileStream.on('finish', () => {
+            fileStream.close();
+            resolve();
+          });
+          fileStream.on('error', reject);
+        }).on('error', reject);
+      });
     } catch (error) {
       console.error(`Failed to download and cache album art from ${url}:`, error);
       return ''; // Return empty string if download fails
