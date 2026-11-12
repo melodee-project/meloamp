@@ -28,7 +28,7 @@ Melodee will be built using **React** and **Material-UI (MUI)**, run within **El
 - **Maintainability:** Modular codebase, strong typing, clear separation of concerns.
 - **Cross-Platform:** Single codebase for Windows, macOS, Linux.
 - **Auto-Update:** Support for in-app updates (Electron auto-updater).
-- **Testing:** Unit and integration tests (Jest, React Testing Library).
+- **Testing:** Unit and integration tests (Vitest, React Testing Library).
 - **Offline Support:** This application has no offline support. 
 
 #### User Feedback Patterns

@@ -55,7 +55,6 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   commands: CommandItem[];
-  isPlaying?: boolean;
 }
 
 /**
@@ -66,7 +65,6 @@ export default function CommandPalette({
   open, 
   onClose, 
   commands,
-  isPlaying = false,
 }: CommandPaletteProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');

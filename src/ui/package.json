@@ -1,155 +1,68 @@
 {
   "name": "ui",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
-  "homepage": ".",
+  "type": "module",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hello-pangea/dnd": "^18.0.1",
-    "@mui/icons-material": "^9.2.0",
-    "@mui/material": "^9.2.0",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "axios": "^1.18.1",
-    "i18next": "^26.3.6",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-i18next": "^17.0.9",
-    "react-router-dom": "^7.18.1",
-    "react-scripts": "5.0.1",
-    "react-window": "^2.2.7",
-    "zustand": "^5.0.14"
+    "@mui/icons-material": "^9.5.0",
+    "@mui/material": "^9.5.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.10",
+    "axios": "^1.21.1",
+    "i18next": "^27.1.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-i18next": "^18.0.1",
+    "react-router-dom": "^7.18.5",
+    "react-window": "^2.5.3",
+    "zustand": "^5.1.0"
   },
   "scripts": {
-    "start": "node scripts/run-cra.js start",
-    "dev": "node scripts/run-cra.js start",
-    "build": "node scripts/run-cra.js build",
-    "test": "node scripts/run-cra.js test",
-    "test:coverage": "node scripts/run-cra.js test --watchAll=false --coverage",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
-    "typecheck": "tsc --noEmit",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=20"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "jest": {
-    "collectCoverageFrom": [
-      "src/**/*.{ts,tsx}",
-      "!src/**/*.d.ts",
-      "!src/index.tsx",
-      "!src/setupTests.ts",
-      "!src/**/*.test.{ts,tsx}",
-      "!src/**/*.spec.{ts,tsx}"
-    ],
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "json-summary"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "<rootDir>/src/setupTests.ts"
-    ],
-    "moduleNameMapper": {
-      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
-      "^react-router$": "<rootDir>/node_modules/react-router/dist/development/index.js",
-      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
-    },
-    "transformIgnorePatterns": [
-      "node_modules/(?!(axios|react-router|react-router-dom)/)"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 30,
-        "functions": 29,
-        "lines": 39,
-        "statements": 37
-      },
-      "./src/api.ts": {
-        "branches": 85,
-        "functions": 90,
-        "lines": 90,
-        "statements": 85
-      },
-      "./src/queueStore.ts": {
-        "branches": 68,
-        "functions": 90,
-        "lines": 90,
-        "statements": 90
-      },
-      "./src/settings.ts": {
-        "branches": 45,
-        "functions": 80,
-        "lines": 90,
-        "statements": 80
-      },
-      "./src/storage.ts": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      },
-      "./src/themes/registry.ts": {
-        "branches": 90,
-        "functions": 90,
-        "lines": 90,
-        "statements": 90
-      },
-      "./src/utils/*.ts": {
-        "branches": 80,
-        "functions": 90,
-        "lines": 80,
-        "statements": 80
-      },
-      "./src/types/settings.ts": {
-        "branches": 90,
-        "functions": 90,
-        "lines": 90,
-        "statements": 90
-      }
-    }
+    "node": ">=22.12.0"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "^26.1.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@types/react-window": "^2.0.0",
-    "ajv": "^8.20.0",
-    "ajv-keywords": "^5.1.0",
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "axios-mock-adapter": "^2.1.0",
-    "typescript": "^5.9.3"
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-testing-library": "^7.16.2",
+    "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   },
-  "overrides": {
-    "nth-check": "^2.1.1",
-    "postcss": "^8.4.31",
-    "browserslist": "^4.28.0"
-  },
-  "peerDependencyRules": {
-    "allowedVersions": {
-      "typescript": "5"
-    }
+  "resolutions": {
+    "brace-expansion@npm:^1.0.0": "^1.1.21",
+    "brace-expansion@npm:^2.0.0": "^2.1.7",
+    "baseline-browser-mapping": "^2.11.0",
+    "browserslist": "^4.28.7",
+    "fast-uri": "^3.1.9",
+    "form-data": "^4.0.6",
+    "js-yaml": "^4.3.2",
+    "source-map-js": "^1.2.2",
+    "tar": "^7.5.21",
+    "undici@npm:^6.0.0": "^6.29.1"
   }
 }

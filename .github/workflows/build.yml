@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Enable and prepare Yarn 4
         run: |
@@ -40,7 +40,7 @@ jobs:
         run: yarn install --immutable
 
       - name: Run static prechecks
-        run: python3 scripts/do-prechecks.py --fast
+        run: python3 scripts/do-prechecks.py --fast --audit
 
   # Run tests first
   test:
@@ -53,7 +53,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Enable and prepare Yarn 4
         run: |
@@ -92,7 +92,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Enable and prepare Yarn 4
         run: |
@@ -108,11 +108,9 @@ jobs:
         working-directory: src/ui
         run: yarn install --immutable
 
-      - name: Build React UI
+      - name: Build UI (Vite)
         working-directory: src/ui
         run: yarn build
-        env:
-          CI: false  # Don't treat warnings as errors
 
       - name: Upload UI build
         uses: actions/upload-artifact@v4
@@ -133,7 +131,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Enable and prepare Yarn 4
         run: |
@@ -181,7 +179,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Enable and prepare Yarn 4
         run: |
@@ -229,7 +227,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Enable and prepare Yarn 4
         run: |

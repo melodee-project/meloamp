@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-11
+
+### Changed
+- **UI build tooling: create-react-app → Vite 8.** `react-scripts` is gone.
+  - `vite.config.ts` handles dev/build/test config; `index.html` moved to the
+    Vite root; assets build to `build/` as before.
+  - Tests run on **Vitest 5 + jsdom** (`vi.*` instead of `jest.*`,
+    `@testing-library/jest-dom/vitest`, `vi.hoisted` for mock factories).
+    All 281 tests pass; coverage is 45% lines (unchanged).
+  - ESLint moved to a flat config (`eslint.config.mjs`) with ESLint 10,
+    typescript-eslint, react-hooks and testing-library plugins.
+  - `REACT_APP_API_URL` remains supported; `VITE_API_URL` is preferred.
+- **All direct dependencies updated to their latest releases** (React 19.3,
+  MUI 9.5, axios 1.21, i18next 27, react-i18next 18, react-router 7.18,
+  zustand 5.1, react-window 2.5, Electron 45.3, electron-builder 26.18,
+  electron-updater 6.8, Express 5.3, Vite 8.3, Vitest 5.1).
+### Fixed
+- **electron-builder config** moved `nsis`/`portable` options to the build root
+  (they were under `build.win`, which electron-builder 26.18 rejects) and
+  dropped the redundant `directories.app`. Verified with a real
+  `electron-builder --linux dir` package run.
+
+- Node baseline raised to **22.12+** (required by Vite 8, Vitest 5, Electron 45);
+  CI now uses Node 22. Root `.yarnrc.yml` enables dependency build scripts so
+  Electron's binary postinstall runs.
+- TypeScript is pinned to **6.0.3** rather than 7.0.2: the latest
+  `typescript-eslint` (8.72) supports `<6.1.0`. Remove the pin once
+  typescript-eslint supports TS 7.
+
+### Security
+- **All 284 open Dependabot alerts resolved** (4 critical, 152 high,
+  104 medium, 24 low) across both lockfiles.
+  - Removing `react-scripts` eliminated webpack-dev-server, postcss <8.5.12,
+    svgo, launch-editor, shell-quote, websocket-driver, node-forge, serialized
+    JavaScript and Babel/rollup advisories from `src/ui`.
+  - Upgrading Electron 43 → 45.3.1 cleared the Electron advisories.
+  - Patched transitives are pinned with `resolutions` (brace-expansion,
+    undici, tar, js-yaml, fast-uri, form-data, @xmldom/xmldom, xml2js,
+    browserslist, baseline-browser-mapping, source-map-js).
+  - `scripts/check.py repo` now fails if `react-scripts` returns or the Node
+    engine range drops below 22.12.
+
+
 ## [1.4.0] - 2026-11-11
 
 ### Fixed

@@ -123,8 +123,8 @@ export default function PlaylistDetailView() {
     try {
       const response = await apiRequest<unknown>(`/playlists/${id}/songs`, { params: { pageSize: 200 } });
       setSongs(unwrapApiPage<Song>(response.data).items);
-    } catch (err) {
-      console.error('Failed to load playlist songs', err);
+    } catch (error) {
+      console.error('Failed to load playlist songs', error);
     } finally {
       setSongsLoading(false);
     }
@@ -262,7 +262,7 @@ export default function PlaylistDetailView() {
     if (playlist.songCount && songs.length < playlist.songCount) {
       try {
         allSongs = await fetchAllSongs();
-      } catch (err) {
+      } catch {
         setSnackbar({ open: true, message: t('playlistDetail.loadError'), severity: 'error' });
         return;
       }

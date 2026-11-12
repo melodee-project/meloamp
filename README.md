@@ -4,7 +4,7 @@
 
 **MeloAmp** is a cross-platform desktop music client for the [Melodee](https://melodee.org) API. It uses:
 
-- React 19 + MUI 9 frontend
+- React 19 + MUI 9 frontend built with Vite
 - Electron + Express shell
 - Zustand for UI state
 - React Router + i18n + Material theming
@@ -37,7 +37,7 @@ It targets Linux, Windows, and macOS.
 
 ```text
 src/
-  ui/       # React 19 + MUI 9 + Zustand app
+  ui/       # React 19 + MUI 9 + Zustand app (Vite)
   electron/  # Electron main process + preload + package/build config
 scripts/    # Build scripts and quality gates (check.py / do-prechecks.py)
 AGENTS.md  # Local development and architecture instructions
@@ -67,7 +67,7 @@ There is no shared workspace root config.
 
 ## Prerequisites
 
-- Node.js 20+ (CI uses Node 20)
+- Node.js 22.12+ (CI uses Node 22)
 - Yarn 4.x (repo enforces this via `packageManager` in the root `package.json`)
   - `yarn --version` should report `4.x`
 - `rsync` for Linux packaging script
@@ -117,7 +117,7 @@ node -v
 yarn -v
 ```
 
-- Required baseline: Node 20+, Yarn 4.x.
+- Required baseline: Node 22.12+, Yarn 4.x.
 - If `yarn -v` is not a 4.x version, run:
 
 ```bash
@@ -226,10 +226,11 @@ The app serves on `localhost:3001` with fallback ports if already in use.
 From `src/ui`:
 
 ```bash
-yarn test              # interactive/watch mode
+yarn test              # Vitest watch mode
+yarn test run          # single run
 yarn test:coverage     # single run + coverage thresholds
 yarn typecheck         # tsc --noEmit
-yarn lint              # eslint, zero warnings allowed
+yarn lint              # eslint (flat config), zero warnings allowed
 ```
 
 From `src/electron`:
@@ -246,6 +247,7 @@ Electron helpers, typecheck, lint, tests + coverage, production build):
 ```bash
 python3 scripts/do-prechecks.py
 python3 scripts/do-prechecks.py --fast   # skip tests + build
+python3 scripts/do-prechecks.py --audit  # include dependency audits (network)
 python3 scripts/check.py --list          # list individual gates
 ```
 
@@ -350,7 +352,7 @@ GitHub Actions is defined in `.github/workflows/build.yml` and does:
 - State: Zustand stores (`src/ui/src/queueStore.ts`), not Redux/context for app state
 - Themes: MUI theme map in `src/ui/src/themes/`
 - i18n: `react-i18next`, locale resources under `src/ui/src/locales/`
-- Testing: Jest + React Testing Library, `src/ui/src/test` helpers
+- Testing: Vitest + React Testing Library, `src/ui/src/test` helpers
 
 ### Electron shell
 

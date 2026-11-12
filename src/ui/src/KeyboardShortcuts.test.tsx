@@ -3,7 +3,7 @@ import { useKeyboardShortcuts, formatShortcut } from './hooks/useKeyboardShortcu
 
 describe('useKeyboardShortcuts', () => {
   it('calls action when shortcut matches', () => {
-    const action = jest.fn();
+    const action = vi.fn();
     
     renderHook(() => 
       useKeyboardShortcuts([
@@ -23,7 +23,7 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('does not call action when shortcut does not match', () => {
-    const action = jest.fn();
+    const action = vi.fn();
     
     renderHook(() => 
       useKeyboardShortcuts([
@@ -43,7 +43,7 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('does not trigger shortcuts when disabled', () => {
-    const action = jest.fn();
+    const action = vi.fn();
     
     renderHook(() => 
       useKeyboardShortcuts(
@@ -63,7 +63,7 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('skips disabled shortcuts', () => {
-    const action = jest.fn();
+    const action = vi.fn();
     
     renderHook(() => 
       useKeyboardShortcuts([
@@ -82,7 +82,7 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('handles space key', () => {
-    const action = jest.fn();
+    const action = vi.fn();
     
     renderHook(() => 
       useKeyboardShortcuts([
@@ -100,7 +100,7 @@ describe('useKeyboardShortcuts', () => {
   });
 
   it('handles escape key', () => {
-    const action = jest.fn();
+    const action = vi.fn();
     
     renderHook(() => 
       useKeyboardShortcuts([

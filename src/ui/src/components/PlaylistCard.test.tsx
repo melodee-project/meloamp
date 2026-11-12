@@ -9,9 +9,9 @@ import * as testUtils from '../test/testUtils';
 
 const theme = createTheme({ palette: { mode: 'light' } });
 
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
   useNavigate: () => mockNavigate,
 }));
 
@@ -29,7 +29,7 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe('PlaylistCard', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders playlist name', () => {

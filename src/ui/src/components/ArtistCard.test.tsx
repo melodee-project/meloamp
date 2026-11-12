@@ -3,9 +3,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import ArtistCard from './ArtistCard';
 import { createMockArtist } from '../test/testUtils';
 
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
   useNavigate: () => mockNavigate,
 }));
 

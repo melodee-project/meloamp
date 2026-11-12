@@ -24,13 +24,13 @@ describe('Sidebar', () => {
   const defaultProps = {
     user: { username: 'TestUser', email: 'test@example.com' },
     isOpen: true,
-    onToggle: jest.fn(),
-    onThemeToggle: jest.fn(),
+    onToggle: vi.fn(),
+    onThemeToggle: vi.fn(),
     themeMode: 'light' as const,
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders user info', () => {

@@ -68,8 +68,7 @@ main() {
   log "Step 1/5: Install + build React UI"
   yarn_install_if_needed "$UI_DIR"
 
-  # If your UI is CRA, uncomment to speed builds (no source maps):
-  # export GENERATE_SOURCEMAP=false
+  # Sourcemaps are disabled in vite.config.ts; enable there if you need them.
   (cd "$UI_DIR" && time yarn build)
 
   log "Step 2/5: Sync UI build -> Electron build folder"

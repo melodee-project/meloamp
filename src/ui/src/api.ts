@@ -3,7 +3,8 @@ import { LoginRequest, LoginResponse, Meta } from './apiModels';
 import { clearUser } from './storage';
 import { getErrorStatus } from './utils/errors';
 
-let API_BASE = localStorage.getItem('serverUrl') || process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
+const envApiUrl = import.meta.env.VITE_API_URL ?? import.meta.env.REACT_APP_API_URL;
+let API_BASE = localStorage.getItem('serverUrl') || envApiUrl || 'http://localhost:4000/api/v1';
 
 let jwt: string | null = localStorage.getItem('jwt');
 

@@ -69,7 +69,7 @@ describe('settings store', () => {
   });
 
   test('subscribeToUserSettings receives local updates and unsubscribes', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const unsubscribe = subscribeToUserSettings(listener);
 
     updateUserSettings({ theme: 'forest' });
@@ -82,10 +82,10 @@ describe('settings store', () => {
   });
 
   test('does not throw when persistence fails', () => {
-    const spy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota exceeded');
     });
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     expect(() => updateUserSettings({ theme: 'ocean' })).not.toThrow();
     expect(warn).toHaveBeenCalled();

@@ -35,7 +35,7 @@ describe('useApiEffect', () => {
   });
 
   test('ignores cancellation errors and logs real failures', async () => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     renderHook(() => useApiEffect(async () => {
       throw Object.assign(new Error('canceled'), { code: 'ERR_CANCELED' });

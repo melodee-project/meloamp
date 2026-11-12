@@ -28,12 +28,12 @@ describe('usePlaybackBridge', () => {
   });
 
   const setup = () => {
-    const onTogglePlay = jest.fn();
-    const onNext = jest.fn();
-    const onPrevious = jest.fn();
-    const onStop = jest.fn();
-    const onSeekTo = jest.fn();
-    const onSeekBy = jest.fn();
+    const onTogglePlay = vi.fn();
+    const onNext = vi.fn();
+    const onPrevious = vi.fn();
+    const onStop = vi.fn();
+    const onSeekTo = vi.fn();
+    const onSeekBy = vi.fn();
 
     const view = renderHook(() => usePlaybackBridge({
       audioRef,

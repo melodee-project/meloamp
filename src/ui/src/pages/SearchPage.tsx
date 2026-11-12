@@ -140,7 +140,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           try {
             const target = search ? `${location.pathname}?q=${encodeURIComponent(search)}` : location.pathname;
             navigate(target, { replace: true });
-          } catch (e) {
+          } catch {
             // ignore navigation errors
           }
         })

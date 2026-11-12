@@ -143,8 +143,10 @@ def check_packaging(problems: list[str]) -> None:
         problems.append("electron-builder artifactName must include ${ext}")
 
     win = build.get("win", {})
-    nsis = win.get("nsis", {}).get("artifactName", "")
-    portable = win.get("portable", {}).get("artifactName", "")
+    if "nsis" in win or "portable" in win:
+        problems.append("nsis/portable options belong at build root, not under build.win")
+    nsis = build.get("nsis", {}).get("artifactName", "")
+    portable = build.get("portable", {}).get("artifactName", "")
     if not nsis or not portable:
         problems.append("Windows nsis/portable targets need distinct artifactName values")
     elif nsis == portable:
@@ -240,6 +242,24 @@ def check_icon_button_labels(problems: list[str]) -> None:
             index += len("<IconButton")
 
 
+def check_no_legacy_cra(problems: list[str]) -> None:
+    deps = read_json(UI_DIR / "package.json")
+    all_deps = {**deps.get("dependencies", {}), **deps.get("devDependencies", {})}
+    if "react-scripts" in all_deps:
+        problems.append("src/ui still depends on react-scripts; the app builds with Vite")
+
+
+def check_node_engines(problems: list[str]) -> None:
+    for package in (UI_DIR / "package.json", ELECTRON_DIR / "package.json"):
+        engine = read_json(package).get("engines", {}).get("node", "")
+        if not engine:
+            problems.append(f"{package.relative_to(ROOT)} must declare an engines.node range")
+        elif "22.12" not in engine:
+            problems.append(
+                f"{package.relative_to(ROOT)} engines.node should require >=22.12 (Vite 8 / Vitest 5)"
+            )
+
+
 def check_no_dead_theme_json(problems: list[str]) -> None:
     theme_dir = UI_DIR / "src" / "themes"
     for path in theme_dir.glob("*.json"):
@@ -260,6 +280,8 @@ def repo_gate(_: Sequence[str]) -> int:
     check_electron_helpers(problems)
     check_no_dead_theme_json(problems)
     check_icon_button_labels(problems)
+    check_no_legacy_cra(problems)
+    check_node_engines(problems)
 
     if problems:
         raise GateFailure("Repository checks failed:\n  - " + "\n  - ".join(problems))
@@ -385,13 +407,21 @@ def ui_commands() -> list[Command]:
     eslint = UI_DIR / "node_modules" / ".bin" / "eslint"
 
     typecheck = (node, str(tsc), "--noEmit") if tsc.exists() else (yarn, "typecheck")
-    lint = (node, str(eslint), "src", "--ext", ".ts,.tsx", "--max-warnings", "0") if eslint.exists() else (yarn, "lint")
+    lint = (node, str(eslint), ".", "--max-warnings", "0") if eslint.exists() else (yarn, "lint")
 
     return [
         Command("UI typecheck", typecheck, UI_DIR),
         Command("UI lint", lint, UI_DIR),
         Command("UI tests (coverage)", (yarn, "test:coverage"), UI_DIR),
         Command("UI production build", (yarn, "build"), UI_DIR),
+    ]
+
+
+def audit_commands() -> list[Command]:
+    yarn = shutil.which("yarn") or "yarn"
+    return [
+        Command("UI dependency audit", (yarn, "npm", "audit", "--all", "--severity", "low"), UI_DIR),
+        Command("Electron dependency audit", (yarn, "npm", "audit", "--all", "--severity", "low"), ELECTRON_DIR),
     ]
 
 
@@ -417,6 +447,7 @@ GATES: dict[str, Callable[[Sequence[str]], int]] = {
     "repo": repo_gate,
     "i18n": i18n_gate,
     "electron": lambda _: command_gate(electron_commands()),
+    "audit": lambda _: command_gate(audit_commands()),
     "ui-typecheck": lambda _: command_gate(ui_commands()[:1]),
     "ui-lint": lambda _: command_gate(ui_commands()[1:2]),
     "ui-tests": lambda _: command_gate(ui_commands()[2:3]),
@@ -429,6 +460,7 @@ ALL_GATES = [
     "repo",
     "i18n",
     "electron",
+    "audit",
     "ui-typecheck",
     "ui-lint",
     "ui-tests",

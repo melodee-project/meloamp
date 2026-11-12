@@ -318,8 +318,6 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
           user={user}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
-          onThemeToggle={() => onSettingsChange({ ...settings, mode: settings.mode === 'dark' ? 'light' : 'dark' })}
-          themeMode={settings.mode}
         />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <AppBar
@@ -437,7 +435,6 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
         open={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         commands={commands}
-        isPlaying={isPlaying}
       />
     </>
   );

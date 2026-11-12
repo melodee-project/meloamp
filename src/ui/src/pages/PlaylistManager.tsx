@@ -192,7 +192,7 @@ export default function PlaylistManager() {
       setImportDialogOpen(false);
       setImportFile(null);
       fetchPlaylists();
-    } catch (err) {
+    } catch {
       setSnackbar({ open: true, message: t('playlist.importError'), severity: 'error' });
     } finally {
       setIsImporting(false);

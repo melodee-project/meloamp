@@ -2,7 +2,7 @@
 """Run local pre-push/pre-PR checks, stopping at the first failure.
 
 Wraps ``scripts/check.py`` so local checks and CI always share one definition
-of "green". Requires Node 20+, Yarn 4 (via corepack) and Python 3.9+.
+of "green". Requires Node 22.12+, Yarn 4 (via corepack) and Python 3.9+.
 
 Usage:
     python3 scripts/do-prechecks.py            # everything
@@ -34,7 +34,7 @@ class Check:
     gate: str
 
 
-def checks_for(*, fast: bool = False) -> list[Check]:
+def checks_for(*, fast: bool = False, audit: bool = False) -> list[Check]:
     """Ordered cheapest-first so obvious problems fail before slow builds."""
     checks = [
         Check("Working tree whitespace", "diff"),
@@ -42,6 +42,10 @@ def checks_for(*, fast: bool = False) -> list[Check]:
         Check("Repository hygiene", "repo"),
         Check("i18n coverage", "i18n"),
         Check("Electron syntax + tests", "electron"),
+    ]
+    if audit:
+        checks.append(Check("Dependency audit", "audit"))
+    checks += [
         Check("UI typecheck", "ui-typecheck"),
         Check("UI lint", "ui-lint"),
     ]
@@ -57,7 +61,19 @@ def validate_environment() -> None:
     if missing:
         raise RuntimeError(
             "Required tools missing from PATH: " + ", ".join(missing)
-            + ". Install Node 20+, enable Yarn 4 with corepack, and retry."
+            + ". Install Node 22.12+, enable Yarn 4 with corepack, and retry."
+        )
+
+    node_version = subprocess.run(
+        ("node", "-p", "process.versions.node"), capture_output=True, text=True, check=False
+    ).stdout.strip()
+    try:
+        major, minor = (int(part) for part in node_version.split(".")[:2])
+    except ValueError:
+        raise RuntimeError(f"Could not parse Node version {node_version!r}") from None
+    if (major, minor) < (22, 12):
+        raise RuntimeError(
+            f"Node {node_version} is too old; Vite 8 / Vitest 5 require Node >=22.12.0."
         )
 
     for package in (ROOT / "src" / "ui", ROOT / "src" / "electron"):
@@ -114,10 +130,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="skip the (slow) UI test and production build gates",
     )
+    parser.add_argument(
+        "--audit",
+        action="store_true",
+        help="also run `yarn npm audit` for both packages (requires network)",
+    )
     parser.add_argument("--list", action="store_true", help="list the gate sequence and exit")
     args = parser.parse_args(argv)
 
-    checks = checks_for(fast=args.fast)
+    checks = checks_for(fast=args.fast, audit=args.audit)
     if args.list:
         for index, check in enumerate(checks, start=1):
             print(f"{index}. {check.name} (check.py {check.gate})")

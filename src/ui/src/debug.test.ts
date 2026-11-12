@@ -3,12 +3,12 @@ import { debugLog, debugError, isDebugEnabled } from './debug';
 describe('debug utilities', () => {
   beforeEach(() => {
     localStorage.clear();
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   test('isDebugEnabled returns false by default', () => {
@@ -43,7 +43,7 @@ describe('debug utilities', () => {
   });
 
   test('isDebugEnabled handles localStorage exception gracefully', () => {
-    const getItemMock = jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('storage error'); });
+    const getItemMock = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('storage error'); });
     expect(isDebugEnabled()).toBe(false);
     getItemMock.mockRestore();
   });

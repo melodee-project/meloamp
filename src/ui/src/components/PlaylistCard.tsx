@@ -28,7 +28,7 @@ export default function PlaylistCard({ playlist, compact }: { playlist: Playlist
       // Map songs to include url property for the player
       const queueSongs = songs.map(toQueueSong);
       playNow(queueSongs); // Play the entire playlist at once
-    } catch (err) {
+    } catch {
       // Optionally show error
     }
   };

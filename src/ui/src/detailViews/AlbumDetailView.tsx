@@ -275,7 +275,7 @@ export default function AlbumDetailView() {
           <Typography variant="body2" color="text.secondary">{t('albumDetail.loadingTracks', 'Loading songs...')}</Typography>
         ) : songs.length > 0 ? (
           <List disablePadding>
-            {songs.map((song: Song, idx: number) => (
+            {songs.map((song: Song) => (
               <ListItem key={song.id} disableGutters disablePadding sx={{ width: '100%', px: 0 }}>
                 <MiniSongCard song={song} />
               </ListItem>

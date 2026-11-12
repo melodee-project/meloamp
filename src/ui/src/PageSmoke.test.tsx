@@ -122,7 +122,7 @@ describe('page smoke tests', () => {
   });
 
   test('LocalThemeGallery renders every registered theme', () => {
-    render(<LocalThemeGallery settings={{ ...DEFAULT_SETTINGS }} onChange={jest.fn()} />);
+    render(<LocalThemeGallery settings={{ ...DEFAULT_SETTINGS }} onChange={vi.fn()} />);
     expect(screen.getByText(testI18n.t('settings.theme'))).toBeInTheDocument();
     expect(screen.getAllByText('Classic').length).toBeGreaterThan(0);
   });
@@ -208,13 +208,13 @@ describe('page smoke tests', () => {
     const mock = getMockApi();
     mock.reset();
     mock.onGet('/themes').reply(200, []);
-    render(<ThemesPage settings={{ ...DEFAULT_SETTINGS }} onChange={jest.fn()} />);
+    render(<ThemesPage settings={{ ...DEFAULT_SETTINGS }} onChange={vi.fn()} />);
     await settle();
     expect(screen.getByRole('heading', { level: 4, name: 'Themes' })).toBeInTheDocument();
   });
 
   test('UserSettings renders persisted settings', () => {
-    render(<UserSettingsPage settings={{ ...DEFAULT_SETTINGS }} onChange={jest.fn()} />);
+    render(<UserSettingsPage settings={{ ...DEFAULT_SETTINGS }} onChange={vi.fn()} />);
     expect(screen.getByText(testI18n.t('settings.title'))).toBeInTheDocument();
   });
 

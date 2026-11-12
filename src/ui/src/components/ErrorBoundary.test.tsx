@@ -33,11 +33,11 @@ const ThrowError = () => {
 
 describe('ErrorBoundary', () => {
   beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   test('renders children when no error', () => {

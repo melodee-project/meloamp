@@ -1,6 +1,6 @@
 {
   "name": "meloamp",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "main": "main.js",
   "files": [
     "main.js",
@@ -21,12 +21,12 @@
   "license": "MIT",
   "description": "MeloAmp: Cross-platform streaming client for the Melodee.",
   "devDependencies": {
-    "electron": "^43.1.1",
-    "electron-builder": "^26.15.6"
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9",
-    "express": "^5.2.1",
+    "electron-updater": "^6.8.11",
+    "express": "^5.3.0",
     "mpris-service": "^2.1.2"
   },
   "overrides": {
@@ -88,13 +88,7 @@
         }
       ],
       "icon": "resources/logo.png",
-      "artifactName": "${productName}-${version}-windows-${arch}.${ext}",
-      "nsis": {
-        "artifactName": "${productName}-${version}-windows-${arch}-setup.${ext}"
-      },
-      "portable": {
-        "artifactName": "${productName}-${version}-windows-${arch}-portable.${ext}"
-      }
+      "artifactName": "${productName}-${version}-windows-${arch}.${ext}"
     },
     "mac": {
       "target": [
@@ -123,8 +117,7 @@
     },
     "directories": {
       "output": "dist",
-      "buildResources": "resources",
-      "app": "."
+      "buildResources": "resources"
     },
     "extraResources": [
       {
@@ -135,9 +128,29 @@
         "from": "resources/logo.png",
         "to": "resources/logo.png"
       }
-    ]
+    ],
+    "nsis": {
+      "artifactName": "${productName}-${version}-windows-${arch}-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-windows-${arch}-portable.${ext}"
+    }
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
+  },
+  "resolutions": {
+    "@xmldom/xmldom@npm:^0.8.0": "^0.8.15",
+    "@xmldom/xmldom@npm:^0.9.0": "^0.9.12",
+    "brace-expansion@npm:^1.0.0": "^1.1.21",
+    "brace-expansion@npm:^2.0.0": "^2.1.7",
+    "brace-expansion@npm:^5.0.0": "^5.0.11",
+    "fast-uri": "^3.1.9",
+    "form-data": "^4.0.6",
+    "js-yaml": "^4.3.2",
+    "tar": "^7.5.21",
+    "undici@npm:^6.0.0": "^6.29.1",
+    "undici@npm:^7.0.0": "^7.30.1",
+    "xml2js": "^0.5.0"
   }
 }

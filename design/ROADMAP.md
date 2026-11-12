@@ -20,10 +20,11 @@ It is intentionally implementation-oriented: each feature includes acceptance cr
   repo hygiene, i18n, Electron tests, typecheck, lint, tests + coverage, build)
 - [x] **R0.7 Fix committed merge conflicts** in `src/ui/package.json` / `yarn.lock`;
   Yarn-4 immutable installs are clean again
-- [ ] **R0.8 Migrate the UI from create-react-app to Vite** (CRA 5 is
-  unmaintained; the `overrides` block exists only to patch its transitive deps).
-  Ship as an isolated PR: Vite + `@vitejs/plugin-react`, Vitest + jsdom for the
-  existing RTL suites, then delete `react-scripts` and the `jest` block.
+- [x] **R0.8 Migrate the UI from create-react-app to Vite**. Replaced
+  `react-scripts` with Vite 8 + `@vitejs/plugin-react`, moved the test suite to
+  Vitest 5 + jsdom, adopted a flat ESLint config, and removed the CRA-specific
+  `jest`/`overrides` blocks. This also removed the largest source of Dependabot
+  alerts (webpack-dev-server and its transitive tree).
 
 ### Milestone 1 — Playback Experience
 - [x] **P1.1 Repeat modes** (Off / Repeat All / Repeat One)
@@ -107,7 +108,7 @@ You are a coding agent working in this repo: **MeloAmp** (React + MUI UI in `src
 - Prefer minimal, surgical changes; do not refactor unrelated code.
 
 **Test requirements (required to complete):**
-- Add/replace tests under `src/ui/src` using Jest + React Testing Library.
+- Add/replace tests under `src/ui/src` using Vitest + React Testing Library.
 - Provide tests for:
   - The primary success path
   - At least one failure/error path (API error or validation)
@@ -154,7 +155,7 @@ You are a coding agent working in this repo: **MeloAmp** (React + MUI UI in `src
   - [src/ui/src/setupTests.ts](src/ui/src/setupTests.ts) (extend)
 
 **Implementation Tasks**
-- [ ] Replace default CRA test with a smoke test that renders `App` and asserts nav buttons exist.
+- [x] Replace the default CRA test with a smoke test that renders `App` and asserts nav buttons exist.
 - [ ] Add a test that when no JWT is present, Login screen is shown.
 - [ ] Add a test that when JWT is present and `/users/me` succeeds, dashboard loads.
 

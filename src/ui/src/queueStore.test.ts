@@ -248,12 +248,12 @@ describe('useQueueStore persistence and bounds', () => {
   });
 
   test('queue persistence strips credentials from stream URLs', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const song = { ...mockSong('s1'), url: 'https://api.test/stream/1?jwt=secret' };
     useQueueStore.getState().addToQueue(song);
-    jest.advanceTimersByTime(1500);
+    vi.advanceTimersByTime(1500);
     const stored = JSON.parse(localStorage.getItem('queueState') || '{}');
     expect(stored.queue[0].url).not.toContain('jwt');
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 });

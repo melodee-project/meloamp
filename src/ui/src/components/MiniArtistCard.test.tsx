@@ -1,11 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { createMockArtist } from '../test/testUtils';
 import MiniArtistCard from './MiniArtistCard';
 
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
   useNavigate: () => mockNavigate,
 }));
 
@@ -26,7 +26,7 @@ describe('MiniArtistCard', () => {
   test('navigates on click', () => {
     const artist = createMockArtist({ id: 'a1' });
     render(<MiniArtistCard artist={artist} />);
-    screen.getByTitle('Test Artist').click();
+    fireEvent.click(screen.getByTitle('Test Artist'));
     expect(mockNavigate).toHaveBeenCalledWith('/artists/a1');
   });
 });

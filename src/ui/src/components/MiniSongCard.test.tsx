@@ -8,9 +8,9 @@ import * as testUtils from '../test/testUtils';
 
 const theme = createTheme({ palette: { mode: 'light' } });
 
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
   useNavigate: () => mockNavigate,
 }));
 
@@ -26,7 +26,7 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe('MiniSongCard', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders song title', () => {
@@ -67,7 +67,7 @@ describe('MiniSongCard', () => {
 
   test('handles onClick callback when provided', () => {
     const song = createMockSong();
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     renderWithProviders(<MiniSongCard song={song} onClick={onClick} />);
     fireEvent.click(screen.getByText('Test Song'));
     expect(onClick).toHaveBeenCalledWith(song);

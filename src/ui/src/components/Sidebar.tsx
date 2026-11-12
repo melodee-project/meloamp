@@ -53,8 +53,6 @@ interface SidebarProps {
   user: SidebarUser | null;
   isOpen: boolean;
   onToggle: () => void;
-  onThemeToggle: () => void;
-  themeMode: 'light' | 'dark';
 }
 
 interface NavSection {
@@ -72,7 +70,7 @@ interface NavItem {
 
 const DRAWER_WIDTH = 240;
 
-export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMode }: SidebarProps) {
+export default function Sidebar({ user, isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));

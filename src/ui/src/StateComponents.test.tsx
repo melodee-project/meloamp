@@ -70,7 +70,7 @@ describe('EmptyState', () => {
   });
 
   it('renders action button when provided', () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     renderWithI18n(
       <EmptyState 
         action={{ label: 'Add Songs', onClick: handleClick }} 
@@ -107,7 +107,7 @@ describe('ErrorState', () => {
   });
 
   it('renders retry button when onRetry is provided', () => {
-    const handleRetry = jest.fn();
+    const handleRetry = vi.fn();
     renderWithI18n(<ErrorState onRetry={handleRetry} />);
     
     const button = screen.getByRole('button', { name: /try again/i });

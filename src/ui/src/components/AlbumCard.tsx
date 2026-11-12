@@ -28,7 +28,7 @@ export default function AlbumCard({ album, compact }: { album: Album; compact?: 
       // Map songs to include url property for the player
       const queueSongs = songs.map(toQueueSong);
       playNow(queueSongs); // Play the entire album at once
-    } catch (err) {
+    } catch {
       // Optionally show error
     }
   };

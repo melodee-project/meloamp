@@ -47,7 +47,7 @@ function unwrapPayload<T>(value: unknown): T | null {
   if (nested && typeof nested === 'object' && ('results' in nested || 'data' in nested)) {
     return nested as T;
   }
-  if ((value as { results?: unknown }).hasOwnProperty('results')) {
+  if (Object.prototype.hasOwnProperty.call(value, 'results')) {
     return value as T;
   }
   return null;
