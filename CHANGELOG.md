@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-14
+
+### Added
+- **Visual local theme gallery** (`src/ui/src/pages/LocalThemeGallery.tsx`)
+  - Replaces the server-dependent ThemesPage at `/themes` with a local gallery
+    of all 18 built-in themes, categorized as Classic, Dark, Colorful, and Wild.
+  - Each theme card displays live color swatches (primary, secondary, paper
+    background, text), the theme's border radius, and a light/dark mode badge.
+  - One-click apply persists to localStorage with no server dependency.
+  - Hover lift animation and active theme indicator for clear feedback.
+
+### Fixed
+- **Queue playback not advancing to next track** (`src/ui/src/pages/Player.tsx`)
+  - Added `onEnded` handler to the `<audio>` element that auto-advances to
+    the next track, wraps to the start (repeat-all), restarts (repeat-one),
+    or stops at the end of the queue.
+- **`got.stream is not a function` crash in album art caching**
+  (`src/electron/main.js`)
+  - Replaced `got` (v14, ESM-only, no `got.stream` function) with native
+    Node.js `https`/`http` modules in `cacheArtUrl`, eliminating the
+    ESM/CJS compatibility issue and the runtime crash on track change.
+
+### Changed
+- All version references bumped to `1.3.0` (UI and Electron packages now
+  share a single version number).
+
 ## [1.2.0] - 2026-06-10
 
 ### Added
@@ -195,7 +221,8 @@ First feature-complete release. Cross-platform desktop client for the
 
 ### Notes
 - This is the initial public release; the `package.json` versions
-  (`ui@1.2.0` / `electron@1.1.0`) reflect in-development iteration labels
+  (`ui@1.2.0` / `electron@1.1.0`) reflect in-development iteration labels;
+  from 1.3.0 onward both packages share a single version number.
   that predate this changelog.
 - The 80+ commits before `1.0.0` are squashed here; see `git log` for
   the full pre-release history.

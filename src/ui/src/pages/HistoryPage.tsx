@@ -185,7 +185,7 @@ export default function HistoryPage() {
                   <ListItemText
                     onClick={() => handleSongClick(item.song.id)}
                     primary={
-                      <Typography variant="subtitle1" fontWeight={600}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                         {item.song.title}
                       </Typography>
                     }

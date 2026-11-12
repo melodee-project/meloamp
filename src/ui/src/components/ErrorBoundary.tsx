@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import { ErrorOutline } from '@mui/icons-material';
+import { Error as ErrorIcon } from '@mui/icons-material';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -55,7 +55,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
               boxShadow: 3,
             }}
           >
-            <ErrorOutline sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
+            <ErrorIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
             <Typography variant="h5" gutterBottom>
               Something went wrong
             </Typography>

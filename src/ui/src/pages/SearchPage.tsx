@@ -208,15 +208,15 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
               setRecentSearches(getRecentSearches());
             }
           }}
-          InputProps={{
+          slotProps={{ input: {
             startAdornment: (
               <InputAdornment position="start">
-                <IconButton disabled>
+                <IconButton disabled size="small">
                   <Search />
                 </IconButton>
               </InputAdornment>
             ),
-          }}
+          } }}
         />
       </Box>
 
@@ -232,7 +232,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           </Button>
         </Box>
         <Collapse in={showFilters}>
-          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', mb: 2 }}>
             <Chip
               label={t('search.artists', 'Artists')}
               color={activeFilters.includes('artists') ? 'primary' : 'default'}
@@ -277,7 +277,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
               {t('search.clearHistory', 'Clear')}
             </Button>
           </Box>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
             {recentSearches.map((recentQuery, index) => (
               <Chip
                 key={index}

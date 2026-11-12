@@ -167,10 +167,10 @@ export default function ArtistLookupPage() {
                   search();
                 }
               }}
-              InputProps={{ startAdornment: <Search sx={{ mr: 1, opacity: 0.75 }} /> }}
+              slotProps={{ input: { startAdornment: <Search sx={{ mr: 1, opacity: 0.75 }} /> } }}
             />
 
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} alignItems="center" flexWrap="wrap">
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
               <TextField
                 size="small"
                 type="number"
@@ -178,7 +178,7 @@ export default function ArtistLookupPage() {
                 value={limit}
                 onChange={(event) => setLimit(Number(event.target.value) || 25)}
                 sx={{ minWidth: 130 }}
-                inputProps={{ min: 1, max: 250 }}
+                slotProps={{ htmlInput: { min: 1, max: 250 } }}
               />
               <Button variant="outlined" onClick={clearSelection} disabled={!selectedProviders.length}>
                 {t('artistLookup.clearProviders', 'Clear providers')}
@@ -220,7 +220,7 @@ export default function ArtistLookupPage() {
       </Card>
 
       <Paper sx={{ p: 2 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography variant="h6">
             {t('artistLookup.results', 'Results')}
           </Typography>
@@ -261,7 +261,7 @@ export default function ArtistLookupPage() {
                             : t('artistLookup.noCandidateDetails', 'No extra candidate metadata available.')}
                         </Typography>
                         {candidate.imageUrl ? (
-                          <Typography variant="caption" display="block" color="text.secondary">
+                          <Typography variant="caption" sx={{ display: 'block' }} color="text.secondary">
                             {t('artistLookup.image', 'Image')}: {candidate.imageUrl}
                           </Typography>
                         ) : null}
