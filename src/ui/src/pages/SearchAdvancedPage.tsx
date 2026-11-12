@@ -1,4 +1,5 @@
 import React from 'react';
+import { getErrorMessage } from '../utils/errors';
 import {
   Alert,
   Box,
@@ -140,8 +141,8 @@ export default function SearchAdvancedPage() {
 
       const payloadData = unwrapPayload<AdvancedSearchResponse>(response.data);
       setAdvancedResponse(payloadData ? unwrapApiResponse(payloadData) : null);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setAdvancedLoading(false);
     }
@@ -186,8 +187,8 @@ export default function SearchAdvancedPage() {
         setSongResponse(source.data || []);
         setSongTotal(source.meta?.totalCount || 0);
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setSongsLoading(false);
     }

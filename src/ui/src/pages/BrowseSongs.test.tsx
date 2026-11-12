@@ -39,9 +39,6 @@ describe('BrowseSongs', () => {
 
   test('renders song list', async () => {
     renderWithProviders(<BrowseSongs />);
-    await testUtils.waitFor(() => {
-      const songCards = document.querySelectorAll('.MuiCard-root');
-      expect(songCards.length).toBeGreaterThan(0);
-    });
+    expect(await screen.findByText('Song One')).toBeInTheDocument();
   });
 });

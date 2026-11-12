@@ -4,10 +4,14 @@ This folder contains all theme definitions for the MeloAmp application. Themes c
 
 ## How Themes Work
 
-- **Theme Files:**
-  - Each theme has two files:
-    - A `.ts` file (e.g., `rainbowTheme.ts`) that exports a Material-UI (MUI) theme object using `createTheme`. This defines the palette, typography, and shape for the theme.
-    - A `.json` file (e.g., `rainbow.json`) that stores user settings for the theme, including the theme name and other preferences.
+- **Theme files:**
+  - Each theme lives in a `.ts` file (e.g., `rainbowTheme.ts`) that exports a
+    Material-UI (MUI) theme object using `createTheme`. This defines the palette,
+    typography, and shape for the theme.
+  - Themes are registered once in `registry.ts`; the app, settings UI, gallery,
+    and tests all read from that registry. There are no per-theme JSON files:
+    user preferences live in a single `userSettings` localStorage entry managed
+    by `src/settings.ts`.
 - **Theme Selection:**
   - Users can select a theme in the app's Settings page. The selected theme is saved in local storage and applied throughout the app using MUI's `ThemeProvider`.
   - The navigation bar and all UI elements update to reflect the active theme.
@@ -16,18 +20,14 @@ This folder contains all theme definitions for the MeloAmp application. Themes c
 
 ## Adding a New Theme
 
-1. **Create the Theme Files:**
-   - Copy an existing theme file (e.g., `classicTheme.ts`) and modify the `palette`, `typography`, and `shape` as desired. Save it as `<yourThemeName>Theme.ts`.
-   - Create a corresponding `<yourThemeName>.json` file with the following structure:
-     ```json
-     {
-       "theme": "<yourThemeName>",
-       "language": "en",
-       "highContrast": false,
-       "fontScale": 1,
-       "caching": false
-     }
-     ```
+1. **Create the theme file:**
+   - Copy an existing theme file (e.g., `classicTheme.ts`) and modify the
+     `palette`, `typography`, and `shape` as desired. Save it as
+     `<yourThemeName>Theme.ts`.
+2. **Register it** in `themes/registry.ts` (`THEME_CATALOG`) with a unique id and
+   category.
+3. **Translate it**: add `localThemeGallery.themes.<id>.name` and
+   `.description` to `src/locales/en.json` (other locales fall back to English).
 
 2. **Register the Theme in the App:**
    - Import your new theme in `App.tsx` and `index.tsx`:

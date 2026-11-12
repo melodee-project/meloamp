@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -19,6 +21,7 @@ import { toQueueSong } from '../components/toQueueSong';
 import { useQueueStore } from '../queueStore';
 
 export default function RecommendationsPage() {
+  const { t } = useTranslation();
   const [recommendations, setRecommendations] = React.useState<RecommendationsResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -51,8 +54,8 @@ export default function RecommendationsPage() {
           recs = nested;
         }
         setRecommendations(recs);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load recommendations');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to load recommendations'));
       } finally {
         setLoading(false);
       }
@@ -101,9 +104,7 @@ export default function RecommendationsPage() {
   if (loading) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Recommendations
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.recommendations')}</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {Array.from({ length: 12 }).map((_, i) => (
             <Card key={i} sx={{ width: 220 }}>
@@ -122,9 +123,7 @@ export default function RecommendationsPage() {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Recommendations
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.recommendations')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -133,18 +132,14 @@ export default function RecommendationsPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          Recommendations
-        </Typography>
+        <Typography variant="h4">{t('nav.recommendations')}</Typography>
         {recommendations?.category && (
           <Chip label={recommendations.category} color="primary" variant="outlined" />
         )}
       </Box>
 
       {recommendations?.recommendations.length === 0 ? (
-        <Typography color="text.secondary">
-          No recommendations available. Play more music to get personalized recommendations!
-        </Typography>
+        <Typography color="text.secondary">{t('recommendations.empty')}</Typography>
       ) : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {recommendations?.recommendations.map((item) => (
@@ -180,7 +175,7 @@ export default function RecommendationsPage() {
               {item.type === 'Song' && (
                 <Box sx={{ p: 1, pt: 0 }}>
                   <Tooltip title="Play now">
-                    <IconButton onClick={() => handlePlaySong(item)} color="primary">
+                    <IconButton aria-label={t('recommendations.playNow', 'Play now')} onClick={() => handlePlaySong(item)} color="primary">
                       <PlayArrow />
                     </IconButton>
                   </Tooltip>

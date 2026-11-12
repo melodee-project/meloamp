@@ -47,7 +47,7 @@ yarn_install_if_needed() {
 run_electron_build() {
   local targets=("$@")
 
-  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux "${targets[@]}")
+  (cd "$ELECTRON_DIR" && time yarn electron-builder --linux "${targets[@]}" --publish never)
 }
 
 main() {

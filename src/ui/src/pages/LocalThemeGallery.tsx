@@ -12,54 +12,19 @@ import {
 import { Check, WbSunny, NightsStay, Palette } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { UserSettings } from '../types/settings';
-import classicTheme from '../themes/classicTheme';
-import oceanTheme from '../themes/oceanTheme';
-import sunsetTheme from '../themes/sunsetTheme';
-import forestTheme from '../themes/forestTheme';
-import darkTheme from '../themes/darkTheme';
-import modernMinimalTheme from '../themes/modernMinimalTheme';
-import rainbowTheme from '../themes/rainbowTheme';
-import candyTheme from '../themes/candyTheme';
-import bubblegumTheme from '../themes/bubblegumTheme';
-import { getAuroraTheme } from '../themes/auroraTheme';
-import { getMonoContrastTheme } from '../themes/monoContrastTheme';
-import { getBerryTwilightTheme } from '../themes/berryTwilightTheme';
-import retroWaveTheme from '../themes/retroWaveTheme';
-import spaceFunkTheme from '../themes/spaceFunkTheme';
-import acidPopTheme from '../themes/acidPopTheme';
-import fiestaTheme from '../themes/fiestaTheme';
-import scarlettTheme from '../themes/scarlettTheme';
-import winAmpTheme from '../themes/winAmpTheme';
-import { Theme } from '@mui/material/styles';
+import { THEME_CATALOG, ThemeValue } from '../themes/registry';
 
 interface ThemeEntry {
   id: string;
-  name: string;
-  description: string;
   category: 'classic' | 'dark' | 'colorful' | 'wild';
-  getTheme: ((mode: 'light' | 'dark') => Theme) | Theme;
+  getTheme: ThemeValue;
 }
 
-const themeEntries: ThemeEntry[] = [
-  { id: 'classic', name: 'Classic', description: 'Clean, familiar Material Design with blue primary and orange accents', category: 'classic', getTheme: classicTheme },
-  { id: 'ocean', name: 'Ocean', description: 'Cool blues and teals inspired by the sea', category: 'classic', getTheme: oceanTheme },
-  { id: 'sunset', name: 'Sunset', description: 'Warm orange and gold tones like a setting sun', category: 'classic', getTheme: sunsetTheme },
-  { id: 'forest', name: 'Forest', description: 'Earthy greens for a natural, calming feel', category: 'classic', getTheme: forestTheme },
-  { id: 'dark', name: 'Dark', description: 'Elegant dark theme with blue and pink accents', category: 'dark', getTheme: darkTheme },
-  { id: 'modernMinimal', name: 'Modern Minimal', description: 'Black and white ultra-minimalist design with sharp edges', category: 'dark', getTheme: modernMinimalTheme },
-  { id: 'monoContrast', name: 'Mono Contrast', description: 'High-contrast monochrome with monospace typography', category: 'dark', getTheme: (mode) => getMonoContrastTheme(mode) },
-  { id: 'winAmp', name: 'WinAmp', description: 'Retro WinAmp-inspired neon green with dark grey background', category: 'dark', getTheme: winAmpTheme },
-  { id: 'retroWave', name: 'Retro Wave', description: 'Synthwave neon pink and cyan on deep purple', category: 'colorful', getTheme: retroWaveTheme },
-  { id: 'spaceFunk', name: 'Space Funk', description: 'Electric purple and magenta with rounded corners, dark cosmic', category: 'colorful', getTheme: spaceFunkTheme },
-  { id: 'aurora', name: 'Aurora', description: 'Teal and amber aurora borealis inspired, adapts to light/dark', category: 'colorful', getTheme: (mode) => getAuroraTheme(mode) },
-  { id: 'berryTwilight', name: 'Berry Twilight', description: 'Rich berry and lavender hues, adapts to light/dark', category: 'colorful', getTheme: (mode) => getBerryTwilightTheme(mode) },
-  { id: 'rainbow', name: 'Rainbow', description: 'Bold rainbow palette with hot pink primary and comic sans', category: 'wild', getTheme: rainbowTheme },
-  { id: 'candy', name: 'Candy', description: 'Sweet candy pink and turquoise with playful rounded corners', category: 'wild', getTheme: candyTheme },
-  { id: 'bubblegum', name: 'Bubblegum', description: 'Soft pastel pinks and peaches with extra-round corners', category: 'wild', getTheme: bubblegumTheme },
-  { id: 'acidPop', name: 'Acid Pop', description: 'Neon acid green and vivid red — loud and proud', category: 'wild', getTheme: acidPopTheme },
-  { id: 'fiesta', name: 'Fiesta', description: 'Vibrant orange and pink party palette, bold and celebratory', category: 'wild', getTheme: fiestaTheme },
-  { id: 'scarlett', name: 'Scarlett', description: 'Deep indigo with hot pink, firebrick red, and gold accents', category: 'wild', getTheme: scarlettTheme },
-];
+const themeEntries: ThemeEntry[] = THEME_CATALOG.map(({ id, category, value }) => ({
+  id,
+  category,
+  getTheme: value,
+}));
 
 function extractColors(entry: ThemeEntry, currentMode: 'light' | 'dark') {
   const theme = typeof entry.getTheme === 'function'
@@ -72,7 +37,7 @@ function extractColors(entry: ThemeEntry, currentMode: 'light' | 'dark') {
     background: p.background?.default || '#f5f5f5',
     paper: p.background?.paper || '#ffffff',
     text: p.text?.primary || '#000000',
-    borderRadius: (theme.shape as any)?.borderRadius || 4,
+    borderRadius: theme.shape?.borderRadius ?? 4,
     mode: p.mode || 'light',
   };
 }
@@ -172,7 +137,7 @@ function ThemeCard({ entry, isActive, currentMode, onApply }: ThemeCardProps) {
       <CardActionArea onClick={() => onApply(entry.id)}>
         <CardContent sx={{ bgcolor: colors.paper, color: textColor }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>
-            {t(`localThemeGallery.themes.${entry.id}.name`, entry.name)}
+            {t(`localThemeGallery.themes.${entry.id}.name`)}
           </Typography>
           <Typography variant="caption" color={hexToRgba(textColor, 0.6)} sx={{
             display: '-webkit-box',
@@ -182,7 +147,7 @@ function ThemeCard({ entry, isActive, currentMode, onApply }: ThemeCardProps) {
             minHeight: 32,
             mt: 0.5,
           }}>
-            {t(`localThemeGallery.themes.${entry.id}.description`, entry.description)}
+            {t(`localThemeGallery.themes.${entry.id}.description`)}
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
             <Chip
@@ -234,7 +199,7 @@ export default function LocalThemeGallery({ settings, onChange }: Props) {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 600 }}>
         {t(
           'localThemeGallery.intro',
-          'Choose from 18 hand-crafted themes — from clean classics to bold, wild designs. Themes are stored locally and do not depend on the server.'
+          'Choose from hand-crafted themes — from clean classics to bold, wild designs. Themes are stored locally and do not depend on the server.'
         )}
       </Typography>
 

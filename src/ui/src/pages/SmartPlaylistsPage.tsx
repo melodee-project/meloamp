@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -28,7 +30,7 @@ import {
   Public,
   Lock,
 } from '@mui/icons-material';
-import { apiRequest } from '../api';
+import { apiRequest, unwrapApiResponse } from '../api';
 import { SmartPlaylistModel, SmartPlaylistEvaluateResponse, Song, PaginatedResponse } from '../apiModels';
 import { toQueueSong } from '../components/toQueueSong';
 import { useQueueStore } from '../queueStore';
@@ -44,6 +46,7 @@ type SmartPlaylistEvaluatePayload =
   | { data: { data: SmartPlaylistEvaluateResponse } };
 
 export default function SmartPlaylistsPage() {
+  const { t } = useTranslation();
   const [playlists, setPlaylists] = React.useState<SmartPlaylistModel[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -54,28 +57,24 @@ export default function SmartPlaylistsPage() {
   const [selectedPlaylistId, setSelectedPlaylistId] = React.useState<string | null>(null);
   const addToQueue = useQueueStore((state) => state.addToQueue);
 
-  const fetchPlaylists = React.useCallback(async () => {
+  const fetchPlaylists = React.useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await apiRequest<SmartPlaylistListPayload>('/playlists/smart');
-      let playlistList: SmartPlaylistModel[] = [];
-      if (Array.isArray(response.data)) {
-        playlistList = response.data;
-      } else if (Array.isArray(response.data?.data)) {
-        playlistList = response.data.data;
-      } else if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
-        playlistList = response.data.data.data;
-      }
+      const response = await apiRequest<SmartPlaylistListPayload>('/playlists/smart', { signal });
+      const playlistList = unwrapApiResponse<SmartPlaylistModel[]>(response.data) ?? [];
       setPlaylists(playlistList);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load smart playlists');
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, 'Failed to load smart playlists'));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    fetchPlaylists();
+    const controller = new AbortController();
+    fetchPlaylists(controller.signal);
+    return () => controller.abort();
   }, [fetchPlaylists]);
 
   const handleCreate = async () => {
@@ -92,7 +91,7 @@ export default function SmartPlaylistsPage() {
       setCreateDialogOpen(false);
       setFormData({ name: '', mqlQuery: '', entityType: 'Song' });
       fetchPlaylists();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create smart playlist:', err);
     }
   };
@@ -110,7 +109,7 @@ export default function SmartPlaylistsPage() {
       setEditPlaylist(null);
       setFormData({ name: '', mqlQuery: '', entityType: 'Song' });
       fetchPlaylists();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to update smart playlist:', err);
     }
   };
@@ -119,7 +118,7 @@ export default function SmartPlaylistsPage() {
     try {
       await apiRequest(`/playlists/smart/${id}`, { method: 'DELETE' });
       fetchPlaylists();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to delete smart playlist:', err);
     }
     setMenuAnchor(null);
@@ -158,7 +157,7 @@ export default function SmartPlaylistsPage() {
         });
         return;
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to evaluate smart playlist:', err);
     }
   };
@@ -187,9 +186,7 @@ export default function SmartPlaylistsPage() {
   if (loading) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Smart Playlists
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.smartPlaylists')}</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} sx={{ width: 280 }}>
@@ -207,9 +204,7 @@ export default function SmartPlaylistsPage() {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Smart Playlists
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.smartPlaylists')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -218,7 +213,7 @@ export default function SmartPlaylistsPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Smart Playlists</Typography>
+        <Typography variant="h4">{t('nav.smartPlaylists')}</Typography>
         <Button
           variant="contained"
           startIcon={<Add />}
@@ -226,19 +221,13 @@ export default function SmartPlaylistsPage() {
             setFormData({ name: '', mqlQuery: '', entityType: 'Song' });
             setCreateDialogOpen(true);
           }}
-        >
-          Create
-        </Button>
+        >{t('common.create')}</Button>
       </Box>
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Smart playlists are dynamically generated based on Melodee Query Language (MQL) rules.
-      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{t('smartPlaylists.description')}</Typography>
 
       {playlists.length === 0 ? (
-        <Typography color="text.secondary">
-          No smart playlists yet. Create one to get started!
-        </Typography>
+        <Typography color="text.secondary">{t('smartPlaylists.empty')}</Typography>
       ) : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {playlists.map((playlist) => (
@@ -251,7 +240,7 @@ export default function SmartPlaylistsPage() {
                       {playlist.name}
                     </Typography>
                   </Box>
-                  <IconButton
+                  <IconButton aria-label={t('smartPlaylists.menu', 'Playlist options')}
                     size="small"
                     onClick={(e) => handleMenuOpen(e, playlist.apiKey)}
                   >
@@ -290,7 +279,7 @@ export default function SmartPlaylistsPage() {
                 </Typography>
 
                 <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                  <IconButton
+                  <IconButton aria-label={t('smartPlaylists.play')}
                     size="small"
                     color="primary"
                     onClick={() => handlePlay(playlist)}
@@ -310,19 +299,19 @@ export default function SmartPlaylistsPage() {
             <ListItemIcon>
               <Edit fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Edit</ListItemText>
+            <ListItemText>{t('common.edit')}</ListItemText>
           </MenuItem>
         )}
         <MenuItem onClick={() => selectedPlaylistId && handleDelete(selectedPlaylistId)}>
           <ListItemIcon>
             <Delete fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText>Delete</ListItemText>
+          <ListItemText>{t('common.delete')}</ListItemText>
         </MenuItem>
       </Menu>
 
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create Smart Playlist</DialogTitle>
+        <DialogTitle>{t('smartPlaylists.createTitle', 'Create Smart Playlist')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -346,15 +335,13 @@ export default function SmartPlaylistsPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreate} variant="contained" disabled={!formData.name || !formData.mqlQuery}>
-            Create
-          </Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleCreate} variant="contained" disabled={!formData.name || !formData.mqlQuery}>{t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={!!editPlaylist} onClose={() => setEditPlaylist(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Smart Playlist</DialogTitle>
+        <DialogTitle>{t('smartPlaylists.editTitle', 'Edit Smart Playlist')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -376,10 +363,8 @@ export default function SmartPlaylistsPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditPlaylist(null)}>Cancel</Button>
-          <Button onClick={handleUpdate} variant="contained" disabled={!formData.name || !formData.mqlQuery}>
-            Save
-          </Button>
+          <Button onClick={() => setEditPlaylist(null)}>{t('common.cancel')}</Button>
+          <Button onClick={handleUpdate} variant="contained" disabled={!formData.name || !formData.mqlQuery}>{t('common.save')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

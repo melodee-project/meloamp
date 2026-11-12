@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -64,6 +66,7 @@ function extractChartDetail(payload: ChartDetailResponsePayload): ChartDetailMod
 }
 
 export default function ChartsPage() {
+  const { t } = useTranslation();
   const [charts, setCharts] = React.useState<ChartListModel[]>([]);
   const [selectedChart, setSelectedChart] = React.useState<ChartDetailModel | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -77,8 +80,8 @@ export default function ChartsPage() {
         const response = await apiRequest<ChartListResponsePayload>('/charts');
         const chartList = extractChartList(response.data);
         setCharts(chartList);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load charts');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Failed to load charts'));
       } finally {
         setLoading(false);
       }
@@ -92,7 +95,7 @@ export default function ChartsPage() {
       const response = await apiRequest<ChartDetailResponsePayload>(`/charts/${chartId}`);
       const chart = extractChartDetail(response.data);
       setSelectedChart(chart);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load chart details:', err);
     } finally {
       setLoading(false);
@@ -113,9 +116,7 @@ export default function ChartsPage() {
   if (loading && charts.length === 0) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Charts
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.charts')}</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} sx={{ width: 220 }}>
@@ -134,9 +135,7 @@ export default function ChartsPage() {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Charts
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.charts')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -151,9 +150,7 @@ export default function ChartsPage() {
             color="primary"
             sx={{ cursor: 'pointer' }}
             onClick={() => setSelectedChart(null)}
-          >
-            Charts
-          </Typography>
+          >{t('nav.charts')}</Typography>
           <Typography variant="body2" color="text.secondary">
             /
           </Typography>
@@ -222,12 +219,10 @@ export default function ChartsPage() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Charts
-      </Typography>
+      <Typography variant="h4" gutterBottom>{t('nav.charts')}</Typography>
 
       {charts.length === 0 ? (
-        <Typography color="text.secondary">No charts available.</Typography>
+        <Typography color="text.secondary">{t('charts.noCharts', 'No charts available.')}</Typography>
       ) : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {charts.map((chart) => (

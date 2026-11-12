@@ -1,6 +1,6 @@
 # MeloAmp Roadmap (Features & Enhancements)
 
-_Last updated: 2025-12-19_
+_Last updated: 2026-11-11_
 
 This roadmap is written for a single primary persona:
 
@@ -16,11 +16,22 @@ It is intentionally implementation-oriented: each feature includes acceptance cr
 - [x] **R0.3 Add smoke tests for core navigation** (Dashboard/Browse/Search/Queue/Player)
 - [x] **R0.4 CI build matrix** for Linux/Windows/macOS and artifact upload
 - [x] **R0.5 Auto-update support** (electron-builder updater + update UI feedback)
+- [x] **R0.6 Pre-push quality gates** (`scripts/do-prechecks.py`: whitespace,
+  repo hygiene, i18n, Electron tests, typecheck, lint, tests + coverage, build)
+- [x] **R0.7 Fix committed merge conflicts** in `src/ui/package.json` / `yarn.lock`;
+  Yarn-4 immutable installs are clean again
+- [ ] **R0.8 Migrate the UI from create-react-app to Vite** (CRA 5 is
+  unmaintained; the `overrides` block exists only to patch its transitive deps).
+  Ship as an isolated PR: Vite + `@vitejs/plugin-react`, Vitest + jsdom for the
+  existing RTL suites, then delete `react-scripts` and the `jest` block.
 
 ### Milestone 1 — Playback Experience
 - [x] **P1.1 Repeat modes** (Off / Repeat All / Repeat One)
 - [x] **P1.2 Shuffle mode** (true shuffle + “keep current song” behavior)
-- [x] **P1.3 Gapless-ish transitions** (preload next track + minimize silence)
+- [ ] **P1.3 Gapless-ish transitions** (preload next track + minimize silence).
+  The previous implementation downloaded the next track into an unused
+  `<audio>` element; it was removed rather than left misleading. Implement by
+  swapping playback between two preloaded elements.
 - [x] **P1.4 Volume normalization** (ReplayGain/LUFS when available; safe fallback)
 - [x] **P1.5 Playback error recovery** (retry/backoff, user-visible error, skip to next)
 
@@ -48,8 +59,13 @@ It is intentionally implementation-oriented: each feature includes acceptance cr
 
 ### Milestone 5 — UX Consistency & Accessibility
 - [x] **U5.1 Standard loading/empty/error components** used everywhere
+- [x] **U5.4 Accessibility pass**: labelled icon buttons, keyboard-reachable
+  player controls, dialog labels, list semantics
 - [x] **U5.2 Keyboard shortcuts & command palette-lite** (focus search, play/pause, queue)
-- [x] **U5.3 Better localization coverage** (fill missing keys, consistent phrasing)
+- [ ] **U5.3 Better localization coverage** (fill missing keys, consistent phrasing).
+  `en.json` is now complete and enforced by `scripts/check.py`; the other eight
+  locales currently cover ~107 keys and fall back to English. Translating the
+  remaining keys is content work, not code work.
 
 ---
 

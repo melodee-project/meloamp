@@ -194,23 +194,23 @@ const SongCardComponent = function SongCard({ song, maxWidth = 345, displaySongN
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
           <Tooltip title={t('songCard.playNext')}>
-            <IconButton size="small" onClick={handlePlayNext}><SkipNext /></IconButton>
+            <IconButton aria-label={t('songCard.playNext')} size="small" onClick={handlePlayNext}><SkipNext /></IconButton>
           </Tooltip>
           <Tooltip title={favorite ? t('songCard.unfavorite') : t('songCard.favorite')}>
-            <IconButton size="small" color={favorite ? 'primary' : 'default'} onClick={handleToggleFavorite}>
+            <IconButton aria-label={favorite ? t('songCard.unfavorite') : t('songCard.favorite')} size="small" color={favorite ? 'primary' : 'default'} onClick={handleToggleFavorite}>
               {favorite ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
           </Tooltip>
           <Tooltip title={hated ? t('songCard.unhate') : t('songCard.hate')}>
-            <IconButton size="small" color={hated ? 'error' : 'default'} onClick={handleToggleHated}>
+            <IconButton aria-label={hated ? t('songCard.unhate') : t('songCard.hate')} size="small" color={hated ? 'error' : 'default'} onClick={handleToggleHated}>
               {hated ? <ThumbDown /> : <ThumbDownOffAlt />}
             </IconButton>
           </Tooltip>
           <Tooltip title={t('songCard.addLast')}>
-            <IconButton size="small" onClick={handleAddLast}><QueueMusic /></IconButton>
+            <IconButton aria-label={t('songCard.addLast')} size="small" onClick={handleAddLast}><QueueMusic /></IconButton>
           </Tooltip>
           <Tooltip title={t('songCard.addToPlaylist')}>
-            <IconButton size="small" onClick={handleAddToPlaylist}><PlaylistAdd /></IconButton>
+            <IconButton aria-label={t('songCard.addToPlaylist')} size="small" onClick={handleAddToPlaylist}><PlaylistAdd /></IconButton>
           </Tooltip>
         </Stack>
       </CardContent>

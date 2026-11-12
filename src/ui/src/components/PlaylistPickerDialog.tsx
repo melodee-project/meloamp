@@ -25,8 +25,9 @@ import {
 } from '@mui/material';
 import { Search, Add, PlaylistAdd } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import api from '../api';
-import { Playlist, PaginatedResponse } from '../apiModels';
+import api, { unwrapApiPage } from '../api';
+import { Playlist } from '../apiModels';
+import { getErrorMessage } from '../utils/errors';
 
 interface PlaylistPickerDialogProps {
   open: boolean;
@@ -62,15 +63,18 @@ export default function PlaylistPickerDialog({
       setShowCreateNew(false);
       setNewPlaylistName('');
       
-      api.get<PaginatedResponse<Playlist>>('/user/playlists', { params: { pageSize: 100 } })
-        .then(res => {
-          setPlaylists(res.data.data || []);
-          setLoading(false);
+      const controller = new AbortController();
+      api.get<unknown>('/user/playlists', { params: { pageSize: 100 }, signal: controller.signal })
+        .then((response) => {
+          setPlaylists(unwrapApiPage<Playlist>(response.data).items);
         })
-        .catch(err => {
-          setError(err?.response?.data?.message || t('playlist.loadError'));
-          setLoading(false);
+        .catch((error) => {
+          if (!controller.signal.aborted) setError(getErrorMessage(error, t('playlist.loadError')));
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
         });
+      return () => controller.abort();
     }
   }, [open, t]);
 
@@ -91,8 +95,8 @@ export default function PlaylistPickerDialog({
       await api.post(`/playlists/${selectedPlaylist.id}/songs`, { songIds });
       onSuccess?.(selectedPlaylist.name, 'added');
       onClose();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || t('playlist.addError');
+    } catch (err) {
+      const message = getErrorMessage(err, t('playlist.addError'));
       setError(message);
       onError?.(message);
     } finally {
@@ -117,8 +121,8 @@ export default function PlaylistPickerDialog({
       });
       onSuccess?.(newPlaylistName.trim(), 'created');
       onClose();
-    } catch (err: any) {
-      const message = err?.response?.data?.message || t('playlist.createError');
+    } catch (err) {
+      const message = getErrorMessage(err, t('playlist.createError'));
       setError(message);
       onError?.(message);
     } finally {

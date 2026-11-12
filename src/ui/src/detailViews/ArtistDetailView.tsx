@@ -1,11 +1,12 @@
 import { debugLog, debugError } from '../debug';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, Chip, Stack, IconButton, Tooltip, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
-import { apiRequest } from '../api';
-import api from '../api';
-import { Artist, Album, PaginatedResponse } from '../apiModels';
+import api, { apiRequest, unwrapApiPage, unwrapApiResponse } from '../api';
+import { Artist, Album } from '../apiModels';
+import { useApiEffect } from '../hooks/useApiEffect';
+import { getErrorMessage } from '../utils/errors';
 import { useTranslation } from 'react-i18next';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -28,33 +29,37 @@ export default function ArtistDetailView() {
   const { t } = useTranslation();
 
   // Fetch artist on mount
-  useEffect(() => {
+  useApiEffect(async (signal) => {
     setLoading(true);
     setError(null);
-    apiRequest(`/artists/${id}`)
-      .then((artistRes) => {
-        setArtist(artistRes.data as Artist);
-        setDislike((artistRes.data as Artist).userRating === -1);
-      })
-      .catch(err => setError(err?.response?.data?.message || err?.message || 'Failed to load artist.'))
-      .finally(() => setLoading(false));
-  }, [id]);
+    try {
+      const response = await apiRequest<Artist>(`/artists/${id}`, { signal });
+      const artistData = unwrapApiResponse<Artist>(response.data);
+      if (signal.aborted || !artistData) return;
+      setArtist(artistData);
+      setDislike(artistData.userRating === -1);
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(getErrorMessage(err, t('artistDetail.loadError', 'Failed to load artist.')));
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, [id, t]);
 
   // Fetch albums when sort changes
-  useEffect(() => {
+  useApiEffect(async (signal) => {
     if (!id) return;
-    apiRequest(`/artists/${id}/albums`, { 
-      params: { 
-        page: 1, 
-        pageSize: 100,
-        orderBy: albumSort,
-        orderDirection: sortDirection
-      } 
-    })
-      .then((albumsRes) => {
-        setAlbums((albumsRes.data as PaginatedResponse<Album>).data || []);
-      })
-      .catch(err => debugError('ArtistDetailView', 'Failed to load albums:', err));
+    try {
+      const response = await apiRequest<unknown>(`/artists/${id}/albums`, {
+        params: { page: 1, pageSize: 100, orderBy: albumSort, orderDirection: sortDirection },
+        signal,
+      });
+      if (signal.aborted) return;
+      setAlbums(unwrapApiPage<Album>(response.data).items);
+    } catch (err) {
+      if (signal.aborted) return;
+      debugError('ArtistDetailView', 'Failed to load albums:', err);
+    }
   }, [id, albumSort, sortDirection]);
 
   const handleSortChange = (field: AlbumSortField) => {
@@ -121,14 +126,14 @@ export default function ArtistDetailView() {
             <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
               <Tooltip title={artist.userStarred ? t('songCard.unfavorite') : t('songCard.favorite')}>
                 <span>
-                  <IconButton color={artist.userStarred ? 'primary' : 'default'} onClick={handleFavorite} disabled={favLoading} size="large">
+                  <IconButton aria-label={artist.userStarred ? t('songCard.unfavorite') : t('songCard.favorite')} color={artist.userStarred ? 'primary' : 'default'} onClick={handleFavorite} disabled={favLoading} size="large">
                     {artist.userStarred ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                   </IconButton>
                 </span>
               </Tooltip>
               <Tooltip title={dislike ? t('songCard.unhate') : t('songCard.hate')}>
                 <span>
-                  <IconButton color={dislike ? 'error' : 'default'} onClick={handleDislike} disabled={favLoading} size="large">
+                  <IconButton aria-label={dislike ? t('songCard.unhate') : t('songCard.hate')} color={dislike ? 'error' : 'default'} onClick={handleDislike} disabled={favLoading} size="large">
                     {dislike ? <ThumbDownIcon /> : <ThumbDownOffAltIcon />}
                   </IconButton>
                 </span>
@@ -169,7 +174,7 @@ export default function ArtistDetailView() {
                 <MenuItem value="CalculatedRating">{t('sort.rating')}</MenuItem>
               </Select>
             </FormControl>
-            <IconButton onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
+            <IconButton aria-label={t('sort.toggleDirection', 'Toggle sort direction')} onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
               {sortDirection === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
             </IconButton>
           </Box>

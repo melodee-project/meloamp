@@ -1,4 +1,6 @@
 import React from 'react';
+import { getErrorMessage } from '../utils/errors';
+import { useApiEffect } from '../hooks/useApiEffect';
 import {
   Box,
   Typography,
@@ -81,28 +83,27 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const [listeningResponse, topResponse] = await Promise.all([
-          api.get(`/analytics/listening?period=${period}`),
-          api.get(`/analytics/top/${period}`, {
-            params: { type: topType, limit: topLimit },
-          }),
-        ]);
+  useApiEffect(async (signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [listeningResponse, topResponse] = await Promise.all([
+        api.get(`/analytics/listening?period=${period}`, { signal }),
+        api.get(`/analytics/top/${period}`, {
+          params: { type: topType, limit: topLimit },
+          signal,
+        }),
+      ]);
+      if (signal.aborted) return;
 
-        setListening(normalizeListening(listeningResponse.data));
-        setTopContent(normalizeTopContent(topResponse.data));
-      } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || t('common.error'));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
+      setListening(normalizeListening(listeningResponse.data));
+      setTopContent(normalizeTopContent(topResponse.data));
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(getErrorMessage(err, t('common.error')));
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
   }, [period, topType, t]);
 
   const topItems = topContent?.items || [];
@@ -233,7 +234,7 @@ export default function AnalyticsPage() {
                   <React.Fragment key={`${item.id}-${index}`}>
                     <ListItem>
                       <ListItemText
-                        primary={`#${item.rank || index + 1} ${item.name || t('common.noResults', 'Unknown')}`}
+                        primary={`#${item.rank || index + 1} ${item.name || t('common.unknownName', 'Unknown')}`}
                         secondary={formatTopItem(item)}
                       />
                     </ListItem>

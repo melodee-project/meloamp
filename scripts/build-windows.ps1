@@ -1,51 +1,46 @@
-# build-windows.ps1 - Build MeloAmp Electron App for Windows 10/11
+# build-windows.ps1 - Build the MeloAmp Windows packages (nsis, portable, zip).
 # Usage: .\scripts\build-windows.ps1
-
 $ErrorActionPreference = 'Stop'
 
-# Change to the project root directory (the parent of scripts/)
-Set-Location (Join-Path $PSScriptRoot '..')
+$Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$UiDir = Join-Path $Root 'src/ui'
+$ElectronDir = Join-Path $Root 'src/electron'
+$BuildDir = Join-Path $ElectronDir 'build'
 
-Write-Host "`n[1/5] Building React UI..."
-Set-Location src/ui
-if (Test-Path yarn.lock) {
+Write-Host "`n[1/4] Installing and building the React UI..."
+Push-Location $UiDir
+try {
+    if (-not (Test-Path 'yarn.lock')) {
+        throw "src/ui/yarn.lock not found. Run 'yarn install' with Yarn 4 first."
+    }
     yarn install --immutable
+    if ($LASTEXITCODE -ne 0) { throw "yarn install failed" }
+    $env:CI = 'true'
     yarn build
-} else {
-    throw "src/ui/yarn.lock not found. Install dependencies with Yarn 4 first: yarn install"
-}
-Set-Location ../..
-
-Write-Host "`n[2/5] Copying React build output to Electron app..."
-Remove-Item -Recurse -Force src/electron/build -ErrorAction SilentlyContinue
-Copy-Item -Recurse src/ui/build src/electron/build
-
-# Remove build from .gitignore temporarily for packaging
-if (Select-String -Path .gitignore -Pattern '^src/electron/build/' -Quiet) {
-    (Get-Content .gitignore) | Where-Object { $_ -notmatch '^src/electron/build/' } | Set-Content .gitignore
+    if ($LASTEXITCODE -ne 0) { throw "yarn build failed" }
+} finally {
+    Pop-Location
 }
 
-Write-Host "`n[3/5] Installing Electron dependencies..."
-Set-Location src/electron
-if (Test-Path yarn.lock) {
+Write-Host "`n[2/4] Syncing UI build into the Electron shell..."
+if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
+New-Item -ItemType Directory -Path $BuildDir | Out-Null
+Copy-Item -Recurse -Force (Join-Path $UiDir 'build/*') $BuildDir
+
+Write-Host "`n[3/4] Installing Electron dependencies..."
+Push-Location $ElectronDir
+try {
+    if (-not (Test-Path 'yarn.lock')) {
+        throw "src/electron/yarn.lock not found. Run 'yarn install' with Yarn 4 first."
+    }
     yarn install --immutable
-} else {
-    throw "src/electron/yarn.lock not found. Install dependencies with Yarn 4 first: yarn install"
+    if ($LASTEXITCODE -ne 0) { throw "yarn install failed" }
+
+    Write-Host "`n[4/4] Packaging for Windows (nsis, portable, zip)..."
+    yarn electron-builder --win nsis portable zip --publish never
+    if ($LASTEXITCODE -ne 0) { throw "electron-builder failed" }
+} finally {
+    Pop-Location
 }
 
-Write-Host "`n[4/5] Building Electron App for Windows (nsis, portable, zip)..."
-# You must have electron-builder installed and configured in package.json
-# This will create .exe installers and portable builds
-if (Test-Path yarn.lock) {
-    yarn run electron-builder --win nsis portable zip
-} else {
-    throw "src/electron/yarn.lock not found. Install dependencies with Yarn 4 first: yarn install"
-}
-
-# Restore .gitignore if backup exists
-Write-Host "`n[post-build] Restoring .gitignore ignore rules..."
-if (Test-Path ../.gitignore.bak) {
-    Move-Item ../.gitignore.bak ../.gitignore -Force
-}
-
-Write-Host "`n[5/5] Build complete! Find your packages in src/electron/dist/"
+Write-Host "`nDone. Artifacts are in src/electron/dist/"

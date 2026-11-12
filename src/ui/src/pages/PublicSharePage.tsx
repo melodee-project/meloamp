@@ -29,6 +29,7 @@ import { apiRequest, buildEndpoint } from '../api';
 import { API_ROUTES } from '../apiRoutes';
 import { PublicShareResponse, PublicSongInfo } from '../apiModels';
 import { useQueueStore, Song as QueueSong } from '../queueStore';
+import { getErrorMessage } from '../utils/errors';
 
 function formatDuration(totalMs: number) {
   if (!totalMs || totalMs <= 0) {
@@ -117,8 +118,8 @@ export default function PublicSharePage() {
           ? (nestedData as { data: PublicShareResponse }).data
           : payload as PublicShareResponse;
         setShare(resolved);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || t('common.error'));
+      } catch (err) {
+        setError(getErrorMessage(err, t('common.error')));
       } finally {
         setLoading(false);
       }

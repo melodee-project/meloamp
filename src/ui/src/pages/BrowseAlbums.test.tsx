@@ -39,9 +39,6 @@ describe('BrowseAlbums', () => {
 
   test('renders album list', async () => {
     renderWithProviders(<BrowseAlbums />);
-    await testUtils.waitFor(() => {
-      const albumCards = document.querySelectorAll('.MuiCard-root');
-      expect(albumCards.length).toBeGreaterThan(0);
-    });
+    expect(await screen.findByText('Album One')).toBeInTheDocument();
   });
 });

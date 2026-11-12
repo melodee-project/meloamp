@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { Error as ErrorIcon } from '@mui/icons-material';
+import i18n from '../i18n';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -57,17 +58,17 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
           >
             <ErrorIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
             <Typography variant="h5" gutterBottom>
-              Something went wrong
+              {i18n.t('error.boundaryTitle', 'Something went wrong')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {this.state.error?.message || i18n.t('error.boundaryMessage', 'An unexpected error occurred.')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
               <Button variant="outlined" onClick={this.handleReset}>
-                Try Again
+                {i18n.t('common.retry')}
               </Button>
               <Button variant="contained" onClick={this.handleReload}>
-                Reload App
+                {i18n.t('error.reloadApp', 'Reload App')}
               </Button>
             </Box>
           </Paper>

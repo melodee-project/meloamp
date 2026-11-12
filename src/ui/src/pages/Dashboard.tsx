@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, CircularProgress, IconButton } from '@mui/material';
-import { Statistic, Artist, Album, Playlist, PaginatedResponse } from '../apiModels';
-import { apiRequest } from '../api';
+import { Statistic, Artist, Album, Playlist } from '../apiModels';
+import { apiRequest, unwrapApiPage, unwrapApiResponse } from '../api';
+import { useApiEffect } from '../hooks/useApiEffect';
 import ArtistCard from '../components/ArtistCard';
 import PlaylistCard from '../components/PlaylistCard';
 import StatisticCard from '../components/StatisticCard';
 import AlbumCard from '../components/AlbumCard';
 import { ArrowBackIos, ArrowForwardIos, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import ErrorState from '../components/ErrorState';
+import { readUserSettings } from '../settings';
+import { getErrorMessage } from '../utils/errors';
 
 // Playlist Card
 // ...moved to components/PlaylistCard.tsx...
@@ -20,40 +24,34 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refetchToken, setRefetchToken] = useState(0);
 
-  // Refetch dashboard data
-  const fetchDashboardData = () => {
+  useApiEffect(async (signal) => {
     setLoading(true);
     setError(null);
-    Promise.all([
-      apiRequest('/system/stats'),
-      apiRequest(`/artists/recent?limit=${recentLimit}`),
-      apiRequest(`/albums/recent?limit=${recentLimit}`),
-      apiRequest('/user/playlists'),
-    ])
-      .then(([statsRes, artistsRes, albumsRes, playlistsRes]) => {
-        setStats((statsRes.data as Statistic[]));
-        setRecentArtists(((artistsRes.data as PaginatedResponse<Artist>).data));
-        setRecentAlbums(((albumsRes.data as PaginatedResponse<Album>).data));
-        setPlaylists(((playlistsRes.data as PaginatedResponse<Playlist>).data));
-      })
-      .catch((err) => {
-        setError(
-          err?.response?.data?.message ||
-          err?.message ||
-          'Failed to load dashboard data. Please try again.'
-        );
-      })
-      .finally(() => setLoading(false));
-  };
+    try {
+      const [statsRes, artistsRes, albumsRes, playlistsRes] = await Promise.all([
+        apiRequest('/system/stats', { signal }),
+        apiRequest(`/artists/recent?limit=${recentLimit}`, { signal }),
+        apiRequest(`/albums/recent?limit=${recentLimit}`, { signal }),
+        apiRequest('/user/playlists', { signal }),
+      ]);
+      if (signal.aborted) return;
 
-  useEffect(() => {
-    fetchDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recentLimit]);
+      setStats(unwrapApiResponse<Statistic[]>(statsRes.data) ?? []);
+      setRecentArtists(unwrapApiPage<Artist>(artistsRes.data).items);
+      setRecentAlbums(unwrapApiPage<Album>(albumsRes.data).items);
+      setPlaylists(unwrapApiPage<Playlist>(playlistsRes.data).items);
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(getErrorMessage(err, t('dashboard.loadError', 'Failed to load dashboard data. Please try again.')));
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, [recentLimit, refetchToken, t]);
 
   if (loading) return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>;
-  if (error) return <Box sx={{ p: 4, textAlign: 'center', color: 'error.main' }}>{t('common.error')}</Box>;
+  if (error) return <ErrorState message={error} onRetry={() => setRefetchToken((token) => token + 1)} fullPage />;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -63,7 +61,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
         </Box>
         <IconButton
           aria-label={t('common.refresh')}
-          onClick={fetchDashboardData}
+          onClick={() => setRefetchToken((token) => token + 1)}
           sx={{ ml: 2, animation: loading ? 'spin 1s linear infinite' : 'none' }}
           disabled={loading}
         >
@@ -98,6 +96,7 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
 
 // Horizontal Infinite Scroll for Playlists
 function PlaylistScroller({ playlists }: { playlists: Playlist[] }) {
+  const { t } = useTranslation();
   const [start, setStart] = useState(0);
   const visibleCount = 5;
   const max = playlists.length;
@@ -106,25 +105,28 @@ function PlaylistScroller({ playlists }: { playlists: Playlist[] }) {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', overflow: 'hidden' }}>
-      <IconButton onClick={() => setStart(Math.max(0, start - visibleCount))} disabled={!canBack}>
+      <IconButton
+        onClick={() => setStart(Math.max(0, start - visibleCount))}
+        disabled={!canBack}
+        aria-label={t('dashboard.scrollBack', 'Scroll playlists back')}
+      >
         <ArrowBackIos />
       </IconButton>
       <Box sx={{ display: 'flex', overflowX: 'auto', flex: 1 }}>
         {playlists.slice(start, start + visibleCount).map(p => <PlaylistCard key={p.id} playlist={p} />)}
       </Box>
-      <IconButton onClick={() => setStart(Math.min(max - visibleCount, start + visibleCount))} disabled={!canForward}>
+      <IconButton
+        onClick={() => setStart(Math.min(max - visibleCount, start + visibleCount))}
+        disabled={!canForward}
+        aria-label={t('dashboard.scrollForward', 'Scroll playlists forward')}
+      >
         <ArrowForwardIos />
       </IconButton>
     </Box>
   );
 }
 
-export default function DashboardWrapper(props: any) {
-  // Get from localStorage userSettings
-  let limit = 10;
-  try {
-    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
-    limit = settings.dashboardRecentLimit || 10;
-  } catch {}
-  return <Dashboard recentLimit={limit} {...props} />;
+export default function DashboardWrapper() {
+  const { dashboardRecentLimit } = readUserSettings();
+  return <Dashboard recentLimit={dashboardRecentLimit} />;
 }

@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -16,7 +18,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Check, Download, Upload, Warning } from '@mui/icons-material';
-import { apiRequest } from '../api';
+import { apiRequest, unwrapApiResponse } from '../api';
 import { ThemePackInfo, PaginatedResponse } from '../apiModels';
 import { UserSettings } from '../types/settings';
 
@@ -28,34 +30,31 @@ interface ThemesPageProps {
 }
 
 export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
+  const { t } = useTranslation();
   const [themes, setThemes] = React.useState<ThemePackInfo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [applying, setApplying] = React.useState<string | null>(null);
   const [previewTheme, setPreviewTheme] = React.useState<ThemePackInfo | null>(null);
 
-  const fetchThemes = React.useCallback(async () => {
+  const fetchThemes = React.useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await apiRequest<ThemeListPayload>('/themes');
-      let themeList: ThemePackInfo[] = [];
-      if (Array.isArray(response.data)) {
-        themeList = response.data;
-      } else if (Array.isArray(response.data?.data)) {
-        themeList = response.data.data;
-      } else if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
-        themeList = response.data.data.data;
-      }
+      const response = await apiRequest<ThemeListPayload>('/themes', { signal });
+      const themeList = unwrapApiResponse<ThemePackInfo[]>(response.data) ?? [];
       setThemes(themeList);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load themes');
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, 'Failed to load themes'));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    fetchThemes();
+    const controller = new AbortController();
+    fetchThemes(controller.signal);
+    return () => controller.abort();
   }, [fetchThemes]);
 
   const handleApplyTheme = async (theme: ThemePackInfo) => {
@@ -66,7 +65,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
         data: { themeId: theme.id },
       });
       onChange({ ...settings, theme: theme.id });
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to apply theme:', err);
     } finally {
       setApplying(null);
@@ -80,9 +79,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
   if (loading) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Themes
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.themes')}</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} sx={{ width: 220 }}>
@@ -101,9 +98,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Themes
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.themes')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -112,14 +107,12 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Themes</Typography>
+        <Typography variant="h4">{t('nav.themes')}</Typography>
         <Button
           variant="outlined"
           startIcon={<Upload />}
           component="label"
-        >
-          Import Theme
-          <input
+        >{t('themes.importTheme')}<input
             type="file"
             hidden
             accept=".zip,.json"
@@ -221,9 +214,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
                       justifyContent: 'center',
                     }}
                   >
-                    <Typography variant="h6" color="text.secondary">
-                      No Preview
-                    </Typography>
+                    <Typography variant="h6" color="text.secondary">{t('themes.noPreview')}</Typography>
                   </Box>
                 )}
                 <CardContent>
@@ -305,7 +296,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewTheme(null)}>Cancel</Button>
+          <Button onClick={() => setPreviewTheme(null)}>{t('common.cancel')}</Button>
           {previewTheme && !previewTheme.isBuiltIn && (
             <Button
               startIcon={<Download />}
@@ -325,9 +316,7 @@ export default function ThemesPage({ settings, onChange }: ThemesPageProps) {
                   console.error('Failed to export theme:', err);
                 }
               }}
-            >
-              Export
-            </Button>
+            >{t('themes.export')}</Button>
           )}
           <Button
             variant="contained"

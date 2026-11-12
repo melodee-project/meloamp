@@ -1,27 +1,34 @@
-import { debugLog } from './debug';
 import { create } from 'zustand/react';
-import { Artist, Album } from './apiModels';
 
-export interface Song {
-  id: string;
-  title: string;
-  artist: Artist;
-  album: Album;
+import { Song as ApiSong } from './apiModels';
+import { debugLog } from './debug';
+import { readUserSettings, updateUserSettings } from './settings';
+import { RepeatMode } from './types/playback';
+import { stripStreamAuth } from './utils/streamUrl';
+
+export { RepeatMode };
+
+/**
+ * A song in the playback queue.
+ *
+ * Derived from the API `Song` model so the two cannot drift: only the fields
+ * the player needs are kept, plus player-local flags (`played`).
+ */
+export type Song = Pick<
+  ApiSong,
+  'id' | 'title' | 'durationMs'
+> & {
   imageUrl?: string;
-  url?: string;
-  played?: boolean;
-  durationMs: number;
   userRating?: number;
   userStarred?: boolean;
+  artist: Pick<ApiSong['artist'], 'id' | 'name' | 'imageUrl'>;
+  album: Pick<ApiSong['album'], 'id' | 'name' | 'imageUrl' | 'releaseYear'>;
+  /** Raw stream URL. Never contains credentials; see `utils/streamUrl.ts`. */
+  url?: string;
+  played?: boolean;
   artwork?: string;
   artUrl?: string;
-}
-
-export enum RepeatMode {
-  OFF = 'off',
-  ALL = 'all',
-  ONE = 'one',
-}
+};
 
 export type QueueAction =
   | { type: 'remove'; index: number; song: Song }
@@ -49,209 +56,278 @@ export interface QueueState {
   undo: () => boolean;
 }
 
+type MinimalSong = Pick<
+  Song,
+  'id' | 'title' | 'imageUrl' | 'url' | 'played' | 'durationMs' | 'userRating' | 'userStarred'
+> & {
+  artist: Pick<Song['artist'], 'id' | 'name' | 'imageUrl'>;
+  album: Pick<Song['album'], 'id' | 'name' | 'imageUrl' | 'releaseYear'>;
+};
+
 interface QueuePersistState {
   queue: MinimalSong[];
   current: number;
 }
 
-type MinimalSong = Pick<
-  Song,
-  'id' | 'title' | 'imageUrl' | 'url' | 'played' | 'durationMs' | 'userRating'
-> & {
-  artist: Pick<NonNullable<Song['artist']>, 'id' | 'name' | 'imageUrl'>;
-  album: Pick<NonNullable<Song['album']>, 'id' | 'name' | 'imageUrl' | 'releaseYear'>;
-};
-
-let persistTimeout: ReturnType<typeof setTimeout> | null = null;
+const QUEUE_STORAGE_KEY = 'queueState';
 const PERSIST_DEBOUNCE_MS = 1000;
 
+let persistTimeout: ReturnType<typeof setTimeout> | null = null;
+
 const clampCurrentIndex = (current: number, queueLength: number): number => {
-  if (!Number.isInteger(current) || Number.isNaN(current)) {
-    return 0;
-  }
+  if (!Number.isInteger(current) || Number.isNaN(current)) return 0;
   if (queueLength <= 0) return 0;
   return Math.max(0, Math.min(current, queueLength - 1));
 };
 
-const toMinimal = (queue: Song[]): MinimalSong[] => queue.map(song => ({
+const toMinimal = (queue: Song[]): MinimalSong[] => queue.map((song) => ({
   id: song.id,
   title: song.title,
   artist: { id: song.artist?.id, name: song.artist?.name, imageUrl: song.artist?.imageUrl },
-  album: { id: song.album?.id, name: song.album?.name, imageUrl: song.album?.imageUrl, releaseYear: song.album?.releaseYear },
+  album: {
+    id: song.album?.id,
+    name: song.album?.name,
+    imageUrl: song.album?.imageUrl,
+    releaseYear: song.album?.releaseYear,
+  },
   imageUrl: song.imageUrl,
-  url: song.url,
+  // Tokens are injected at playback time, never persisted.
+  url: stripStreamAuth(song.url),
   played: song.played,
   durationMs: song.durationMs,
   userRating: song.userRating,
+  userStarred: song.userStarred,
 }));
 
-const debouncedPersist = (queue: Song[], current: number) => {
-  if (persistTimeout) {
-    clearTimeout(persistTimeout);
+function writeQueue(queue: Song[], current: number): void {
+  try {
+    const payload: QueuePersistState = { queue: toMinimal(queue), current };
+    localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.warn('[QueueStore] Failed to persist queue:', error);
   }
-  persistTimeout = setTimeout(() => {
-    try {
-      const minimalQueue = toMinimal(queue);
-      localStorage.setItem('queueState', JSON.stringify({ queue: minimalQueue, current }));
-      debugLog('QueueStore', `Persisted ${queue.length} songs to localStorage`);
-    } catch (e) {
-      console.warn('[QueueStore] Failed to persist queue:', e);
-    }
-  }, PERSIST_DEBOUNCE_MS);
-};
+}
 
-const immediatePersist = (queue: Song[], current: number) => {
+function debouncedPersist(queue: Song[], current: number): void {
+  if (persistTimeout) clearTimeout(persistTimeout);
+  persistTimeout = setTimeout(() => {
+    persistTimeout = null;
+    writeQueue(queue, current);
+  }, PERSIST_DEBOUNCE_MS);
+}
+
+function immediatePersist(queue: Song[], current: number): void {
   if (persistTimeout) {
     clearTimeout(persistTimeout);
     persistTimeout = null;
   }
-  try {
-    const minimalQueue = toMinimal(queue);
-    localStorage.setItem('queueState', JSON.stringify({ queue: minimalQueue, current }));
-  } catch (e) {
-    console.warn('[QueueStore] Failed to persist queue:', e);
-  }
-};
+  writeQueue(queue, current);
+}
 
-const persistPlaybackSettings = (repeatMode: RepeatMode, shuffleEnabled: boolean) => {
-  try {
-    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
-    settings.repeatMode = repeatMode;
-    settings.shuffleEnabled = shuffleEnabled;
-    localStorage.setItem('userSettings', JSON.stringify(settings));
-  } catch (e) {
-    console.warn('[QueueStore] Failed to persist playback settings:', e);
-  }
-};
-
-const loadPlaybackSettings = (): { repeatMode: RepeatMode; shuffleEnabled: boolean } => {
-  try {
-    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
-    return {
-      repeatMode: settings.repeatMode || RepeatMode.OFF,
-      shuffleEnabled: settings.shuffleEnabled || false,
-    };
-  } catch {
-    return { repeatMode: RepeatMode.OFF, shuffleEnabled: false };
-  }
-};
+function persistPlaybackSettings(repeatMode: RepeatMode, shuffleEnabled: boolean): void {
+  updateUserSettings({ repeatMode, shuffleEnabled });
+}
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
 };
 
-type QueueSetFn = (state: QueueState) => Partial<QueueState>;
-
-export const useQueueStore = create<QueueState>((set: (fn: QueueSetFn | Partial<QueueState>) => void, get: () => QueueState) => {
-  let initialQueue: Song[] = [];
-  let initialCurrent = 0;
+function loadInitialQueue(): { queue: Song[]; current: number } {
   try {
-    const saved: QueuePersistState = JSON.parse(localStorage.getItem('queueState') || '{}');
-    if (Array.isArray(saved.queue)) initialQueue = saved.queue as unknown as Song[];
-    if (typeof saved.current === 'number') initialCurrent = saved.current;
-  } catch {}
-  initialCurrent = clampCurrentIndex(initialCurrent, initialQueue.length);
+    const saved = JSON.parse(localStorage.getItem(QUEUE_STORAGE_KEY) || '{}') as Partial<QueuePersistState>;
+    const queue = Array.isArray(saved.queue)
+      ? (saved.queue as unknown as Song[]).map((song) => ({ ...song, url: stripStreamAuth(song.url) }))
+      : [];
+    const current = typeof saved.current === 'number' ? saved.current : 0;
+    return { queue, current: clampCurrentIndex(current, queue.length) };
+  } catch {
+    return { queue: [], current: 0 };
+  }
+}
 
-  const playbackSettings = loadPlaybackSettings();
+export const useQueueStore = create<QueueState>((set, get) => {
+  const initial = loadInitialQueue();
+  const settings = readUserSettings();
 
-  const store: QueueState = {
-    queue: initialQueue,
-    current: initialCurrent,
-    repeatMode: playbackSettings.repeatMode,
-    shuffleEnabled: playbackSettings.shuffleEnabled,
+  return {
+    queue: initial.queue,
+    current: initial.current,
+    repeatMode: settings.repeatMode,
+    shuffleEnabled: settings.shuffleEnabled,
     originalOrder: null,
     lastAction: null,
-    addToQueue: (song: Song) => set((state: QueueState) => {
-      const newQueue = [...state.queue, song];
-      debouncedPersist(newQueue, state.current);
-      return { queue: newQueue };
-    }),
-    addToQueueNext: (song: Song) => set((state: QueueState) => {
-      const insertIndex = state.current + 1;
-      const newQueue = [...state.queue];
-      newQueue.splice(insertIndex, 0, song);
-      debouncedPersist(newQueue, state.current);
-      debugLog('QueueStore', 'addToQueueNext: inserted at index', insertIndex);
-      return { queue: newQueue };
-    }),
-    setQueue: (songs: Song[]) => set((state: QueueState) => {
-      immediatePersist(songs, 0);
-      return { queue: songs, current: 0, originalOrder: null, shuffleEnabled: false, lastAction: null };
-    }),
-    removeFromQueue: (index: number) => set((state: QueueState) => {
-      const removedSong = state.queue[index];
-      const lastAction: QueueAction = { type: 'remove', index, song: removedSong };
 
-      const newQueue = state.queue.filter((_: Song, i: number) => i !== index);
-      const newCurrent = index < state.current
-        ? state.current - 1
-        : Math.min(state.current, newQueue.length - 1);
+    addToQueue: (song: Song) => {
+      const { queue, current } = get();
+      const newQueue = [...queue, song];
+      set({ queue: newQueue });
+      debouncedPersist(newQueue, current);
+    },
+
+    addToQueueNext: (song: Song) => {
+      const { queue, current } = get();
+      const insertIndex = clampCurrentIndex(current + 1, queue.length + 1);
+      const newQueue = [...queue];
+      newQueue.splice(insertIndex, 0, song);
+      set({ queue: newQueue });
+      debouncedPersist(newQueue, current);
+      debugLog('QueueStore', 'addToQueueNext: inserted at index', insertIndex);
+    },
+
+    setQueue: (songs: Song[]) => {
+      set({
+        queue: songs,
+        current: 0,
+        originalOrder: null,
+        shuffleEnabled: false,
+        lastAction: null,
+      });
+      immediatePersist(songs, 0);
+      persistPlaybackSettings(get().repeatMode, false);
+    },
+
+    removeFromQueue: (index: number) => {
+      const { queue, current } = get();
+      const removedSong = queue[index];
+      if (!removedSong) return;
+
+      const newQueue = queue.filter((_, i) => i !== index);
+      const newCurrent = index < current
+        ? current - 1
+        : Math.min(current, newQueue.length - 1);
+
+      set({
+        queue: newQueue,
+        current: Math.max(0, newCurrent),
+        lastAction: { type: 'remove', index, song: removedSong },
+      });
       debouncedPersist(newQueue, Math.max(0, newCurrent));
-      return { queue: newQueue, current: Math.max(0, newCurrent), lastAction };
-    }),
-    reorderQueue: (from: number, to: number) => set((state: QueueState) => {
-      const q = [...state.queue];
-      const [item] = q.splice(from, 1);
-      q.splice(to, 0, item);
-      debouncedPersist(q, state.current);
-      return { queue: q, lastAction: { type: 'reorder', from, to } as QueueAction };
-    }),
-    clearQueue: () => set((state: QueueState) => {
-      const lastAction: QueueAction = { type: 'clear', queue: [...state.queue], current: state.current };
+    },
+
+    reorderQueue: (from: number, to: number) => {
+      const { queue, current } = get();
+      if (from === to || from < 0 || to < 0 || from >= queue.length || to >= queue.length) return;
+
+      const newQueue = [...queue];
+      const [item] = newQueue.splice(from, 1);
+      newQueue.splice(to, 0, item);
+
+      let newCurrent = current;
+      if (current === from) newCurrent = to;
+      else if (from < current && to >= current) newCurrent = current - 1;
+      else if (from > current && to <= current) newCurrent = current + 1;
+
+      set({ queue: newQueue, current: newCurrent, lastAction: { type: 'reorder', from, to } });
+      debouncedPersist(newQueue, newCurrent);
+    },
+
+    clearQueue: () => {
+      const { queue, current } = get();
+      set({
+        queue: [],
+        current: 0,
+        originalOrder: null,
+        lastAction: { type: 'clear', queue: [...queue], current },
+      });
       immediatePersist([], 0);
-      return { queue: [], current: 0, originalOrder: null, lastAction };
-    }),
-    updateSong: (index: number, patch: Partial<Song>) => set((state: QueueState) => {
-      const q = [...state.queue];
-      if (q[index]) {
-        q[index] = { ...q[index], ...patch };
+    },
+
+    updateSong: (index: number, patch: Partial<Song>) => {
+      const { queue, current } = get();
+      if (!queue[index]) return;
+      const newQueue = [...queue];
+      newQueue[index] = { ...newQueue[index], ...patch };
+      set({ queue: newQueue });
+      debouncedPersist(newQueue, current);
+    },
+
+    setCurrent: (index: number) => {
+      const { queue, current } = get();
+      const safeIndex = clampCurrentIndex(index, queue.length);
+      const newQueue = [...queue];
+      if (safeIndex > current && newQueue[current]) {
+        newQueue[current] = { ...newQueue[current], played: true };
       }
-      debouncedPersist(q, state.current);
-      return { queue: q };
-    }),
-    setCurrent: (index: number) => set((state: QueueState) => {
-      const safeIndex = clampCurrentIndex(index, state.queue.length);
-      let queue = [...state.queue];
-      if (safeIndex > state.current && queue[state.current]) {
-        queue[state.current] = { ...queue[state.current], played: true };
-      }
-      debouncedPersist(queue, safeIndex);
-      return { queue, current: safeIndex };
-    }),
+      set({ queue: newQueue, current: safeIndex });
+      debouncedPersist(newQueue, safeIndex);
+    },
+
     playNow: (songs: Song | Song[]) => {
-      let newQueue: Song[];
-      if (Array.isArray(songs)) {
-        newQueue = songs;
-      } else {
-        newQueue = [songs];
-      }
+      const newQueue = Array.isArray(songs) ? songs : [songs];
+      set({
+        queue: newQueue,
+        current: 0,
+        originalOrder: null,
+        shuffleEnabled: false,
+        lastAction: null,
+      });
+      immediatePersist(newQueue, 0);
+      persistPlaybackSettings(get().repeatMode, false);
       debugLog('QueueStore', 'playNow called:', {
         isArray: Array.isArray(songs),
         queueLength: newQueue.length,
-        firstSong: newQueue[0] ? {
-          id: newQueue[0].id,
-          title: newQueue[0].title,
-          url: newQueue[0].url,
-          hasUrl: !!newQueue[0].url
-        } : null
+        firstSong: newQueue[0] ? { id: newQueue[0].id, title: newQueue[0].title, hasUrl: !!newQueue[0].url } : null,
       });
-      set({ queue: newQueue, current: 0, originalOrder: null, shuffleEnabled: false, lastAction: null });
-      immediatePersist(newQueue, 0);
     },
-    setRepeatMode: (mode: RepeatMode) => set((state: QueueState) => {
-      persistPlaybackSettings(mode, state.shuffleEnabled);
+
+    setRepeatMode: (mode: RepeatMode) => {
+      set({ repeatMode: mode });
+      persistPlaybackSettings(mode, get().shuffleEnabled);
       debugLog('QueueStore', 'Repeat mode changed:', mode);
-      return { repeatMode: mode };
-    }),
+    },
+
+    toggleShuffle: () => {
+      const { queue, current, shuffleEnabled, originalOrder } = get();
+      const nextShuffleEnabled = !shuffleEnabled;
+
+      if (nextShuffleEnabled) {
+        const currentSong = queue[current];
+        const original = [...queue];
+
+        // Keep the current song at index 0 so playback is uninterrupted.
+        const others = queue.filter((_, index) => index !== current);
+        const newQueue = currentSong ? [currentSong, ...shuffleArray(others)] : shuffleArray(others);
+
+        set({
+          queue: newQueue,
+          current: 0,
+          shuffleEnabled: true,
+          originalOrder: original,
+        });
+        persistPlaybackSettings(get().repeatMode, true);
+        debouncedPersist(newQueue, 0);
+        debugLog('QueueStore', 'Shuffle enabled, current song kept at position 0');
+        return;
+      }
+
+      const restored = originalOrder && originalOrder.length > 0 ? originalOrder : queue;
+      const currentSong = queue[current];
+      // Track the current song by object identity first (unique), then by id.
+      const restoredIndex = currentSong
+        ? restored.findIndex((song) => song === currentSong)
+        : -1;
+      const byIdIndex = currentSong ? restored.findIndex((song) => song.id === currentSong.id) : -1;
+      const newCurrent = restoredIndex >= 0 ? restoredIndex : byIdIndex;
+
+      set({
+        queue: restored,
+        current: Math.max(0, newCurrent),
+        shuffleEnabled: false,
+        originalOrder: null,
+      });
+      persistPlaybackSettings(get().repeatMode, false);
+      debouncedPersist(restored, Math.max(0, newCurrent));
+      debugLog('QueueStore', 'Shuffle disabled, restored original order');
+    },
+
     undo: () => {
       const state = get();
       const { lastAction } = state;
-
       if (!lastAction) {
         debugLog('QueueStore', 'undo: no action to undo');
         return false;
@@ -262,74 +338,26 @@ export const useQueueStore = create<QueueState>((set: (fn: QueueSetFn | Partial<
           const newQueue = [...state.queue];
           newQueue.splice(lastAction.index, 0, lastAction.song);
           const newCurrent = lastAction.index <= state.current ? state.current + 1 : state.current;
-          debouncedPersist(newQueue, newCurrent);
           set({ queue: newQueue, current: newCurrent, lastAction: null });
-          debugLog('QueueStore', 'undo: restored removed song at index', lastAction.index);
+          debouncedPersist(newQueue, newCurrent);
           return true;
         }
         case 'clear': {
-          debouncedPersist(lastAction.queue, lastAction.current);
           set({ queue: lastAction.queue, current: lastAction.current, lastAction: null });
-          debugLog('QueueStore', 'undo: restored cleared queue with', lastAction.queue.length, 'songs');
+          debouncedPersist(lastAction.queue, lastAction.current);
           return true;
         }
         case 'reorder': {
-          const q = [...state.queue];
-          const [item] = q.splice(lastAction.to, 1);
-          q.splice(lastAction.from, 0, item);
-          debouncedPersist(q, state.current);
-          set({ queue: q, lastAction: null });
-          debugLog('QueueStore', 'undo: reversed reorder from', lastAction.to, 'to', lastAction.from);
+          const newQueue = [...state.queue];
+          const [item] = newQueue.splice(lastAction.to, 1);
+          newQueue.splice(lastAction.from, 0, item);
+          set({ queue: newQueue, lastAction: null });
+          debouncedPersist(newQueue, state.current);
           return true;
         }
         default:
           return false;
       }
     },
-    toggleShuffle: () => set((state: QueueState) => {
-      const newShuffleEnabled = !state.shuffleEnabled;
-
-      if (newShuffleEnabled) {
-        const currentSong = state.queue[state.current];
-        const originalOrder = [...state.queue];
-
-        const otherSongs = state.queue.filter((_, i) => i !== state.current);
-        const shuffledOthers = shuffleArray(otherSongs);
-        const newQueue = currentSong ? [currentSong, ...shuffledOthers] : shuffledOthers;
-
-        debouncedPersist(newQueue, 0);
-        persistPlaybackSettings(state.repeatMode, true);
-        debugLog('QueueStore', 'Shuffle enabled, current song kept at position 0');
-
-        return {
-          queue: newQueue,
-          current: 0,
-          shuffleEnabled: true,
-          originalOrder,
-        };
-      } else {
-        if (state.originalOrder && state.originalOrder.length > 0) {
-          const currentSong = state.queue[state.current];
-          const newCurrent = currentSong
-            ? state.originalOrder.findIndex(s => s.id === currentSong.id)
-            : 0;
-
-          debouncedPersist(state.originalOrder, Math.max(0, newCurrent));
-          persistPlaybackSettings(state.repeatMode, false);
-          debugLog('QueueStore', 'Shuffle disabled, restored original order');
-
-          return {
-            queue: state.originalOrder,
-            current: Math.max(0, newCurrent),
-            shuffleEnabled: false,
-            originalOrder: null,
-          };
-        }
-
-        persistPlaybackSettings(state.repeatMode, false);
-        return { shuffleEnabled: false, originalOrder: null };
-      }
-    }),
   };
-  return store;
 });

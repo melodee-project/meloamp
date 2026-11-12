@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -35,7 +37,7 @@ import {
   MusicNote,
   PlaylistPlay,
 } from '@mui/icons-material';
-import { apiRequest } from '../api';
+import { apiRequest, unwrapApiResponse } from '../api';
 import { Share as ShareModel, ShareType, CreateShareRequest, PaginatedResponse } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 
@@ -49,6 +51,7 @@ const SHARE_TYPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function SharesPage() {
+  const { t } = useTranslation();
   const [shares, setShares] = React.useState<ShareModel[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -67,28 +70,24 @@ export default function SharesPage() {
     expiresAt: '',
   });
 
-  const fetchShares = React.useCallback(async () => {
+  const fetchShares = React.useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await apiRequest<ShareListPayload>('/shares');
-      let shareList: ShareModel[] = [];
-      if (Array.isArray(response.data)) {
-        shareList = response.data;
-      } else if (Array.isArray(response.data?.data)) {
-        shareList = response.data.data;
-      } else if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
-        shareList = response.data.data.data;
-      }
+      const response = await apiRequest<ShareListPayload>('/shares', { signal });
+      const shareList = unwrapApiResponse<ShareModel[]>(response.data) ?? [];
       setShares(shareList);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load shares');
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, 'Failed to load shares'));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    fetchShares();
+    const controller = new AbortController();
+    fetchShares(controller.signal);
+    return () => controller.abort();
   }, [fetchShares]);
 
   const handleCreate = async () => {
@@ -107,7 +106,7 @@ export default function SharesPage() {
       setCreateDialogOpen(false);
       resetFormData();
       fetchShares();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create share:', err);
     }
   };
@@ -126,7 +125,7 @@ export default function SharesPage() {
       setEditShare(null);
       resetFormData();
       fetchShares();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to update share:', err);
     }
   };
@@ -135,7 +134,7 @@ export default function SharesPage() {
     try {
       await apiRequest(`/shares/${id}`, { method: 'DELETE' });
       fetchShares();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to delete share:', err);
     }
     setMenuAnchor(null);
@@ -211,9 +210,7 @@ export default function SharesPage() {
   if (loading && shares.length === 0) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Shares
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.shares')}</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} sx={{ width: 280 }}>
@@ -231,9 +228,7 @@ export default function SharesPage() {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Shares
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.shares')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -244,7 +239,7 @@ export default function SharesPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Share color="primary" />
-          <Typography variant="h4">Shares</Typography>
+          <Typography variant="h4">{t('nav.shares')}</Typography>
         </Box>
         <Button
           variant="contained"
@@ -253,19 +248,13 @@ export default function SharesPage() {
             resetFormData();
             setCreateDialogOpen(true);
           }}
-        >
-          Create Share
-        </Button>
+        >{t('shares.createTitle')}</Button>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Shares allow you to create public links to your music that can be accessed by anyone without logging in.
-      </Alert>
+      <Alert severity="info" sx={{ mb: 3 }}>{t('shares.description')}</Alert>
 
       {shares.length === 0 ? (
-        <Typography color="text.secondary">
-          No shares yet. Create a share to share your music with others!
-        </Typography>
+        <Typography color="text.secondary">{t('shares.empty')}</Typography>
       ) : (
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           {shares.map((share) => (
@@ -281,7 +270,7 @@ export default function SharesPage() {
                         {share.resourceName}
                       </Typography>
                     </Box>
-                    <IconButton
+                    <IconButton aria-label={t('shares.menu', 'Share options')}
                       size="small"
                       onClick={(e) => {
                         setMenuAnchor(e.currentTarget);
@@ -312,7 +301,7 @@ export default function SharesPage() {
 
                   <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                     <Tooltip title={copiedId === share.id ? 'Copied!' : 'Copy link'}>
-                      <IconButton
+                      <IconButton aria-label={t('shares.copyLink', 'Copy link')}
                         size="small"
                         color={copiedId === share.id ? 'success' : 'default'}
                         onClick={() => handleCopyLink(share)}
@@ -321,7 +310,7 @@ export default function SharesPage() {
                       </IconButton>
                     </Tooltip>
                       <Tooltip title="Open share link">
-                      <IconButton
+                      <IconButton aria-label={t('shares.openLink', 'Open share link')}
                         size="small"
                         onClick={() => openShareLink(share.shareUrl)}
                       >
@@ -352,7 +341,7 @@ export default function SharesPage() {
             <ListItemIcon>
               <Edit fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Edit</ListItemText>
+            <ListItemText>{t('common.edit')}</ListItemText>
           </MenuItem>
         )}
         {selectedShare && (
@@ -360,13 +349,13 @@ export default function SharesPage() {
             <ListItemIcon>
               <Delete fontSize="small" color="error" />
             </ListItemIcon>
-            <ListItemText>Delete</ListItemText>
+            <ListItemText>{t('common.delete')}</ListItemText>
           </MenuItem>
         )}
       </Menu>
 
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Create Share</DialogTitle>
+        <DialogTitle>{t('shares.createTitle', 'Create Share')}</DialogTitle>
         <DialogContent>
           <TextField
             margin="dense"
@@ -385,10 +374,10 @@ export default function SharesPage() {
             onChange={(e) => setFormData({ ...formData, shareType: e.target.value as ShareType })}
             sx={{ mb: 2 }}
           >
-            <MenuItem value="Album">Album</MenuItem>
-            <MenuItem value="Artist">Artist</MenuItem>
-            <MenuItem value="Song">Song</MenuItem>
-            <MenuItem value="Playlist">Playlist</MenuItem>
+            <MenuItem value="Album">{t('shares.entityAlbum', 'Album')}</MenuItem>
+            <MenuItem value="Artist">{t('shares.entityArtist', 'Artist')}</MenuItem>
+            <MenuItem value="Song">{t('shares.entitySong', 'Song')}</MenuItem>
+            <MenuItem value="Playlist">{t('shares.entityPlaylist', 'Playlist')}</MenuItem>
           </TextField>
           <TextField
             margin="dense"
@@ -419,15 +408,13 @@ export default function SharesPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreate} variant="contained" disabled={!formData.resourceId}>
-            Create
-          </Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleCreate} variant="contained" disabled={!formData.resourceId}>{t('common.create')}</Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={!!editShare} onClose={() => setEditShare(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Share</DialogTitle>
+        <DialogTitle>{t('shares.editTitle', 'Edit Share')}</DialogTitle>
         <DialogContent>
           <TextField
             margin="dense"
@@ -458,10 +445,8 @@ export default function SharesPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditShare(null)}>Cancel</Button>
-          <Button onClick={handleUpdate} variant="contained">
-            Save
-          </Button>
+          <Button onClick={() => setEditShare(null)}>{t('common.cancel')}</Button>
+          <Button onClick={handleUpdate} variant="contained">{t('common.save')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

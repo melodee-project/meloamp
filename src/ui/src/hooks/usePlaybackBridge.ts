@@ -1,12 +1,17 @@
 import { MutableRefObject, useEffect } from 'react';
-import { RepeatMode, useQueueStore } from '../queueStore';
+
 import { debugLog } from '../debug';
 
 interface PlaybackBridgeDeps {
   audioRef: MutableRefObject<HTMLAudioElement | null>;
-  playing: boolean;
-  duration: number;
-  setPlaying: (playing: boolean) => void;
+  onTogglePlay: () => void;
+  onNext: () => void;
+  onPrevious: () => void;
+  onStop: () => void;
+  /** Absolute seek target in seconds. */
+  onSeekTo: (seconds: number) => void;
+  /** Relative seek offset in seconds. */
+  onSeekBy: (offsetSeconds: number) => void;
 }
 
 const isElectronApiAvailable = (): boolean =>
@@ -14,153 +19,92 @@ const isElectronApiAvailable = (): boolean =>
   && !!window.electron
   && !!window.electron.ipcRenderer;
 
-const handleMprisCommand = (
-  command: string,
-  args: unknown[],
-  ctx: { audioRef: MutableRefObject<HTMLAudioElement | null>; playing: boolean; duration: number; setPlaying: (p: boolean) => void; setCurrent: (i: number) => void; current: number; queueLength: number },
-) => {
-  switch (command) {
-    case 'play':
-      if (!ctx.playing && ctx.audioRef.current) {
-        ctx.audioRef.current.play().then(() => ctx.setPlaying(true)).catch(console.error);
-      }
-      break;
-    case 'pause':
-      if (ctx.playing && ctx.audioRef.current) {
-        ctx.audioRef.current.pause();
-        ctx.setPlaying(false);
-      }
-      break;
-    case 'stop':
-      if (ctx.audioRef.current) {
-        ctx.audioRef.current.pause();
-        ctx.audioRef.current.currentTime = 0;
-        ctx.setPlaying(false);
-      }
-      break;
-    case 'next':
-      if (ctx.current < ctx.queueLength - 1) ctx.setCurrent(ctx.current + 1);
-      break;
-    case 'previous':
-      if (ctx.current > 0) ctx.setCurrent(ctx.current - 1);
-      break;
-    case 'seek':
-      if (ctx.audioRef.current && args[0] !== undefined) {
-        const offsetSeconds = (args[0] as number) / 1000000;
-        ctx.audioRef.current.currentTime = Math.max(0, Math.min(ctx.duration, ctx.audioRef.current.currentTime + offsetSeconds));
-      }
-      break;
-    case 'position':
-      if (ctx.audioRef.current && args[0] !== undefined) {
-        const positionSeconds = (args[0] as number) / 1000000;
-        ctx.audioRef.current.currentTime = Math.max(0, Math.min(ctx.duration, positionSeconds));
-      }
-      break;
-  }
-};
+type RemoteCommand = 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'seek' | 'position';
 
-const handleMediaKeyCommand = (
-  command: string,
-  ctx: { audioRef: MutableRefObject<HTMLAudioElement | null>; playing: boolean; duration: number; setPlaying: (p: boolean) => void; setCurrent: (i: number) => void; current: number; queueLength: number; repeatMode: RepeatMode },
-) => {
-  switch (command) {
-    case 'playPause':
-      if (ctx.playing && ctx.audioRef.current) {
-        ctx.audioRef.current.pause();
-        ctx.setPlaying(false);
-      } else if (!ctx.playing && ctx.audioRef.current) {
-        ctx.audioRef.current.play().then(() => ctx.setPlaying(true)).catch(console.error);
-      }
-      break;
-    case 'next':
-      if (ctx.current < ctx.queueLength - 1) ctx.setCurrent(ctx.current + 1);
-      else if (ctx.repeatMode === RepeatMode.ALL && ctx.queueLength > 0) ctx.setCurrent(0);
-      break;
-    case 'previous':
-      if (ctx.audioRef.current && ctx.audioRef.current.currentTime > 3) {
-        ctx.audioRef.current.currentTime = 0;
-      } else if (ctx.current > 0) {
-        ctx.setCurrent(ctx.current - 1);
-      } else if (ctx.repeatMode === RepeatMode.ALL && ctx.queueLength > 0) {
-        ctx.setCurrent(ctx.queueLength - 1);
-      }
-      break;
-    case 'stop':
-      if (ctx.audioRef.current) {
-        ctx.audioRef.current.pause();
-        ctx.audioRef.current.currentTime = 0;
-        ctx.setPlaying(false);
-      }
-      break;
-  }
-};
-
-export function usePlaybackBridge({ audioRef, playing, duration, setPlaying }: PlaybackBridgeDeps) {
-  const current = useQueueStore((s) => s.current);
-  const queueLength = useQueueStore((s) => s.queue.length);
-  const setCurrent = useQueueStore((s) => s.setCurrent);
-  const repeatMode = useQueueStore((s) => s.repeatMode);
-
+/**
+ * Bridges Electron IPC (MPRIS on Linux, global media keys) into the player.
+ *
+ * Unit contract: the main process converts D-Bus microseconds to **seconds**
+ * before sending, so both `seek` (offset) and `position` (absolute) arrive in
+ * seconds here. Never divide again in the renderer.
+ */
+export function usePlaybackBridge({
+  audioRef,
+  onTogglePlay,
+  onNext,
+  onPrevious,
+  onStop,
+  onSeekTo,
+  onSeekBy,
+}: PlaybackBridgeDeps) {
   useEffect(() => {
     if (!isElectronApiAvailable()) return;
-    const handler = (_event: unknown, command: string, ...args: unknown[]) => {
-      handleMprisCommand(command, args, {
-        audioRef, playing, duration, setPlaying, setCurrent, current, queueLength,
-      });
-    };
-    window.electron!.ipcRenderer.on('meloamp-mpris-control', handler);
-    return () => {
-      if (isElectronApiAvailable()) {
-        window.electron!.ipcRenderer.removeListener('meloamp-mpris-control', handler);
-      }
-    };
-  }, [audioRef, playing, duration, setPlaying, setCurrent, current, queueLength]);
 
-  useEffect(() => {
-    if (!isElectronApiAvailable()) return;
-    const handler = (_event: unknown, command: string) => {
-      debugLog('Player', 'Media key received:', command);
-      handleMediaKeyCommand(command, {
-        audioRef, playing, duration, setPlaying, setCurrent, current, queueLength, repeatMode,
-      });
-    };
-    window.electron!.ipcRenderer.on('meloamp-media-key', handler);
-    return () => {
-      if (isElectronApiAvailable()) {
-        window.electron!.ipcRenderer.removeListener('meloamp-media-key', handler);
+    const handleMprisCommand = (command: RemoteCommand, args: unknown[]) => {
+      switch (command) {
+        case 'play':
+          if (audioRef.current) {
+            audioRef.current.play().catch((error) => console.error('[MPRIS] play failed:', error));
+          }
+          break;
+        case 'pause':
+          audioRef.current?.pause();
+          break;
+        case 'stop':
+          onStop();
+          break;
+        case 'next':
+          onNext();
+          break;
+        case 'previous':
+          onPrevious();
+          break;
+        case 'seek': {
+          const offsetSeconds = Number(args[0]);
+          if (Number.isFinite(offsetSeconds)) onSeekBy(offsetSeconds);
+          break;
+        }
+        case 'position': {
+          const positionSeconds = Number(args[0]);
+          if (Number.isFinite(positionSeconds)) onSeekTo(positionSeconds);
+          break;
+        }
+        default:
+          debugLog('PlaybackBridge', 'Ignoring unknown MPRIS command:', command);
       }
     };
-  }, [audioRef, playing, duration, setPlaying, setCurrent, current, queueLength, repeatMode]);
 
-  useEffect(() => {
-    const handleTogglePlay = () => {
-      if (playing && audioRef.current) {
-        audioRef.current.pause();
-        setPlaying(false);
-      } else if (!playing && audioRef.current) {
-        audioRef.current.play().then(() => setPlaying(true)).catch(console.error);
+    const handleMediaKeyCommand = (command: string) => {
+      debugLog('PlaybackBridge', 'Media key received:', command);
+      switch (command) {
+        case 'playPause':
+          onTogglePlay();
+          break;
+        case 'next':
+          onNext();
+          break;
+        case 'previous':
+          onPrevious();
+          break;
+        case 'stop':
+          onStop();
+          break;
+        default:
+          debugLog('PlaybackBridge', 'Ignoring unknown media key:', command);
       }
     };
-    const handleNext = () => {
-      if (current < queueLength - 1) setCurrent(current + 1);
-      else if (repeatMode === RepeatMode.ALL && queueLength > 0) setCurrent(0);
+
+    const ipc = window.electron!.ipcRenderer;
+    const mprisHandler = (_event: unknown, command: RemoteCommand, ...args: unknown[]) => {
+      handleMprisCommand(command, args);
     };
-    const handlePrev = () => {
-      if (audioRef.current && audioRef.current.currentTime > 3) {
-        audioRef.current.currentTime = 0;
-      } else if (current > 0) {
-        setCurrent(current - 1);
-      } else if (repeatMode === RepeatMode.ALL && queueLength > 0) {
-        setCurrent(queueLength - 1);
-      }
-    };
-    window.addEventListener('meloamp-toggle-play', handleTogglePlay);
-    window.addEventListener('meloamp-next-track', handleNext);
-    window.addEventListener('meloamp-prev-track', handlePrev);
+    const mediaKeyHandler = (_event: unknown, command: string) => handleMediaKeyCommand(command);
+
+    ipc.on('meloamp-mpris-control', mprisHandler);
+    ipc.on('meloamp-media-key', mediaKeyHandler);
     return () => {
-      window.removeEventListener('meloamp-toggle-play', handleTogglePlay);
-      window.removeEventListener('meloamp-next-track', handleNext);
-      window.removeEventListener('meloamp-prev-track', handlePrev);
+      ipc.removeListener('meloamp-mpris-control', mprisHandler);
+      ipc.removeListener('meloamp-media-key', mediaKeyHandler);
     };
-  }, [audioRef, playing, setPlaying, setCurrent, current, queueLength, repeatMode]);
+  }, [audioRef, onNext, onPrevious, onSeekBy, onSeekTo, onStop, onTogglePlay]);
 }

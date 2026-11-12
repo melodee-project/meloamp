@@ -7,7 +7,23 @@ const fs = require('fs');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
+const { fileURLToPath } = require('url');
 const { autoUpdater } = require('electron-updater');
+const {
+  artCachePath,
+  formatArtUrl,
+  generateTrackId,
+  isAllowedExternalUrl,
+  sanitizeAccelerator,
+} = require('./helpers');
+const { translate } = require('./strings');
+
+const LOOPBACK_HOST = '127.0.0.1';
+
+/** Translate a main-process string using the OS locale. */
+const t = (key, replacements) => translate(app.getLocale(), key, replacements);
+const ART_DOWNLOAD_TIMEOUT_MS = 10_000;
+const ART_MAX_BYTES = 10 * 1024 * 1024;
 
 let staticServer;
 let SERVER_PORT = 3001;
@@ -55,7 +71,30 @@ function startStaticServer() {
     buildPath = path.join(__dirname, '../ui/build');
   }
 
-  // Serve static files (js, css, images, etc.)
+  // Serve static files (js, css, images, etc.) with a strict CSP and
+  // no-cache HTML so packaged clients pick up shell updates immediately.
+  server.use((req, res, next) => {
+    res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: http: https:",
+        "media-src 'self' blob: http: https:",
+        "font-src 'self' data:",
+        "connect-src 'self' http: https: ws: wss:",
+        "object-src 'none'",
+        "base-uri 'none'",
+        "form-action 'none'",
+        "frame-ancestors 'none'",
+      ].join('; '),
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    next();
+  });
+
   server.use(express.static(buildPath));
 
   // For all other routes (SPA routing), serve index.html
@@ -89,11 +128,12 @@ function startStaticServer() {
       };
 
       server.once('error', onError);
-      server.listen(nextPort, () => {
+      // Bind to loopback only: the app shell must not be reachable from the LAN.
+      server.listen(nextPort, LOOPBACK_HOST, () => {
         server.removeListener('error', onError);
         SERVER_PORT = typeof nextPort === 'number' && nextPort === 0 ? server.address().port : nextPort;
         staticServer = server;
-        console.log('Static server running on http://localhost:' + SERVER_PORT);
+        console.log(`Static server running on http://${LOOPBACK_HOST}:${SERVER_PORT}`);
         resolve(SERVER_PORT);
       });
     };
@@ -173,15 +213,31 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
       devTools: debugConsoleEnabled,
     },
+  });
+
+  // Never let the app window navigate away from the local shell, and route
+  // external links through the OS browser (validated http/https only).
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAllowedExternalUrl(url)) shell.openExternal(url).catch(() => undefined);
+    return { action: 'deny' };
+  });
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const target = new URL(url);
+    if (target.host !== LOOPBACK_HOST && target.hostname !== 'localhost') {
+      event.preventDefault();
+      if (isAllowedExternalUrl(url)) shell.openExternal(url).catch(() => undefined);
+    }
   });
 
   mainWindow.on('show', () => updateTrayMenu(lastNowPlaying));
   mainWindow.on('hide', () => updateTrayMenu(lastNowPlaying));
 
   // Load the React build output via HTTP server
-  mainWindow.loadURL('http://localhost:' + SERVER_PORT);
+  mainWindow.loadURL(`http://${LOOPBACK_HOST}:${SERVER_PORT}`);
 
   if (debugConsoleEnabled) {
     mainWindow.webContents.on('did-finish-load', () => {
@@ -208,70 +264,82 @@ async function cacheArtUrl(url) {
   }
 
   const hash = crypto.createHash('sha256').update(url).digest('hex');
-  const extension = path.extname(new URL(url).pathname) || '.jpg';
-  const cachedArtPath = path.join(cacheDir, hash + extension);
+  const cachedArtPath = artCachePath(cacheDir, url, hash);
 
   if (!fs.existsSync(cachedArtPath)) {
+    const removePartial = () => {
+      try {
+        if (fs.existsSync(cachedArtPath)) fs.unlinkSync(cachedArtPath);
+      } catch (cleanupError) {
+        console.error(`Failed to clean up partial album art cache file ${cachedArtPath}:`, cleanupError);
+      }
+    };
+
     try {
       await new Promise((resolve, reject) => {
-        const cleanupPartialCacheFile = () => {
-          try {
-            if (fs.existsSync(cachedArtPath)) {
-              fs.unlinkSync(cachedArtPath);
-            }
-          } catch (cleanupError) {
-            console.error(`Failed to clean up partial album art cache file ${cachedArtPath}:`, cleanupError);
-          }
-        };
         const client = url.startsWith('https') ? https : http;
-        client.get(url, (response) => {
+        const request = client.get(url, { timeout: ART_DOWNLOAD_TIMEOUT_MS }, (response) => {
           if (response.statusCode < 200 || response.statusCode >= 300) {
             response.resume();
             reject(new Error(`HTTP ${response.statusCode}`));
             return;
           }
+
+          const contentType = String(response.headers['content-type'] || '');
+          if (contentType && !contentType.startsWith('image/')) {
+            response.resume();
+            reject(new Error(`Unexpected content-type: ${contentType}`));
+            return;
+          }
+
+          const declaredLength = Number(response.headers['content-length']);
+          if (Number.isFinite(declaredLength) && declaredLength > ART_MAX_BYTES) {
+            response.resume();
+            reject(new Error(`Artwork too large: ${declaredLength} bytes`));
+            return;
+          }
+
+          let received = 0;
           const fileStream = fs.createWriteStream(cachedArtPath);
+
+          response.on('data', (chunk) => {
+            received += chunk.length;
+            if (received > ART_MAX_BYTES) {
+              response.destroy(new Error('Artwork exceeded size limit'));
+            }
+          });
+          response.on('error', (error) => {
+            fileStream.destroy();
+            removePartial();
+            reject(error);
+          });
           response.pipe(fileStream);
           fileStream.on('finish', () => {
             fileStream.close();
             resolve();
           });
           fileStream.on('error', (error) => {
-            cleanupPartialCacheFile();
+            removePartial();
             reject(error);
           });
-          response.on('error', (error) => {
-            cleanupPartialCacheFile();
-            reject(error);
-          });
-        }).on('error', (error) => {
-          cleanupPartialCacheFile();
+        });
+
+        request.on('timeout', () => {
+          request.destroy(new Error('Artwork download timed out'));
+        });
+        request.on('error', (error) => {
+          removePartial();
           reject(error);
         });
       });
     } catch (error) {
-      try {
-        if (fs.existsSync(cachedArtPath)) {
-          fs.unlinkSync(cachedArtPath);
-        }
-      } catch (cleanupError) {
-        console.error(`Failed to clean up failed album art cache file ${cachedArtPath}:`, cleanupError);
-      }
+      removePartial();
       console.error(`Failed to download and cache album art from ${url}:`, error);
-      return ''; // Return empty string if download fails
+      return '';
     }
   }
 
   return formatArtUrl(cachedArtPath);
-}
-
-// Helper function to generate proper MPRIS track ID
-function generateTrackId(trackId) {
-  if (!trackId) return '/org/mpris/MediaPlayer2/track/0';
-  
-  // Ensure track ID follows D-Bus object path rules
-  const sanitized = String(trackId).replace(/[^a-zA-Z0-9_]/g, '_');
-  return `/org/mpris/MediaPlayer2/track/${sanitized}`;
 }
 
 async function handleMprisPlaybackInfo(event, info) {
@@ -308,7 +376,7 @@ async function handleMprisPlaybackInfo(event, info) {
   if (info.trackId && info.trackId !== lastTrackId && info.status === 'Playing') {
     lastTrackId = info.trackId;
     if (Notification.isSupported()) {
-      const iconPath = artUrl.startsWith('file://') ? artUrl.slice(7) : undefined;
+      const iconPath = artUrl.startsWith('file://') ? fileURLToPath(artUrl) : undefined;
       new Notification({
         title: info.title || 'Now Playing',
         body: `${artistNames.join(', ')} \n${albumName}`,
@@ -357,15 +425,15 @@ function handleMprisPositionUpdate(event, position) {
 }
 
 function teardownMpris() {
-  ipcMain.removeListener('meloamp-playback-info', handleMprisPlaybackInfo);
-  ipcMain.removeListener('meloamp-position-update', handleMprisPositionUpdate);
   if (mprisPlayer) {
     try { mprisPlayer.close?.(); } catch {}
   }
   mprisPlayer = null;
 }
 
-// IPC: Receive playback info from renderer and update MPRIS
+// IPC: Receive playback info from renderer and update MPRIS.
+// Registered once: `teardownMpris` only closes the D-Bus player, so a transient
+// D-Bus failure cannot permanently detach these handlers.
 ipcMain.on('meloamp-playback-info', handleMprisPlaybackInfo);
 ipcMain.on('meloamp-position-update', handleMprisPositionUpdate);
 
@@ -434,8 +502,27 @@ function unregisterMediaKeys() {
 
 // IPC: Update media key configuration
 ipcMain.on('meloamp-update-media-keys', (event, config) => {
-  console.log('Updating media key configuration:', config);
-  mediaKeyConfig = { ...mediaKeyConfig, ...config };
+  if (!config || typeof config !== 'object') return;
+
+  // Only accept accelerators from a strict allowlist; the renderer must not be
+  // able to register arbitrary global shortcuts.
+  const next = { ...mediaKeyConfig };
+  for (const action of Object.keys(next)) {
+    if (!(action in config)) continue;
+    if (config[action] === null || config[action] === '') {
+      next[action] = '';
+      continue;
+    }
+    const sanitized = sanitizeAccelerator(config[action]);
+    if (sanitized === null) {
+      console.warn(`Ignoring invalid accelerator for ${action}:`, config[action]);
+      continue;
+    }
+    next[action] = sanitized;
+  }
+
+  mediaKeyConfig = next;
+  console.log('Updating media key configuration:', mediaKeyConfig);
   registerMediaKeys();
 });
 
@@ -497,13 +584,13 @@ function updateTrayMenu(nowPlaying = null) {
   const contextMenu = Menu.buildFromTemplate([
     // Now playing info (if available)
     ...(nowPlaying ? [
-      { label: nowPlaying.title || 'Unknown Track', enabled: false },
-      { label: nowPlaying.artist || 'Unknown Artist', enabled: false },
+      { label: nowPlaying.title || t('tray.unknownTrack'), enabled: false },
+      { label: nowPlaying.artist || t('tray.unknownArtist'), enabled: false },
       { type: 'separator' }
     ] : []),
     // Playback controls
     {
-      label: 'Play/Pause',
+      label: t('tray.playPause'),
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('meloamp-media-key', 'playPause');
@@ -511,7 +598,7 @@ function updateTrayMenu(nowPlaying = null) {
       }
     },
     {
-      label: 'Next',
+      label: t('tray.next'),
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('meloamp-media-key', 'next');
@@ -519,7 +606,7 @@ function updateTrayMenu(nowPlaying = null) {
       }
     },
     {
-      label: 'Previous',
+      label: t('tray.previous'),
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('meloamp-media-key', 'previous');
@@ -529,7 +616,7 @@ function updateTrayMenu(nowPlaying = null) {
     { type: 'separator' },
     // Window controls
     {
-      label: mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() ? 'Hide Window' : 'Show Window',
+      label: mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() ? t('tray.hideWindow') : t('tray.showWindow'),
       click: () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           if (mainWindow.isVisible()) {
@@ -543,7 +630,7 @@ function updateTrayMenu(nowPlaying = null) {
     },
     { type: 'separator' },
     {
-      label: 'Quit',
+      label: t('tray.quit'),
       click: () => {
         app.quit();
       }
@@ -568,17 +655,12 @@ ipcMain.on('meloamp-tray-update', (event, nowPlaying) => {
 });
 
 ipcMain.handle('meloamp-open-external', async (event, rawUrl) => {
-  try {
-    const parsed = new URL(rawUrl);
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      throw new Error('Unsupported URL protocol');
-    }
-    await shell.openExternal(parsed.toString());
-    return true;
-  } catch (error) {
-    console.error('Failed to open external URL:', error);
-    throw error;
+  if (!isAllowedExternalUrl(rawUrl)) {
+    console.warn('Refusing to open non-http(s) URL:', rawUrl);
+    return false;
   }
+  await shell.openExternal(new URL(rawUrl).toString());
+  return true;
 });
 
 // Global error handling
@@ -596,7 +678,7 @@ app.whenReady().then(async () => {
     createWindow();
   } catch (error) {
     console.error('Failed to start static server:', error);
-    dialog.showErrorBox('Startup Error', 'Failed to start local web server. Please restart MeloAmp.');
+    dialog.showErrorBox(t('dialog.startupErrorTitle'), t('dialog.startupErrorMessage'));
     app.quit();
     return;
   }
@@ -651,8 +733,8 @@ function setupAutoUpdater() {
     // Show notification
     if (Notification.isSupported()) {
       new Notification({
-        title: 'Update Available',
-        body: `MeloAmp ${info.version} is available. Click to download.`,
+        title: t('notification.updateAvailableTitle'),
+        body: t('notification.updateAvailableBody', { version: info.version }),
         silent: false
       }).show();
     }
@@ -660,10 +742,10 @@ function setupAutoUpdater() {
     // Ask user if they want to download
     showOwnerSafeDialog({
       type: 'info',
-      title: 'Update Available',
-      message: `A new version (${info.version}) is available.`,
-      detail: 'Would you like to download it now?',
-      buttons: ['Download', 'Later'],
+      title: t('dialog.updateAvailableTitle'),
+      message: t('dialog.updateAvailableMessage', { version: info.version }),
+      detail: t('dialog.updateAvailableDetail'),
+      buttons: [t('dialog.download'), t('dialog.later')],
       defaultId: 0,
       cancelId: 1
     }).then(({ response }) => {
@@ -695,10 +777,10 @@ function setupAutoUpdater() {
     // Ask user to restart
     showOwnerSafeDialog({
       type: 'info',
-      title: 'Update Ready',
-      message: 'Update downloaded successfully.',
-      detail: 'The update will be installed when you restart MeloAmp.',
-      buttons: ['Restart Now', 'Later'],
+      title: t('dialog.updateReadyTitle'),
+      message: t('dialog.updateReadyMessage'),
+      detail: t('dialog.updateReadyDetail'),
+      buttons: [t('dialog.restartNow'), t('dialog.later')],
       defaultId: 0,
       cancelId: 1
     }).then(({ response }) => {
@@ -753,19 +835,19 @@ function setupApplicationMenu() {
         { role: 'about' },
         { type: 'separator' },
         {
-          label: 'Check for Updates...',
+          label: t('menu.checkUpdates'),
           click: () => {
             if (!app.isPackaged) {
               showOwnerSafeDialog({
                 type: 'info',
-                title: 'Development Mode',
-                message: 'Auto-updates are only available in packaged builds.',
-                buttons: ['OK']
+                title: t('dialog.devModeTitle'),
+                message: t('dialog.devModeMessage'),
+                buttons: [t('dialog.ok')]
               });
               return;
             }
             autoUpdater.checkForUpdates().catch(err => {
-              dialog.showErrorBox('Update Error', err.message);
+              dialog.showErrorBox(t('dialog.updateErrorTitle'), err.message);
             });
           }
         },
@@ -781,14 +863,14 @@ function setupApplicationMenu() {
     }] : []),
     // File menu
     {
-      label: 'File',
+      role: 'fileMenu',
       submenu: [
         isMac ? { role: 'close' } : { role: 'quit' }
       ]
     },
     // Edit menu
     {
-      label: 'Edit',
+      role: 'editMenu',
       submenu: [
         { role: 'undo' },
         { role: 'redo' },
@@ -809,7 +891,7 @@ function setupApplicationMenu() {
     },
     // View menu
     {
-      label: 'View',
+      role: 'viewMenu',
       submenu: [
         { role: 'reload' },
         { role: 'forceReload' },
@@ -824,10 +906,10 @@ function setupApplicationMenu() {
     },
     // Help menu
     {
-      label: 'Help',
+      role: 'help',
       submenu: [
         {
-          label: 'About MeloAmp',
+          label: t('menu.about'),
           click: () => {
             showOwnerSafeDialog({
               type: 'info',
@@ -841,7 +923,7 @@ function setupApplicationMenu() {
         ...(isMac ? [] : [
           { type: 'separator' },
           {
-            label: 'Check for Updates...',
+            label: t('menu.checkUpdates'),
             click: () => {
               if (!app.isPackaged) {
                 showOwnerSafeDialog({
@@ -853,7 +935,7 @@ function setupApplicationMenu() {
                 return;
               }
               autoUpdater.checkForUpdates().catch(err => {
-                dialog.showErrorBox('Update Error', err.message);
+                dialog.showErrorBox(t('dialog.updateErrorTitle'), err.message);
               });
             }
           }

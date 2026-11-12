@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -20,7 +22,7 @@ import {
   ListItemText,
 } from '@mui/material';
 import { Save, Delete, MoreVert, Refresh } from '@mui/icons-material';
-import { apiRequest } from '../api';
+import { apiRequest, unwrapApiResponse } from '../api';
 import { EqualizerPreset, EqualizerBand, CreateEqualizerPresetRequest, PaginatedResponse } from '../apiModels';
 
 type PresetListPayload = EqualizerPreset[] | PaginatedResponse<EqualizerPreset> | { data: EqualizerPreset[] } | { data: { data: EqualizerPreset[] } };
@@ -39,6 +41,7 @@ const FREQUENCY_LABELS: Record<number, string> = {
 };
 
 export default function EqualizerPage() {
+  const { t } = useTranslation();
   const [presets, setPresets] = React.useState<EqualizerPreset[]>([]);
   const [selectedPreset, setSelectedPreset] = React.useState<EqualizerPreset | null>(null);
   const [bands, setBands] = React.useState<EqualizerBand[]>([]);
@@ -48,33 +51,29 @@ export default function EqualizerPage() {
   const [newPresetName, setNewPresetName] = React.useState('');
   const [menuAnchor, setMenuAnchor] = React.useState<null | HTMLElement>(null);
 
-  const fetchPresets = React.useCallback(async () => {
+  const fetchPresets = React.useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await apiRequest<PresetListPayload>('/equalizer/presets');
-      let presetList: EqualizerPreset[] = [];
-      if (Array.isArray(response.data)) {
-        presetList = response.data;
-      } else if (Array.isArray(response.data?.data)) {
-        presetList = response.data.data;
-      } else if (response.data?.data?.data && Array.isArray(response.data.data.data)) {
-        presetList = response.data.data.data;
-      }
+      const response = await apiRequest<PresetListPayload>('/equalizer/presets', { signal });
+      const presetList = unwrapApiResponse<EqualizerPreset[]>(response.data) ?? [];
       setPresets(presetList);
       if (presetList.length > 0 && !selectedPreset) {
         const defaultPreset = presetList.find((p: EqualizerPreset) => p.isDefault) || presetList[0];
         setSelectedPreset(defaultPreset);
         setBands(defaultPreset.bands || []);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load equalizer presets');
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, 'Failed to load equalizer presets'));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [selectedPreset]);
 
   React.useEffect(() => {
-    fetchPresets();
+    const controller = new AbortController();
+    fetchPresets(controller.signal);
+    return () => controller.abort();
   }, [fetchPresets]);
 
   const handleBandChange = (index: number, gain: number) => {
@@ -96,7 +95,7 @@ export default function EqualizerPage() {
       setCreateDialogOpen(false);
       setNewPresetName('');
       fetchPresets();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create preset:', err);
     }
   };
@@ -109,7 +108,7 @@ export default function EqualizerPage() {
         setSelectedPreset(null);
         setBands([]);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to delete preset:', err);
     }
     setMenuAnchor(null);
@@ -126,9 +125,7 @@ export default function EqualizerPage() {
   if (loading && presets.length === 0) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Equalizer
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.equalizer')}</Typography>
         <Card>
           <CardContent>
             <Skeleton variant="rectangular" height={300} />
@@ -141,9 +138,7 @@ export default function EqualizerPage() {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Equalizer
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.equalizer')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -152,33 +147,27 @@ export default function EqualizerPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Equalizer</Typography>
+        <Typography variant="h4">{t('nav.equalizer')}</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={handleResetBands}
             disabled={!selectedPreset}
-          >
-            Reset
-          </Button>
+          >{t('common.reset')}</Button>
           <Button
             variant="contained"
             startIcon={<Save />}
             onClick={() => setCreateDialogOpen(true)}
             disabled={bands.length === 0}
-          >
-            Save as Preset
-          </Button>
+          >{t('equalizer.saveAsPreset')}</Button>
         </Box>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
         <Card sx={{ minWidth: { md: 250 } }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Presets
-            </Typography>
+            <Typography variant="h6" gutterBottom>{t('equalizer.presets')}</Typography>
             {presets.map((preset) => (
               <Box
                 key={preset.id}
@@ -205,7 +194,7 @@ export default function EqualizerPage() {
                   )}
                 </Box>
                 {!preset.isDefault && (
-                  <IconButton
+                  <IconButton aria-label={t('equalizer.presetMenu', 'Preset options')}
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -231,9 +220,7 @@ export default function EqualizerPage() {
               )}
 
               {!selectedPreset ? (
-                <Typography color="text.secondary">
-                  Select a preset to view and adjust the equalizer bands.
-                </Typography>
+                <Typography color="text.secondary">{t('equalizer.selectPresetHint')}</Typography>
               ) : (
                 <Box
                   sx={{
@@ -304,12 +291,12 @@ export default function EqualizerPage() {
           <ListItemIcon>
             <Delete fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText>Delete</ListItemText>
+          <ListItemText>{t('common.delete')}</ListItemText>
         </MenuItem>
       </Menu>
 
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
-        <DialogTitle>Save as New Preset</DialogTitle>
+        <DialogTitle>{t('equalizer.saveAsNewPreset', 'Save as New Preset')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -321,10 +308,8 @@ export default function EqualizerPage() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreatePreset} variant="contained" disabled={!newPresetName}>
-            Save
-          </Button>
+          <Button onClick={() => setCreateDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleCreatePreset} variant="contained" disabled={!newPresetName}>{t('common.save')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -2,35 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { FormControl, InputLabel, Select, MenuItem, Typography, Box, Switch, FormControlLabel, Slider, Button, TextField, Divider, Alert } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { MediaKeyConfig } from '../types/global.d';
-import { UserSettings as UserSettingsType } from '../types/settings';
+import { UserSettings as UserSettingsType, DEFAULT_SETTINGS } from '../types/settings';
+import { THEME_CATALOG } from '../themes/registry';
+import { SUPPORTED_LANGUAGES } from '../i18n';
 
 interface UserSettingsProps {
   settings: UserSettingsType;
   onChange: (settings: UserSettingsType) => void;
 }
 
-const themes = [
-  { label: 'Acid Pop', value: 'acidPop' },
-  { label: 'Aurora', value: 'aurora' },
-  { label: 'Berry Twilight', value: 'berryTwilight' },
-  { label: 'Bubblegum', value: 'bubblegum' },
-  { label: 'Candy', value: 'candy' },
-  { label: 'Classic', value: 'classic' },
-  { label: 'Dark', value: 'dark' },
-  { label: 'Fiesta', value: 'fiesta' },
-  { label: 'Forest', value: 'forest' },
-  { label: 'Modern Minimal', value: 'modernMinimal' },
-  { label: 'Mono Contrast', value: 'monoContrast' },
-  { label: 'Ocean', value: 'ocean' },
-  { label: 'Rainbow', value: 'rainbow' },
-  { label: 'Retro Wave', value: 'retroWave' },
-  { label: 'Scarlett', value: 'scarlett' },
-  { label: 'Space Funk', value: 'spaceFunk' },
-  { label: 'Sunset', value: 'sunset' },
-  { label: 'WinAmp', value: 'winAmp' }
-];
-
-const sortedThemes = themes.slice().sort((a, b) => a.label.localeCompare(b.label));
+const sortedThemes = THEME_CATALOG
+  .map(({ id }) => ({ label: id, value: id }))
+  .sort((a, b) => a.label.localeCompare(b.label));
 
 // Default media key shortcuts
 const defaultMediaKeys: MediaKeyConfig = {
@@ -78,18 +61,9 @@ export default function UserSettings({ settings, onChange }: UserSettingsProps) 
   };
 
   const handleRestoreDefaults = () => {
-    const defaults: UserSettingsType = {
-      theme: 'berryTwilight',
-      language: 'en',
-      highContrast: false,
-      fontScale: 1,
-      caching: false,
-      mode: 'light' as const,
-      dashboardRecentLimit: 10
-    };
-    document.documentElement.style.setProperty('--meloamp-font-scale', String(defaults.fontScale));
-    i18n.changeLanguage(defaults.language);
-    onChange(defaults);
+    document.documentElement.style.setProperty('--meloamp-font-scale', String(DEFAULT_SETTINGS.fontScale));
+    i18n.changeLanguage(DEFAULT_SETTINGS.language);
+    onChange({ ...DEFAULT_SETTINGS });
   };
 
   return (
@@ -102,7 +76,11 @@ export default function UserSettings({ settings, onChange }: UserSettingsProps) 
           label={t('settings.theme')}
           onChange={e => onChange({ ...settings, theme: e.target.value })}
         >
-          {sortedThemes.map(tObj => <MenuItem key={tObj.value} value={tObj.value}>{tObj.label}</MenuItem>)}
+          {sortedThemes.map(tObj => (
+            <MenuItem key={tObj.value} value={tObj.value}>
+              {t(`localThemeGallery.themes.${tObj.value}.name`)}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
       <FormControl fullWidth sx={{ mb: 2 }}>
@@ -116,16 +94,9 @@ export default function UserSettings({ settings, onChange }: UserSettingsProps) 
             onChange({ ...settings, language: lang });
           }}
         >
-          <MenuItem value="en">English</MenuItem>
-          <MenuItem value="es">Español</MenuItem>
-          <MenuItem value="fr">Français</MenuItem>
-          <MenuItem value="de">Deutsch</MenuItem>
-          <MenuItem value="pt">Português</MenuItem>
-          <MenuItem value="it">Italiano</MenuItem>
-          <MenuItem value="ja">日本語</MenuItem>
-          <MenuItem value="zh-CN">简体中文</MenuItem>
-          <MenuItem value="ru">Русский</MenuItem>
-        </Select>
+          {SUPPORTED_LANGUAGES.map(({ code, label }) => (
+            <MenuItem key={code} value={code}>{label}</MenuItem>
+          ))}        </Select>
       </FormControl>
       <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel>{t('settings.recentItems')}</InputLabel>

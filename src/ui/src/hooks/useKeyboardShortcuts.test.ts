@@ -111,3 +111,30 @@ describe('isInputElement', () => {
     expect(isInputElement(div)).toBe(false);
   });
 });
+
+describe('matchesKeyCombination', () => {
+  const event = (init: Partial<KeyboardEvent> = {}) => ({
+    key: 'k',
+    ctrlKey: false,
+    altKey: false,
+    shiftKey: false,
+    metaKey: false,
+    ...init,
+  }) as KeyboardEvent;
+
+  test('matches a plain key', () => {
+    expect(matchesKeyCombination(event(), parseKeyCombination('k'))).toBe(true);
+  });
+
+  test('requires modifiers to match exactly', () => {
+    expect(matchesKeyCombination(event({ ctrlKey: true }), parseKeyCombination('ctrl+k'))).toBe(true);
+    expect(matchesKeyCombination(event(), parseKeyCombination('ctrl+k'))).toBe(false);
+    expect(matchesKeyCombination(event({ ctrlKey: true, shiftKey: true }), parseKeyCombination('ctrl+k'))).toBe(false);
+  });
+
+  test('matches space and escape aliases', () => {
+    expect(matchesKeyCombination(event({ key: ' ' }), parseKeyCombination('space'))).toBe(true);
+    expect(matchesKeyCombination(event({ key: 'Escape' }), parseKeyCombination('esc'))).toBe(true);
+    expect(matchesKeyCombination(event({ key: 'Enter' }), parseKeyCombination('enter'))).toBe(true);
+  });
+});

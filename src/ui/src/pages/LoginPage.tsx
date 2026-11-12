@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, TextField, Alert } from '@mui/material';
-import { setJwt, setApiBaseUrl, authenticate } from '../api';
+import { authenticate, setApiBaseUrl, setJwt, unwrapApiResponse } from '../api';
 import { LoginRequest, LoginResponse } from '../apiModels';
 import { writeUser } from '../storage';
 import logo from '../logo.svg';
 import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 
 const MIN_SERVER_MAJOR = 1;
 const MIN_SERVER_MINOR = 1;
@@ -20,7 +21,7 @@ const ensureApiUrl = (url: string) => {
   return u;
 };
 
-async function checkServerVersion(apiUrl: string): Promise<{ supported: boolean; info?: any; error?: string }> {
+async function checkServerVersion(apiUrl: string): Promise<{ supported: boolean; info?: Record<string, unknown>; error?: string }> {
   try {
     const res = await fetch(apiUrl + '/system/info');
     if (!res.ok) throw new Error('Failed to fetch server info');
@@ -38,8 +39,8 @@ async function checkServerVersion(apiUrl: string): Promise<{ supported: boolean;
       return { supported: false, info, error: 'login.serverVersionTooOld' };
     }
     return { supported: true, info };
-  } catch (e: any) {
-    return { supported: false, error: e.message };
+  } catch (e) {
+    return { supported: false, error: getErrorMessage(e, 'login.unsupportedServer') };
   }
 }
 
@@ -84,7 +85,8 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       localStorage.setItem('serverUrl', apiUrl);
       setApiBaseUrl(apiUrl);
       const res = await authenticate({ email, password } as LoginRequest);
-      const loginData: LoginResponse = res.data;
+      const loginData = unwrapApiResponse<LoginResponse>(res.data);
+      if (!loginData) throw new Error('Invalid response from authentication');
       const token = loginData.token;
       if (!token) throw new Error('Invalid response from authentication');
       setJwt(token);
@@ -96,9 +98,9 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       }
       setDebugInfo({ loginData, res });
       onLogin();
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed');
-      setDebugInfo({ error: err, errorData: err.response?.data });
+    } catch (err) {
+      setError(getErrorMessage(err, 'Login failed'));
+      setDebugInfo({ error: err, errorData: (err as { response?: { data?: unknown } })?.response?.data });
     } finally {
       setLoading(false);
     }
@@ -109,21 +111,21 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
       <img src={logo} alt="MeloAmp Logo" style={{ height: 400 }} />
       <form onSubmit={handleSubmit}>
         <TextField
-          label={t('login.serverUrl') !== 'login.serverUrl' ? t('login.serverUrl') : 'Server URL'}
+          label={t('login.serverUrl')}
           type="url"
           value={serverUrl}
           onChange={e => setServerUrl(e.target.value)}
           fullWidth
           margin="normal"
           required
-          helperText={t('login.serverUrlHelper') !== 'login.serverUrlHelper' ? t('login.serverUrlHelper') : 'Enter the URL of your MeloAmp server'}
+          helperText={t('login.serverUrlHelper')}
           error={serverCheck.checked && !serverCheck.supported}
         />
         {serverCheck.checked && !serverCheck.supported && (
           <Alert severity="error" sx={{ mt: 2 }}>
             {serverCheck.error && serverCheck.error.startsWith('login.')
-              ? t(serverCheck.error) !== serverCheck.error ? t(serverCheck.error) : 'Server version too old'
-              : serverCheck.error || t('login.unsupportedServer') || 'Unsupported server version'}
+              ? t(serverCheck.error)
+              : serverCheck.error || t('login.unsupportedServer')}
           </Alert>
         )}
         <TextField

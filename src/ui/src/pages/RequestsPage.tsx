@@ -1,4 +1,5 @@
 import React from 'react';
+import { getErrorMessage } from '../utils/errors';
 import { Link, useParams } from 'react-router-dom';
 import {
   Alert,
@@ -29,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { API_ROUTES } from '../apiRoutes';
-import apiRequest from '../api';
+import apiRequest, { unwrapApiPage, unwrapApiResponse } from '../api';
 import {
   ActivityCheckResponse,
   CommentPagedResponse,
@@ -42,21 +43,6 @@ import {
   RequestSummary,
   UpdateRequestRequest,
 } from '../apiModels';
-
-function unwrapPayload<T>(value: unknown): T | null {
-  if (!value || typeof value !== 'object') return null;
-  const hasPayload = (value as { data?: unknown; meta?: unknown; items?: unknown }).data !== undefined;
-  if (hasPayload) return value as T;
-  const nested = (value as { data?: unknown }).data;
-  if (
-    nested &&
-    typeof nested === 'object' &&
-    ((nested as { data?: unknown }).data !== undefined || (nested as { results?: unknown }).results !== undefined)
-  ) {
-    return nested as T;
-  }
-  return null;
-}
 
 export default function RequestsPage() {
   const { requestApiKey } = useParams<{ requestApiKey: string }>();
@@ -91,27 +77,26 @@ export default function RequestsPage() {
 
   const [inlineDescription, setInlineDescription] = React.useState('');
 
-  const loadRequests = React.useCallback(async () => {
+  const loadRequests = React.useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
       if (showUnreadOnly) {
         const res = await apiRequest<PagedResponseOfUnreadRequestSummary>(API_ROUTES.requests.unreadActivity, {
           params: { page, pageSize },
+          signal,
         });
-        const payload = unwrapPayload<PagedResponseOfUnreadRequestSummary>(res.data);
-        if (payload) {
-          setList((payload as unknown as { data: RequestSummary[] }).data || []);
-          const responseMeta = (payload as { meta?: { totalPages?: number; totalCount?: number; currentPage?: number } }).meta || {};
-          setMeta({
-            totalPages: responseMeta.totalPages ?? 1,
-            totalCount: responseMeta.totalCount ?? 0,
-            currentPage: responseMeta.currentPage ?? 1,
-          });
-        }
+        const pageResult = unwrapApiPage<RequestSummary>(res.data);
+        setList(pageResult.items);
+        setMeta({
+          totalPages: pageResult.meta?.totalPages ?? 1,
+          totalCount: pageResult.meta?.totalCount ?? 0,
+          currentPage: pageResult.meta?.currentPage ?? 1,
+        });
         return;
       }
       const response = await apiRequest<RequestPagedResponse>(API_ROUTES.requests.list, {
+        signal,
         params: {
           page,
           pageSize,
@@ -123,45 +108,44 @@ export default function RequestsPage() {
           songApiKey: songApiKey || undefined,
         },
       });
-      const payload = unwrapPayload<RequestPagedResponse>(response.data);
-      if (payload) {
-        setList((payload as RequestPagedResponse).data || []);
-        setMeta((payload as RequestPagedResponse).meta || meta);
-      } else {
-        setList([]);
+      const pageResult = unwrapApiPage<RequestSummary>(response.data);
+      setList(pageResult.items);
+      if (pageResult.meta) {
+        setMeta(pageResult.meta);
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  }, [albumApiKey, artistApiKey, mineOnly, page, pageSize, queryText, showUnreadOnly, songApiKey, status, t, meta]);
+  }, [albumApiKey, artistApiKey, mineOnly, page, pageSize, queryText, showUnreadOnly, songApiKey, status, t]);
 
-  const loadActivity = React.useCallback(async () => {
+  const loadActivity = React.useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await apiRequest<ActivityCheckResponse>(API_ROUTES.requests.activity);
-      const payload = unwrapPayload<ActivityCheckResponse>(response.data) || { hasUnread: false };
-      setHasUnread(payload.hasUnread);
+      const response = await apiRequest<ActivityCheckResponse>(API_ROUTES.requests.activity, { signal });
+      const payload = unwrapApiResponse<ActivityCheckResponse>(response.data);
+      setHasUnread(payload?.hasUnread ?? false);
     } catch {
       // non-blocking
     }
   }, []);
 
-  const loadRequestDetail = React.useCallback(async (apiKey: string) => {
+  const loadRequestDetail = React.useCallback(async (apiKey: string, signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const res = await apiRequest<RequestDetail>(API_ROUTES.requests.detail.replace('{apiKey}', apiKey));
-      const payload = unwrapPayload<RequestDetail>(res.data);
-      setDetail(payload || null);
-      setInlineDescription((payload as RequestDetail | null)?.description || '');
+      const res = await apiRequest<RequestDetail>(API_ROUTES.requests.detail.replace('{apiKey}', apiKey), { signal });
+      const payload = unwrapApiResponse<RequestDetail>(res.data);
+      setDetail(payload);
+      setInlineDescription(payload?.description || '');
       await apiRequest(API_ROUTES.requests.seen.replace('{requestApiKey}', apiKey), { method: 'POST' });
       const commentResponse = await apiRequest<CommentPagedResponse>(API_ROUTES.requests.comments.replace('{requestApiKey}', apiKey));
-      const commentPayload = unwrapPayload<CommentPagedResponse>(commentResponse.data);
-      setComments((commentPayload as CommentPagedResponse)?.data || []);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+      setComments(unwrapApiPage<RequestCommentDto>(commentResponse.data).items);
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [t]);
 
@@ -175,8 +159,8 @@ export default function RequestsPage() {
       });
       setCommentText('');
       await loadRequestDetail(requestApiKey);
-    } catch (err: any) {
-      setCommentError(err?.response?.data?.message || err?.message || t('error.generic', 'Something went wrong'));
+    } catch (err) {
+      setCommentError(getErrorMessage(err, t('error.generic', 'Something went wrong')));
     }
   };
 
@@ -186,8 +170,8 @@ export default function RequestsPage() {
       await apiRequest(API_ROUTES.requests.complete.replace('{requestApiKey}', requestApiKey), { method: 'POST' });
       await loadRequestDetail(requestApiKey);
       await loadRequests();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     }
   };
 
@@ -202,8 +186,8 @@ export default function RequestsPage() {
         data: payload,
       });
       await loadRequestDetail(requestApiKey);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     }
   };
 
@@ -217,20 +201,23 @@ export default function RequestsPage() {
       setCreateOpen(false);
       setNewRequest({ category: '', description: '' });
       loadRequests();
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     }
   };
 
   React.useEffect(() => {
-    loadActivity();
-    loadRequests();
+    const controller = new AbortController();
+    loadActivity(controller.signal);
+    loadRequests(controller.signal);
+    return () => controller.abort();
   }, [loadActivity, loadRequests]);
 
   React.useEffect(() => {
-    if (requestApiKey) {
-      loadRequestDetail(requestApiKey);
-    }
+    if (!requestApiKey) return;
+    const controller = new AbortController();
+    loadRequestDetail(requestApiKey, controller.signal);
+    return () => controller.abort();
   }, [requestApiKey, loadRequestDetail]);
 
   const detailMeta = detail ? [
@@ -352,10 +339,10 @@ export default function RequestsPage() {
         />
         <TextField select value={status || ''} onChange={(event) => setStatus(event.target.value)} label={t('requests.status', 'Status')} sx={{ minWidth: 160 }}>
           <MenuItem value="">{t('requests.allStatuses', 'All')}</MenuItem>
-          <MenuItem value="Open">Open</MenuItem>
-          <MenuItem value="Completed">Completed</MenuItem>
-          <MenuItem value="Closed">Closed</MenuItem>
-          <MenuItem value="InProgress">In Progress</MenuItem>
+          <MenuItem value="Open">{t('requests.statusOpen', 'Open')}</MenuItem>
+          <MenuItem value="Completed">{t('requests.statusCompleted', 'Completed')}</MenuItem>
+          <MenuItem value="Closed">{t('requests.statusClosed', 'Closed')}</MenuItem>
+          <MenuItem value="InProgress">{t('requests.statusInProgress', 'In Progress')}</MenuItem>
         </TextField>
         <TextField value={artistApiKey} onChange={(event) => setArtistApiKey(event.target.value)} label={t('requests.artistFilter', 'Artist API key')} />
         <TextField value={albumApiKey} onChange={(event) => setAlbumApiKey(event.target.value)} label={t('requests.albumFilter', 'Album API key')} />
@@ -382,7 +369,7 @@ export default function RequestsPage() {
           color={hasUnread ? 'warning' : 'default'}
           sx={{ height: 36 }}
         />
-        <Button variant="contained" onClick={loadRequests}>
+        <Button variant="contained" onClick={() => loadRequests()}>
           {t('common.refresh', 'Refresh')}
         </Button>
       </Stack>
@@ -405,10 +392,10 @@ export default function RequestsPage() {
               onChange={(event) => setNewRequest((current) => ({ ...current, category: event.target.value }))}
               label={t('requests.category', 'Category')}
             >
-              <MenuItem value="Song">Song</MenuItem>
-              <MenuItem value="Album">Album</MenuItem>
-              <MenuItem value="Artist">Artist</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
+              <MenuItem value="Song">{t('requests.entitySong', 'Song')}</MenuItem>
+              <MenuItem value="Album">{t('requests.entityAlbum', 'Album')}</MenuItem>
+              <MenuItem value="Artist">{t('requests.entityArtist', 'Artist')}</MenuItem>
+              <MenuItem value="Other">{t('requests.entityOther', 'Other')}</MenuItem>
             </TextField>
             <TextField
               fullWidth

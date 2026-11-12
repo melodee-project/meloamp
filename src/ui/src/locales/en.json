@@ -2,7 +2,10 @@
   "dashboard": {
     "recentArtists": "Recent Artists",
     "recentAlbums": "Recent Albums",
-    "yourPlaylists": "Your Playlists"
+    "yourPlaylists": "Your Playlists",
+    "scrollBack": "Scroll playlists back",
+    "scrollForward": "Scroll playlists forward",
+    "loadError": "Failed to load dashboard data. Please try again."
   },
   "common": {
     "loading": "Loading...",
@@ -28,7 +31,14 @@
     "edit": "Edit",
     "retry": "Try Again",
     "back": "Back",
-    "next": "Next"
+    "next": "Next",
+    "noResults": "No results",
+    "page": "Page",
+    "pageSize": "Page size",
+    "pageXofY": "Page {{current}} of {{total}}",
+    "rating": "Rating",
+    "unknownName": "Unknown",
+    "reset": "Reset"
   },
   "empty": {
     "noSongs": "No songs found",
@@ -60,7 +70,10 @@
     "unauthorized": "Session expired",
     "unauthorizedDesc": "Please log in again to continue.",
     "forbidden": "Access denied",
-    "forbiddenDesc": "You do not have permission to access this resource."
+    "forbiddenDesc": "You do not have permission to access this resource.",
+    "boundaryTitle": "Something went wrong",
+    "boundaryMessage": "An unexpected error occurred.",
+    "reloadApp": "Reload App"
   },
   "commandPalette": {
     "placeholder": "Type a command or search...",
@@ -131,7 +144,11 @@
     "previousKey": "Previous Track",
     "stopKey": "Stop",
     "saveMediaKeys": "Apply Shortcuts",
-    "resetMediaKeys": "Reset to Default"
+    "resetMediaKeys": "Reset to Default",
+    "dark": "Dark",
+    "light": "Light",
+    "restoreDefaults": "Restore Defaults",
+    "toggleMode": "Toggle light/dark mode"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -151,7 +168,17 @@
     "artistLookup": "Artist Lookup",
     "adminUsers": "Admin Users",
     "favorites": "Favorites",
-    "server": "Server"
+    "server": "Server",
+    "advancedSearch": "Advanced Search",
+    "charts": "Charts",
+    "equalizer": "Equalizer",
+    "history": "History",
+    "myLibrary": "My Library",
+    "recommendations": "Recommendations",
+    "shares": "Shares",
+    "smartPlaylists": "Smart Playlists",
+    "themes": "Themes",
+    "toggleSidebar": "Toggle navigation"
   },
   "sidebar": {
     "browse": "Browse",
@@ -160,7 +187,8 @@
     "insights": "Insights",
     "operations": "Operations",
     "tools": "Tools",
-    "admin": "Admin"
+    "admin": "Admin",
+    "guest": "User"
   },
   "player": {
     "nowPlaying": "Now Playing",
@@ -182,7 +210,16 @@
     "tooManyErrors": "Too many playback errors. Stopping.",
     "ratingRemoved": "Rating removed",
     "ratingSaved": "Rating saved",
-    "failedToUpdateRating": "Failed to update rating"
+    "failedToUpdateRating": "Failed to update rating",
+    "addFavorite": "Add to favorites",
+    "fullscreen": "Fullscreen player",
+    "next": "Next track",
+    "pause": "Pause",
+    "play": "Play",
+    "previous": "Previous track",
+    "progress": "Playback position",
+    "removeFavorite": "Remove from favorites",
+    "unknownTrack": "Unknown Track"
   },
   "songCard": {
     "unknownAlbum": "Unknown Album",
@@ -193,14 +230,17 @@
     "hate": "Hate",
     "unhate": "Unhate",
     "addLast": "Add as Last in Queue",
-    "addToPlaylist": "Add to Playlist"
+    "addToPlaylist": "Add to Playlist",
+    "playNow": "Play Now"
   },
   "albumCard": {
-    "songs": "{{count}} songs"
+    "songs": "{{count}} songs",
+    "viewAlbum": "View album"
   },
   "artistCard": {
     "albums": "{{count}} albums",
-    "songs": "{{count}} songs"
+    "songs": "{{count}} songs",
+    "viewArtist": "View artist"
   },
   "playlistCard": {
     "songCount": "{{count}} songs"
@@ -230,7 +270,11 @@
     "exportSuccess": "Playlist exported",
     "importSuccess": "Imported {{matched}} of {{total}} songs",
     "importError": "Failed to import playlist",
-    "invalidM3UFile": "Invalid M3U file"
+    "invalidM3UFile": "Invalid M3U file",
+    "import": "Import",
+    "importDescription": "Select an M3U file to import. Songs will be matched by title and artist.",
+    "selectFile": "Select M3U File",
+    "removeImage": "Remove image"
   },
   "search": {
     "placeholder": "Search artists, albums, tracks...",
@@ -245,7 +289,8 @@
     "filters": "Filters",
     "recentSearches": "Recent Searches",
     "clearHistory": "Clear",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "search": "Search"
   },
   "queue": {
     "title": "Queue",
@@ -274,14 +319,22 @@
     "replacePlaylist": "Replace songs",
     "appendSuccess": "Songs added to playlist",
     "replaceSuccess": "Playlist songs replaced",
-    "selectPlaylistPlaceholder": "Select a playlist..."
+    "selectPlaylistPlaceholder": "Select a playlist...",
+    "songCount_one": "{{count}} song",
+    "songCount_other": "{{count}} songs",
+    "empty": "No Songs",
+    "removeSong": "Remove from queue",
+    "removeImage": "Remove image"
   },
   "login": {
     "email": "Email",
     "password": "Password",
     "login": "Login",
     "loggingIn": "Logging in...",
-    "error": "Login failed. Please check your credentials."
+    "error": "Login failed. Please check your credentials.",
+    "serverUrl": "Server URL",
+    "serverUrlHelper": "Enter the URL of your MeloAmp server",
+    "unsupportedServer": "Unsupported server version"
   },
   "statistic": {
     "songsPlayed": "Songs Played",
@@ -293,12 +346,18 @@
     "releaseYear": "Release Year",
     "tracks": "Songs",
     "duration": "Duration",
-    "noTracks": "No songs found"
+    "noTracks": "No songs found",
+    "genre": "Genre",
+    "genres": "Genres",
+    "loadError": "Failed to load album.",
+    "loadingTracks": "Loading songs...",
+    "playAlbum": "Play Album"
   },
   "artistDetail": {
     "albums": "Albums",
     "songs": "Songs",
-    "noAlbums": "No albums found"
+    "noAlbums": "No albums found",
+    "loadError": "Failed to load artist."
   },
   "sort": {
     "sortBy": "Sort by",
@@ -312,7 +371,8 @@
     "duration": "Duration",
     "lastPlayed": "Last Played",
     "playCount": "Play Count",
-    "rating": "Rating"
+    "rating": "Rating",
+    "toggleDirection": "Toggle sort direction"
   },
   "playlistDetail": {
     "createdBy": "Created by",
@@ -329,7 +389,14 @@
     "deleteSuccess": "Playlist deleted successfully",
     "deleteError": "Failed to delete playlist",
     "deleteDialogTitle": "Delete Playlist",
-    "deleteDialogMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+    "deleteDialogMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "changeImage": "Change Image",
+    "description": "Description",
+    "editMetadata": "Edit Info",
+    "loadingLargePlaylist": "This playlist has {{count}} songs, please wait...",
+    "loadingSongs": "Loading songs...",
+    "public": "Public",
+    "removeImage": "Remove image"
   },
   "update": {
     "checking": "Checking for updates...",
@@ -464,5 +531,224 @@
     "endpointAttached": "Endpoint attached.",
     "endpointDetached": "Endpoint detached.",
     "sessionEndpointsLoaded": "Session endpoints loaded."
+  },
+  "analytics": {
+    "albums": "Albums",
+    "artists": "Artists",
+    "genres": "Genres",
+    "minutes": "minutes",
+    "noTopContent": "No top content available for the selected period.",
+    "period": "Period",
+    "periodLabel": "Period",
+    "songs": "Songs",
+    "title": "Analytics",
+    "topContent": "Top Content",
+    "totalPlayTime": "Total play time",
+    "totalPlays": "Total plays"
+  },
+  "localThemeGallery": {
+    "bold": "Bold",
+    "intro": "Choose from hand-crafted themes — from clean classics to bold, wild designs. Themes are stored locally and do not depend on the server.",
+    "themeCount": "({{count}} themes)",
+    "themes": {
+      "classic": {
+        "name": "Classic",
+        "description": "Clean, familiar Material Design with blue primary and orange accents"
+      },
+      "ocean": {
+        "name": "Ocean",
+        "description": "Cool blues and teals inspired by the sea"
+      },
+      "sunset": {
+        "name": "Sunset",
+        "description": "Warm orange and gold tones like a setting sun"
+      },
+      "forest": {
+        "name": "Forest",
+        "description": "Earthy greens for a natural, calming feel"
+      },
+      "dark": {
+        "name": "Dark",
+        "description": "Elegant dark theme with blue and pink accents"
+      },
+      "modernMinimal": {
+        "name": "Modern Minimal",
+        "description": "Black and white ultra-minimalist design with sharp edges"
+      },
+      "monoContrast": {
+        "name": "Mono Contrast",
+        "description": "High-contrast monochrome with monospace typography"
+      },
+      "winAmp": {
+        "name": "WinAmp",
+        "description": "Retro WinAmp-inspired neon green with dark grey background"
+      },
+      "retroWave": {
+        "name": "Retro Wave",
+        "description": "Synthwave neon pink and cyan on deep purple"
+      },
+      "spaceFunk": {
+        "name": "Space Funk",
+        "description": "Electric purple and magenta with rounded corners, dark cosmic"
+      },
+      "aurora": {
+        "name": "Aurora",
+        "description": "Teal and amber aurora borealis inspired, adapts to light/dark"
+      },
+      "berryTwilight": {
+        "name": "Berry Twilight",
+        "description": "Rich berry and lavender hues, adapts to light/dark"
+      },
+      "rainbow": {
+        "name": "Rainbow",
+        "description": "Bold rainbow palette with hot pink primary and comic sans"
+      },
+      "candy": {
+        "name": "Candy",
+        "description": "Sweet candy pink and turquoise with playful rounded corners"
+      },
+      "bubblegum": {
+        "name": "Bubblegum",
+        "description": "Soft pastel pinks and peaches with extra-round corners"
+      },
+      "acidPop": {
+        "name": "Acid Pop",
+        "description": "Neon acid green and vivid red — loud and proud"
+      },
+      "fiesta": {
+        "name": "Fiesta",
+        "description": "Vibrant orange and pink party palette, bold and celebratory"
+      },
+      "scarlett": {
+        "name": "Scarlett",
+        "description": "Deep indigo with hot pink, firebrick red, and gold accents"
+      }
+    }
+  },
+  "publicShare": {
+    "noSongs": "No songs in this share",
+    "songs": "Songs"
+  },
+  "requests": {
+    "albumFilter": "Album API key",
+    "allStatuses": "All",
+    "anon": "System",
+    "artistFilter": "Artist API key",
+    "artistName": "Artist name",
+    "backToList": "Back to list",
+    "cancel": "Cancel",
+    "category": "Category",
+    "comments": "Comments",
+    "create": "Create request",
+    "createNew": "Create request",
+    "description": "Description",
+    "empty": "No requests found",
+    "externalUrl": "External URL",
+    "hasUnread": "Unread activity",
+    "markComplete": "Mark complete",
+    "mineOnly": "Mine only",
+    "newComment": "New comment",
+    "noComments": "No comments yet",
+    "postComment": "Post comment",
+    "query": "Search",
+    "releaseYear": "Release year",
+    "save": "Save",
+    "showUnread": "Unread activity",
+    "songFilter": "Song API key",
+    "status": "Status",
+    "total": "Total",
+    "unknown": "Unknown artist",
+    "updateDescription": "Update description",
+    "statusOpen": "Open",
+    "statusCompleted": "Completed",
+    "statusClosed": "Closed",
+    "statusInProgress": "In Progress",
+    "entitySong": "Song",
+    "entityAlbum": "Album",
+    "entityArtist": "Artist",
+    "entityOther": "Other"
+  },
+  "searchAdvanced": {
+    "album": "Album",
+    "albumResults": "Album results",
+    "artist": "Artist",
+    "artistResults": "Artist results",
+    "bpmFrom": "BPM from",
+    "bpmTo": "BPM to",
+    "durationFrom": "Duration min (ms)",
+    "durationTo": "Duration max (ms)",
+    "execute": "Run advanced search",
+    "genres": "Genres",
+    "key": "Musical Key",
+    "limit": "Limit",
+    "moods": "Moods (comma separated)",
+    "noInput": "No filters are active yet. Provide at least one field to run the search.",
+    "page": "Page",
+    "playlistResults": "Playlist results",
+    "query": "Query",
+    "readyHint": "Enter a query and click search to begin",
+    "searchSongs": "Run /search/songs",
+    "songEndpointResults": "Song endpoint results",
+    "songResults": "Song results",
+    "sortBy": "Sort by",
+    "sortOrder": "Sort order",
+    "title": "Advanced Search",
+    "toggleContent": "Clear Types",
+    "totalResults": "Total results",
+    "yearFrom": "Year from",
+    "yearTo": "Year to"
+  },
+  "songDetail": {
+    "album": "Album",
+    "artist": "Artist",
+    "duration": "Duration",
+    "genre": "Genre",
+    "loadError": "Failed to load song.",
+    "playCount": "Play Count",
+    "trackNumber": "Track"
+  },
+  "charts": {
+    "noCharts": "No charts available."
+  },
+  "equalizer": {
+    "saveAsNewPreset": "Save as New Preset",
+    "saveAsPreset": "Save as Preset",
+    "presets": "Presets",
+    "selectPresetHint": "Select a preset to view and adjust the equalizer bands.",
+    "presetMenu": "Preset options"
+  },
+  "smartPlaylists": {
+    "createTitle": "Create Smart Playlist",
+    "editTitle": "Edit Smart Playlist",
+    "description": "Smart playlists are dynamically generated based on Melodee Query Language (MQL) rules.",
+    "empty": "No smart playlists yet. Create one to get started!",
+    "menu": "Playlist options",
+    "play": "Play playlist"
+  },
+  "shares": {
+    "createTitle": "Create Share",
+    "editTitle": "Edit Share",
+    "entityAlbum": "Album",
+    "entityArtist": "Artist",
+    "entitySong": "Song",
+    "entityPlaylist": "Playlist",
+    "description": "Shares allow you to create public links to your music that can be accessed by anyone without logging in.",
+    "empty": "No shares yet. Create a share to share your music with others!",
+    "menu": "Share options",
+    "copyLink": "Copy link",
+    "openLink": "Open share link"
+  },
+  "themes": {
+    "importTheme": "Import Theme",
+    "noPreview": "No Preview",
+    "export": "Export"
+  },
+  "history": {
+    "empty": "No play history yet. Start listening to build your history!",
+    "playAgain": "Play again"
+  },
+  "recommendations": {
+    "empty": "No recommendations available. Play more music to get personalized recommendations!",
+    "playNow": "Play now"
   }
 }

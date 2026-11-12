@@ -29,10 +29,9 @@ describe('LoadingState', () => {
   });
 
   it('renders inline with fullPage=false', () => {
-    const { container } = renderWithI18n(<LoadingState fullPage={false} />);
+    renderWithI18n(<LoadingState fullPage={false} />);
     // Inline mode should have display: flex
-    const loadingBox = container.firstChild as HTMLElement;
-    expect(loadingBox).toHaveStyle({ display: 'flex' });
+    expect(screen.getByRole('status')).toHaveStyle({ display: 'flex' });
   });
 
   it('renders with different sizes', () => {

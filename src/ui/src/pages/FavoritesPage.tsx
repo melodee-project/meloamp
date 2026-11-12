@@ -1,7 +1,7 @@
 /**
  * FavoritesPage - Shows user's liked/disliked/top-rated songs, albums, and artists
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -24,11 +24,13 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import api from '../api';
-import { Song, Album, Artist, PaginatedResponse } from '../apiModels';
+import api, { unwrapApiPage } from '../api';
+import { Song, Album, Artist } from '../apiModels';
 import SongCard from '../components/SongCard';
 import AlbumCard from '../components/AlbumCard';
 import ArtistCard from '../components/ArtistCard';
+import { useApiEffect } from '../hooks/useApiEffect';
+import { getErrorMessage, getErrorStatus } from '../utils/errors';
 
 type RatingFilter = 'liked' | 'disliked' | 'topRated' | 'rated';
 type EntityType = 'songs' | 'albums' | 'artists';
@@ -69,56 +71,34 @@ export default function FavoritesPage() {
   }, [ratingFilter, entityType]);
 
   // Fetch data based on current filters
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const endpoint = getEndpoint();
-        
-        if (entityType === 'songs') {
-          const res = await api.get<PaginatedResponse<Song>>(endpoint, {
-            params: { page, pageSize }
-          });
-          setSongs(res.data.data || []);
-          setAlbums([]);
-          setArtists([]);
-          setTotal(res.data.meta?.totalCount || 0);
-        } else if (entityType === 'albums') {
-          const res = await api.get<PaginatedResponse<Album>>(endpoint, {
-            params: { page, pageSize }
-          });
-          setAlbums(res.data.data || []);
-          setSongs([]);
-          setArtists([]);
-          setTotal(res.data.meta?.totalCount || 0);
-        } else if (entityType === 'artists') {
-          const res = await api.get<PaginatedResponse<Artist>>(endpoint, {
-            params: { page, pageSize }
-          });
-          setArtists(res.data.data || []);
-          setSongs([]);
-          setAlbums([]);
-          setTotal(res.data.meta?.totalCount || 0);
-        }
-      } catch (err: any) {
-        // If endpoint doesn't exist, show empty state
-        if (err?.response?.status === 404) {
-          setSongs([]);
-          setAlbums([]);
-          setArtists([]);
-          setTotal(0);
-        } else {
-          setError(err?.response?.data?.message || t('common.error'));
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+  useApiEffect(async (signal) => {
+    setLoading(true);
+    setError(null);
 
-    fetchData();
-  }, [getEndpoint, entityType, page, t, ratingFilter]);
+    try {
+      const response = await api.get<unknown>(getEndpoint(), { params: { page, pageSize }, signal });
+      if (signal.aborted) return;
+      const { items, meta } = unwrapApiPage<Song | Album | Artist>(response.data);
+
+      setSongs(entityType === 'songs' ? (items as Song[]) : []);
+      setAlbums(entityType === 'albums' ? (items as Album[]) : []);
+      setArtists(entityType === 'artists' ? (items as Artist[]) : []);
+      setTotal(meta?.totalCount ?? items.length);
+    } catch (err) {
+      if (signal.aborted) return;
+      // If the endpoint does not exist for this entity/filter, show the empty state.
+      if (getErrorStatus(err) === 404) {
+        setSongs([]);
+        setAlbums([]);
+        setArtists([]);
+        setTotal(0);
+      } else {
+        setError(getErrorMessage(err, t('common.error')));
+      }
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, [getEndpoint, entityType, page, pageSize, ratingFilter, t]);
 
   // Update URL when filters change
   const updateUrl = (filter: RatingFilter, entity: EntityType) => {

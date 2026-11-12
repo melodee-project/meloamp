@@ -1,6 +1,7 @@
-import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { LoginRequest, LoginResponse } from './apiModels';
+import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { LoginRequest, LoginResponse, Meta } from './apiModels';
 import { clearUser } from './storage';
+import { getErrorStatus } from './utils/errors';
 
 let API_BASE = localStorage.getItem('serverUrl') || process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
@@ -9,6 +10,21 @@ let jwt: string | null = localStorage.getItem('jwt');
 export interface ApiPayload<T> {
   data?: T;
 }
+
+/** Pagination metadata returned by the Melodee API envelope. */
+export type ApiMeta = Meta;
+
+/** A list payload plus its pagination metadata. */
+export interface ApiPage<T> {
+  items: T[];
+  meta?: ApiMeta;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Maximum envelope depth we unwrap (guards against pathological responses). */
+const MAX_ENVELOPE_DEPTH = 3;
 
 export function setJwt(token: string) {
   jwt = token;
@@ -71,16 +87,15 @@ const performRefresh = async (): Promise<string | null> => {
 
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  async (error: any) => {
-    const status = error?.response?.status;
-    const originalRequest = error?.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+  async (error: unknown) => {
+    const status = getErrorStatus(error);
+    const originalRequest = (error as { config?: InternalAxiosRequestConfig & { _retry?: boolean } })?.config;
 
     if (status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint(originalRequest.url)) {
       const newToken = await performRefresh();
       if (newToken) {
         originalRequest._retry = true;
-        originalRequest.headers = originalRequest.headers ?? ({} as any);
-        (originalRequest.headers as any).Authorization = `Bearer ${newToken}`;
+        originalRequest.headers.set('Authorization', `Bearer ${newToken}`);
         return api.request(originalRequest);
       }
     }
@@ -100,17 +115,55 @@ export function setApiBaseUrl(url: string) {
   api.defaults.baseURL = url;
 }
 
-export function unwrapApiResponse<T>(value: AxiosResponse<T> | { data: T } | T | null | undefined): T | null {
-  if (!value) return null;
-  if (typeof value === 'object' && value !== null && 'data' in value) {
-    const envelope = value as { data: unknown };
-    const payload: any = envelope.data;
-    if (payload && typeof payload === 'object' && 'data' in payload && payload.data !== undefined) {
-      return payload.data as T;
+export function getApiBaseUrl(): string {
+  return API_BASE;
+}
+
+/** Type guard for the pagination metadata envelope. */
+function isMeta(value: unknown): value is ApiMeta {
+  return isRecord(value) && typeof value.totalCount === 'number';
+}
+
+/**
+ * Unwrap the API envelope (`{ data: payload }`, possibly nested) down to the
+ * payload itself. Non-envelope values are returned unchanged, so call sites can
+ * use a single helper regardless of endpoint shape.
+ *
+ * Prefer `unwrapApiPage` for list endpoints that also carry `meta`.
+ */
+export function unwrapApiResponse<T>(value: unknown): T | null {
+  if (value === null || value === undefined) return null;
+
+  let current: unknown = value;
+  for (let depth = 0; depth < MAX_ENVELOPE_DEPTH; depth += 1) {
+    if (!isRecord(current) || !('data' in current) || current.data === undefined || current.data === null) {
+      break;
     }
-    return payload as T;
+    current = current.data;
   }
-  return value as T;
+
+  return current as T;
+}
+
+/**
+ * Unwrap a list endpoint into `{ items, meta }`.
+ *
+ * Accepts `T[]`, `{ data: T[]; meta? }`, `{ items: T[]; meta? }` and nested
+ * envelopes, so pages never need to guess the response shape.
+ */
+export function unwrapApiPage<T>(value: unknown): ApiPage<T> {
+  const unwrapped = unwrapApiResponse<unknown>(value);
+  const meta = isRecord(value) && isMeta(value.meta) ? value.meta : undefined;
+
+  if (Array.isArray(unwrapped)) return { items: unwrapped as T[], meta };
+  if (isRecord(unwrapped)) {
+    const items = unwrapped.items ?? unwrapped.data ?? unwrapped.results;
+    if (Array.isArray(items)) {
+      const nestedMeta = isRecord(unwrapped) && isMeta(unwrapped.meta) ? unwrapped.meta : meta;
+      return { items: items as T[], meta: nestedMeta };
+    }
+  }
+  return { items: [], meta };
 }
 
 export function buildEndpoint(path: string, params: Record<string, string | number | boolean> = {}) {
@@ -120,9 +173,13 @@ export function buildEndpoint(path: string, params: Record<string, string | numb
   }, path);
 }
 
-export async function apiRequest<T = unknown>(path: string, options: Record<string, unknown> = {}): Promise<AxiosResponse<T>> {
-  const response = await api.request<T>({ url: path, ...options });
-  return response;
+export async function apiRequest<T = unknown>(path: string, options: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+  return api.request<T>({ url: path, ...options });
+}
+
+/** Convenience GET that forwards an abort signal (see `useApiEffect`). */
+export async function apiGet<T = unknown>(path: string, options: AxiosRequestConfig = {}): Promise<AxiosResponse<T>> {
+  return api.get<T>(path, options);
 }
 
 export async function authenticate({ email, password }: LoginRequest): Promise<AxiosResponse<LoginResponse>> {

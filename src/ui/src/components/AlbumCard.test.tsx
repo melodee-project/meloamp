@@ -61,10 +61,7 @@ describe('AlbumCard', () => {
   test('navigates on click', () => {
     const album = createMockAlbum({ id: 'album-123' });
     renderWithProviders(<AlbumCard album={album} />);
-    const card = screen.getByText('Test Album').closest('.MuiCard-root');
-    if (card) {
-      fireEvent.click(card);
-      expect(mockNavigate).toHaveBeenCalledWith('/albums/album-123');
-    }
+    fireEvent.click(screen.getByText('Test Album'));
+    expect(mockNavigate).toHaveBeenCalledWith('/albums/album-123');
   });
 });

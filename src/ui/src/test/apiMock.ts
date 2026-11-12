@@ -149,8 +149,7 @@ function setupDefaultHandlers(mock: MockAdapter) {
   mock.onPost('/playlists').reply(201, mockPlaylists[0]);
 
   // Search endpoint
-  mock.onPost('/search').reply((config) => {
-    const data = JSON.parse(config.data || '{}');
+  mock.onPost('/search').reply(() => {
     return [200, {
       meta: { totalCount: 10, pageSize: 10, currentPage: 1, totalPages: 1, hasNext: false, hasPrevious: false },
       totalCount: 10,

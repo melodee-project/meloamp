@@ -1,11 +1,12 @@
 import { debugLog, debugError } from '../debug';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, List, ListItem, Rating, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow, ArrowUpward, ArrowDownward } from '@mui/icons-material';
-import { apiRequest } from '../api';
-import api from '../api';
-import { Album, Song, PaginatedResponse } from '../apiModels';
+import api, { apiRequest, unwrapApiPage, unwrapApiResponse } from '../api';
+import { Album, Song } from '../apiModels';
+import { useApiEffect } from '../hooks/useApiEffect';
+import { getErrorMessage } from '../utils/errors';
 import { useTranslation } from 'react-i18next';
 import MiniArtistCard from '../components/MiniArtistCard';
 import { useQueueStore } from '../queueStore';
@@ -28,49 +29,45 @@ export default function AlbumDetailView() {
   const [songSort, setSongSort] = useState<SongSortField>('SongNumber');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { t } = useTranslation();
-  const setQueue = useQueueStore((state: any) => state.setQueue);
-  const setCurrent = useQueueStore((state: any) => state.setCurrent);
+  const setQueue = useQueueStore((state) => state.setQueue);
+  const setCurrent = useQueueStore((state) => state.setCurrent);
 
-  useEffect(() => {
+  useApiEffect(async (signal) => {
     setLoading(true);
     setError(null);
-    apiRequest(`/albums/${id}`)
-      .then(res => {
-        const albumData = res.data as Album & { userStarred?: boolean; userDisliked?: boolean; userRating?: number };
-        setAlbum(albumData);
-        setFavorite(albumData.userStarred ?? false);
-        setDisliked(albumData.userDisliked ?? false);
-        setRating(albumData.userRating && albumData.userRating > 0 ? albumData.userRating : 0);
-      })
-      .catch(err => setError(err?.response?.data?.message || err?.message || 'Failed to load album.'))
-      .finally(() => setLoading(false));
-  }, [id]);
+    try {
+      const response = await apiRequest<Album>(`/albums/${id}`, { signal });
+      const albumData = unwrapApiResponse<Album & { userStarred?: boolean; userDisliked?: boolean; userRating?: number }>(response.data);
+      if (signal.aborted || !albumData) return;
+      setAlbum(albumData);
+      setFavorite(albumData.userStarred ?? false);
+      setDisliked(albumData.userDisliked ?? false);
+      setRating(albumData.userRating && albumData.userRating > 0 ? albumData.userRating : 0);
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(getErrorMessage(err, t('albumDetail.loadError', 'Failed to load album.')));
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, [id, t]);
 
-  useEffect(() => {
+  useApiEffect(async (signal) => {
     if (!id) return;
     setSongsLoading(true);
-    debugLog('AlbumDetailView', 'Fetching songs for album id:', id);
-    apiRequest(`/albums/${id}/songs`, { 
-      params: { 
-        page: 1, 
-        pageSize: 100,
-        orderBy: songSort,
-        orderDirection: sortDirection
-      } 
-    })
-      .then(res => {
-        debugLog('AlbumDetailView', 'Songs API response:', res.data);
-        const response = res.data as PaginatedResponse<Song>;
-        setSongs(response.data);
-      })
-      .catch((err) => {
-        debugError('AlbumDetailView', 'Error fetching songs:', err);
-        setSongs([]);
-      })
-      .finally(() => {
-        setSongsLoading(false);
-        debugLog('AlbumDetailView', 'Songs loading finished.');
+    try {
+      const response = await apiRequest<unknown>(`/albums/${id}/songs`, {
+        params: { page: 1, pageSize: 100, orderBy: songSort, orderDirection: sortDirection },
+        signal,
       });
+      if (signal.aborted) return;
+      setSongs(unwrapApiPage<Song>(response.data).items);
+    } catch (err) {
+      if (signal.aborted) return;
+      debugError('AlbumDetailView', 'Error fetching songs:', err);
+      setSongs([]);
+    } finally {
+      if (!signal.aborted) setSongsLoading(false);
+    }
   }, [id, songSort, sortDirection]);
 
   const handleSongSortChange = (field: SongSortField) => {
@@ -95,8 +92,8 @@ export default function AlbumDetailView() {
         setDisliked(false);
         setRating(1);
       }
-    } catch (err: any) {
-      debugError('AlbumDetailView', 'Failed to toggle favorite:', err?.response?.data || err?.message || err);
+    } catch (err) {
+      debugError('AlbumDetailView', 'Failed to toggle favorite:', err);
     }
     setFavLoading(false);
   };
@@ -115,8 +112,8 @@ export default function AlbumDetailView() {
         setFavorite(false);
         setRating(0);
       }
-    } catch (err: any) {
-      debugError('AlbumDetailView', 'Failed to toggle hated:', err?.response?.data || err?.message || err);
+    } catch (err) {
+      debugError('AlbumDetailView', 'Failed to toggle hated:', err);
     }
     setFavLoading(false);
   };
@@ -132,8 +129,8 @@ export default function AlbumDetailView() {
       setRating(r);
       // Clear dislike if rating > 0
       if (r > 0) setDisliked(false);
-    } catch (err: any) {
-      debugError('AlbumDetailView', 'Failed to set rating:', err?.response?.data || err?.message || err);
+    } catch (err) {
+      debugError('AlbumDetailView', 'Failed to set rating:', err);
     }
     setRatingLoading(false);
   };
@@ -195,21 +192,21 @@ export default function AlbumDetailView() {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1, minWidth: 0 }}>
             <Tooltip title={t('albumDetail.playAlbum', 'Play Album')}>
               <span>
-                <IconButton onClick={handlePlayAlbum} color="success">
+                <IconButton aria-label={t('albumDetail.playAlbum', 'Play Album')} onClick={handlePlayAlbum} color="success">
                   <PlayArrow />
                 </IconButton>
               </span>
             </Tooltip>
             <Tooltip title={favorite ? t('common.unfavorite') : t('common.favorite')}>
               <span>
-                <IconButton onClick={handleFavorite} disabled={favLoading} color={favorite ? 'primary' : 'default'}>
+                <IconButton aria-label={favorite ? t('common.unfavorite') : t('common.favorite')} onClick={handleFavorite} disabled={favLoading} color={favorite ? 'primary' : 'default'}>
                   {favorite ? <Favorite /> : <FavoriteBorder />}
                 </IconButton>
               </span>
             </Tooltip>
             <Tooltip title={disliked ? t('common.undislike') : t('common.dislike')}>
               <span>
-                <IconButton onClick={handleDislike} disabled={favLoading} color={disliked ? 'error' : 'default'}>
+                <IconButton aria-label={disliked ? t('common.undislike') : t('common.dislike')} onClick={handleDislike} disabled={favLoading} color={disliked ? 'error' : 'default'}>
                   {disliked ? <ThumbDown /> : <ThumbDownOffAlt />}
                 </IconButton>
               </span>
@@ -231,8 +228,8 @@ export default function AlbumDetailView() {
           </Box>
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{t('albumDetail.releaseYear')}: <span style={{ fontWeight: 400 }}>{album.releaseYear}</span></Typography>
-            {Array.isArray((album as any).genres) && (album as any).genres.length > 0 ? (
-              <Typography variant="body2" sx={{ mb: 1 }}>{t('albumDetail.genres')}: {(album as any).genres.join(', ')}</Typography>
+            {Array.isArray((album as Album & { genres?: string[] }).genres) && (album as Album & { genres?: string[] }).genres!.length > 0 ? (
+              <Typography variant="body2" sx={{ mb: 1 }}>{t('albumDetail.genres')}: {(album as Album & { genres?: string[] }).genres!.join(', ')}</Typography>
             ) : album.genre ? (
               <Typography variant="body2" sx={{ mb: 1 }}>{t('albumDetail.genre')}: {album.genre}</Typography>
             ) : null}
@@ -269,7 +266,7 @@ export default function AlbumDetailView() {
                 <MenuItem value="CalculatedRating">{t('sort.rating')}</MenuItem>
               </Select>
             </FormControl>
-            <IconButton onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
+            <IconButton aria-label={t('sort.toggleDirection', 'Toggle sort direction')} onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
               {sortDirection === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
             </IconButton>
           </Box>

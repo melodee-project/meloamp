@@ -3,10 +3,11 @@ import { Box, Typography, IconButton, List, ListItem, ListItemAvatar, Avatar, Li
 import { Delete, DragIndicator, ImageOutlined } from '@mui/icons-material';
 import api from '../api';
 import { useQueueStore, QueueState, Song } from '../queueStore';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DraggableProvided, DroppableProvided, DropResult } from '@hello-pangea/dnd';
 import { List as VirtualList, RowComponentProps } from 'react-window';
 import './QueueView.css'; // <-- Add this import for custom CSS
 import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 
 // Threshold for enabling virtualization (for smaller lists, regular rendering is fine)
 const VIRTUALIZATION_THRESHOLD = 50;
@@ -44,17 +45,17 @@ function VirtualizedRow({
     <div style={style} {...ariaAttributes}>
       <ListItem
         secondaryAction={
-          <IconButton edge="end" onClick={() => removeFromQueue(index)}><Delete /></IconButton>
+          <IconButton aria-label={t('queue.removeSong')} edge="end" onClick={() => removeFromQueue(index)}><Delete /></IconButton>
         }
         className={song.played ? 'played-song' : 'unplayed-song'}
         sx={{
           mb: 0.5,
           borderRadius: 2,
           border: index === playerCurrent && playing ? '3px solid transparent' : '2px solid',
-          borderColor: index === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
+          borderColor: index === playerCurrent && playing ? 'transparent' : song.played ? 'divider' : 'primary.main',
           fontWeight: song.played ? 400 : 700,
           opacity: song.played ? 0.5 : 1,
-          background: index === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
+          background: index === playerCurrent ? 'action.hover' : 'none',
           height: ITEM_HEIGHT - 8,
           transition: 'background 0.2s, opacity 0.2s',
         }}
@@ -105,11 +106,11 @@ export default function QueueView() {
 
   React.useEffect(() => {
     // Listen for playing state and current index from Player via window event
-    function handlePlayerState(e: any) {
-      if (e?.detail) {
-        if (typeof e.detail.playing === 'boolean') setPlaying(e.detail.playing);
-        if (typeof e.detail.current === 'number') setPlayerCurrent(e.detail.current);
-      }
+    function handlePlayerState(event: Event) {
+      const detail = (event as CustomEvent<{ playing?: boolean; current?: number }>).detail;
+      if (!detail) return;
+      if (typeof detail.playing === 'boolean') setPlaying(detail.playing);
+      if (typeof detail.current === 'number') setPlayerCurrent(detail.current);
     }
     window.addEventListener('meloamp-player-state', handlePlayerState);
     return () => window.removeEventListener('meloamp-player-state', handlePlayerState);
@@ -191,7 +192,7 @@ export default function QueueView() {
     });
   };
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     reorderQueue(result.source.index, result.destination.index);
   };
@@ -274,8 +275,8 @@ export default function QueueView() {
 
       setSnackbar({ open: true, message: t('queue.saveSuccess'), severity: 'success' });
       handleCloseSaveDialog();
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || t('queue.saveError');
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, t('queue.saveError'));
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     } finally {
       setIsSaving(false);
@@ -314,22 +315,22 @@ export default function QueueView() {
   };
 
   // Regular draggable row for smaller lists
-  const DraggableRow = ({ song, idx, provided }: { song: Song; idx: number; provided: any }) => (
+  const DraggableRow = ({ song, idx, provided }: { song: Song; idx: number; provided: DraggableProvided }) => (
     <ListItem 
       ref={provided.innerRef} 
       {...provided.draggableProps} 
       secondaryAction={
-        <IconButton edge="end" onClick={() => handleRemove(idx)}><Delete /></IconButton>
+        <IconButton aria-label={t('queue.removeSong')} edge="end" onClick={() => handleRemove(idx)}><Delete /></IconButton>
       }
       className={song.played ? 'played-song' : 'unplayed-song'}
       sx={{
         mb: 1,
         borderRadius: 2,
         border: idx === playerCurrent && playing ? '3px solid transparent' : '2px solid',
-        borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'grey.300' : 'primary.main',
+        borderColor: idx === playerCurrent && playing ? 'transparent' : song.played ? 'divider' : 'primary.main',
         fontWeight: song.played ? 400 : 700,
         opacity: song.played ? 0.5 : 1,
-        background: idx === playerCurrent ? 'rgba(0,0,0,0.04)' : 'none',
+        background: idx === playerCurrent ? 'action.hover' : 'none',
         position: 'relative',
         zIndex: idx === playerCurrent ? 1 : 'auto',
         bgcolor: song.played ? 'background.paper' : (idx > 0 && !queue[idx-1].played ? 'background.default' : 'background.paper'),
@@ -352,18 +353,15 @@ export default function QueueView() {
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <Typography variant="h4" sx={{ mb: 2 }}>{t('queue.title')}</Typography>
       <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
-        {queue.length} song{queue.length === 1 ? '' : 's'}
+        {t('queue.songCount', { count: queue.length })}
         {queue.length > 0 ? ` • ${formatMs(totalDuration)}` : ''}
-        {useVirtualization && <span> • Virtualized for performance</span>}
       </Typography>
       <Button onClick={handleClearQueue} color="error" sx={{ mr: 2 }}>{t('queue.clear')}</Button>
       <Button onClick={shuffleQueue} sx={{ mr: 2 }}>{t('queue.shuffle')}</Button>
       <Button onClick={handleOpenSaveDialog} sx={{ mr: 2 }} disabled={queue.length === 0}>{t('queue.save')}</Button>
       <Button onClick={() => {}} color="primary">{t('queue.playAll')}</Button>
       {queue.length === 0 ? (
-        <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary', fontSize: 24 }}>
-          No Songs
-        </Box>
+        <Box sx={{ p: 6, textAlign: 'center', color: 'text.secondary', fontSize: 24 }}>{t('queue.empty')}</Box>
       ) : useVirtualization ? (
         // Virtualized list for large queues (50+ songs) - no drag-drop for performance
         <Box 
@@ -389,11 +387,11 @@ export default function QueueView() {
         // Regular drag-drop list for smaller queues
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="queue">
-            {(provided: any) => (
+            {(provided: DroppableProvided) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
                 {queue.map((song: Song, idx: number) => (
                   <Draggable key={song.id} draggableId={song.id.toString()} index={idx}>
-                    {(provided: any) => <DraggableRow song={song} idx={idx} provided={provided} />}
+                    {(provided: DraggableProvided) => <DraggableRow song={song} idx={idx} provided={provided} />}
                   </Draggable>
                 ))}
                 {provided.placeholder}
@@ -448,7 +446,7 @@ export default function QueueView() {
                     borderColor: 'divider'
                   }}
                 />
-                <IconButton
+                <IconButton aria-label={t('queue.removeImage', 'Remove image')}
                   size="small"
                   onClick={handleRemoveImage}
                   sx={{

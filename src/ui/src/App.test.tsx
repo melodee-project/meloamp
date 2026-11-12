@@ -85,11 +85,9 @@ describe('App Navigation', () => {
 
   test('renders MeloAmp logo and title', async () => {
     render(<App />);
-    
-    await waitFor(() => {
-      expect(screen.getByAltText(/meloamp logo/i)).toBeInTheDocument();
-      expect(screen.getByText('MeloAmp')).toBeInTheDocument();
-    });
+
+    expect(await screen.findByAltText(/meloamp logo/i)).toBeInTheDocument();
+    expect(screen.getByText('MeloAmp')).toBeInTheDocument();
   });
 
   test('renders main navigation links', async () => {
@@ -118,7 +116,7 @@ describe('App Navigation', () => {
     render(<App />);
     
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /toggle mode/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /toggle light\/dark mode/i })).toBeInTheDocument();
     });
   });
 

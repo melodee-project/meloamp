@@ -1,5 +1,6 @@
 import { MutableRefObject, useEffect } from 'react';
 import { Song } from '../queueStore';
+import i18n from '../i18n';
 
 interface MediaSessionDeps {
   audioRef: MutableRefObject<HTMLAudioElement | null>;
@@ -61,8 +62,8 @@ export function useMediaSession({
     const artworkUrl = extractArtwork(currentSong);
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentSong.title || 'Unknown Track',
-        artist: extractArtistName(currentSong) || 'Unknown Artist',
+        title: currentSong.title || i18n.t('player.unknownTrack', 'Unknown Track'),
+        artist: extractArtistName(currentSong) || i18n.t('songCard.unknownArtist'),
         album: extractAlbumName(currentSong) || '',
         artwork: artworkUrl
           ? SIZES.map((size) => ({ src: artworkUrl, sizes: `${size}x${size}`, type: 'image/png' }))

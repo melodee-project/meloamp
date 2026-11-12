@@ -1,6 +1,12 @@
 // src/ui/src/components/toQueueSong.ts
-// Helper to normalize API Song to queueStore Song
+// Normalize an API `Song` into the queue's `Song` shape.
+//
+// Note: the stream URL is stored *without* credentials. `Player` injects the
+// current JWT at playback time (`utils/streamUrl.ts`) so that persisted queue
+// state never contains tokens and refreshed tokens take effect immediately.
 import { Song as ApiSong, Artist, Album } from '../apiModels';
+import { Song } from '../queueStore';
+import { stripStreamAuth } from '../utils/streamUrl';
 
 const EMPTY_ARTIST: Artist = {
   id: '',
@@ -32,35 +38,25 @@ const EMPTY_ALBUM: Album = {
   genre: null,
 };
 
-export function toQueueSong(song: ApiSong) {
-  // Append JWT to stream URL to fix audio element auth (can't send headers)
-  let streamUrl = song.streamUrl || '';
-  if (streamUrl) {
-    try {
-      const jwt = localStorage.getItem('jwt');
-      if (jwt) {
-        const url = new URL(streamUrl, window.location.origin);
-        url.searchParams.set('jwt', jwt);
-        streamUrl = url.toString();
-      }
-    } catch (e) {
-      console.warn('[toQueueSong] Failed to append JWT to stream URL:', e);
-    }
-  }
-  
+export function toQueueSong(song: ApiSong): Song {
   return {
     id: song.id,
     title: song.title,
-    artist: song.artist ? { ...song.artist } : EMPTY_ARTIST,
-    album: song.album ? { 
-      ...song.album,
-      // Ensure imageUrl is preserved for full-screen display
-      imageUrl: song.album.imageUrl || song.album.thumbnailUrl 
-    } : EMPTY_ALBUM,
+    artist: song.artist
+      ? { id: song.artist.id, name: song.artist.name, imageUrl: song.artist.imageUrl }
+      : EMPTY_ARTIST,
+    album: song.album
+      ? {
+        id: song.album.id,
+        name: song.album.name,
+        imageUrl: song.album.imageUrl || song.album.thumbnailUrl,
+        releaseYear: song.album.releaseYear,
+      }
+      : EMPTY_ALBUM,
     imageUrl: song.imageUrl || song.thumbnailUrl,
-    url: streamUrl,
-  durationMs: song.durationMs,
-  userStarred: song.userStarred ?? false,
-  userRating: song.userRating ?? 0,
+    url: stripStreamAuth(song.streamUrl || ''),
+    durationMs: song.durationMs,
+    userStarred: song.userStarred ?? false,
+    userRating: song.userRating ?? 0,
   };
 }

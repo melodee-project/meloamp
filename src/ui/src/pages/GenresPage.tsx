@@ -15,11 +15,12 @@ import {
 import { MusicNote, Category } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../api';
-import { Artist, Album, Song, PaginatedResponse } from '../apiModels';
+import api, { unwrapApiPage, unwrapApiResponse } from '../api';
+import { Artist, Album, Song } from '../apiModels';
 import ArtistCard from '../components/ArtistCard';
 import AlbumCard from '../components/AlbumCard';
 import SongCard from '../components/SongCard';
+import { getErrorMessage, getErrorStatus } from '../utils/errors';
 
 interface Genre {
   id: string;
@@ -53,19 +54,19 @@ export default function GenresPage() {
       try {
         // API returns GenreListResponse: { genres: Genre[], totalCount, page, limit }
         const res = await api.get<{ genres: Genre[], totalCount: number, page: number, limit: number }>('/genres');
-        const genreData = res.data.genres || [];
+        const genreData = unwrapApiResponse<{ genres?: Genre[] }>(res.data)?.genres ?? [];
         setGenres(genreData);
-      } catch (err: any) {
+      } catch (err) {
         // If endpoint doesn't exist, show placeholder genres from albums/artists
-        if (err?.response?.status === 404) {
+        if (getErrorStatus(err) === 404) {
           // Try to aggregate genres from albums (fallback approach)
           try {
-            const albumRes = await api.get<PaginatedResponse<Album>>('/albums', { params: { pageSize: 100 } });
+            const albumRes = await api.get<unknown>('/albums', { params: { pageSize: 100 } });
             const albumGenres = new Set<string>();
-            (albumRes.data.data || []).forEach(album => {
+            unwrapApiPage<Album>(albumRes.data).items.forEach(album => {
               if (album.genre) albumGenres.add(album.genre);
               // Check for genres array if it exists on the response
-              const albumAny = album as any;
+              const albumAny = album as Album & { genres?: string[] };
               if (albumAny.genres && Array.isArray(albumAny.genres)) {
                 albumAny.genres.forEach((g: string) => albumGenres.add(g));
               }
@@ -80,7 +81,7 @@ export default function GenresPage() {
             setGenres([]);
           }
         } else {
-          setError(err?.response?.data?.message || t('common.error'));
+          setError(getErrorMessage(err, t('common.error')));
         }
       } finally {
         setLoading(false);
@@ -112,12 +113,12 @@ export default function GenresPage() {
       try {
         // Fetch genre-specific content using the new API
         // API returns GenreSongsResponse: { songs: Song[], totalCount, page, limit }
-        const songsRes = await api.get<{ songs: Song[], totalCount: number, page: number, limit: number }>(
+        const songsRes = await api.get<unknown>(
           `/genres/${genreId}/songs`, 
           { params: { limit: 50 } }
         );
         
-        setSongs(songsRes.data.songs || []);
+        setSongs(unwrapApiResponse<{ songs?: Song[] }>(songsRes.data)?.songs ?? []);
         // Note: Artist and album endpoints for genres are not yet available
         setArtists([]);
         setAlbums([]);

@@ -1,9 +1,9 @@
 /**
- * Player.test.tsx - Tests for playback features
- * Tests repeat modes, shuffle, error recovery, and gapless transitions
+ * Player.test.tsx - Queue-driven playback behaviour
+ *
+ * Covers repeat modes, shuffle/restore, undo, and error recovery state.
+ * Rendering-level player tests live in the component/page suites.
  */
-import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { RepeatMode, useQueueStore } from './queueStore';
 
 // Reset queue store before each test

@@ -14,11 +14,11 @@ describe('toQueueSong', () => {
     expect(result.url).toContain('/stream/s1');
   });
 
-  test('appends JWT to stream URL when jwt is present', () => {
+  test('never persists credentials in the queue stream URL', () => {
     localStorage.setItem('jwt', 'my-token');
-    const apiSong = createMockSong({ streamUrl: '/stream/s1' });
+    const apiSong = createMockSong({ streamUrl: '/stream/s1?jwt=my-token' });
     const result = toQueueSong(apiSong);
-    expect(result.url).toContain('jwt=my-token');
+    expect(result.url).not.toContain('jwt=');
   });
 
   test('handles missing artist gracefully', () => {

@@ -1,45 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, CircularProgress, Pagination, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
 import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import api from '../api';
-import { Song, PaginatedResponse } from '../apiModels';
+
+import { API_ROUTES } from '../apiRoutes';
+import { Song } from '../apiModels';
 import SongCard from '../components/SongCard';
+import ErrorState from '../components/ErrorState';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 type SongSortField = 'Title' | 'SongNumber' | 'AlbumId' | 'PlayedCount' | 'Duration' | 'LastPlayedAt' | 'CalculatedRating';
 
 export default function BrowseSongs() {
   const { t } = useTranslation();
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState<SongSortField>('Title');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  useEffect(() => {
-    setLoading(true);
-    api.get<PaginatedResponse<Song>>('/songs', { 
-      params: { 
-        page, 
-        pageSize: 20,
-        orderBy: sortBy,
-        orderDirection: sortDirection
-      } 
-    })
-      .then((res) => {
-        setSongs(res.data.data);
-        setTotal(res.data.meta?.totalCount || 0);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
-  }, [page, sortBy, sortDirection]);
+  const { items: songs, total, page, pageSize, setPage, loading, error, reload } = usePaginatedList<Song>({
+    path: API_ROUTES.songs.list,
+    params: { orderBy: sortBy, orderDirection: sortDirection },
+  });
 
   const handleSortChange = (field: SongSortField) => {
     if (field === sortBy) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortDirection((previous) => (previous === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
       setSortDirection('asc');
@@ -58,7 +42,7 @@ export default function BrowseSongs() {
               labelId="song-sort-label"
               value={sortBy}
               label={t('sort.sortBy')}
-              onChange={(e) => handleSortChange(e.target.value as SongSortField)}
+              onChange={(event) => handleSortChange(event.target.value as SongSortField)}
             >
               <MenuItem value="Title">{t('sort.title')}</MenuItem>
               <MenuItem value="SongNumber">{t('sort.trackNumber')}</MenuItem>
@@ -69,12 +53,18 @@ export default function BrowseSongs() {
               <MenuItem value="CalculatedRating">{t('sort.rating')}</MenuItem>
             </Select>
           </FormControl>
-          <IconButton onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')} size="small">
+          <IconButton
+            onClick={() => setSortDirection((previous) => (previous === 'asc' ? 'desc' : 'asc'))}
+            size="small"
+            aria-label={t('sort.toggleDirection', 'Toggle sort direction')}
+          >
             {sortDirection === 'asc' ? <ArrowUpward /> : <ArrowDownward />}
           </IconButton>
         </Box>
       </Box>
-      {loading ? (
+      {error ? (
+        <ErrorState message={error} onRetry={reload} fullPage={false} />
+      ) : loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
           <CircularProgress />
         </Box>
@@ -88,16 +78,16 @@ export default function BrowseSongs() {
         </Box>
       )}
       <Pagination
-        count={Math.ceil(total / 20)}
+        count={Math.max(1, Math.ceil(total / pageSize))}
         page={page}
         onChange={(_, value) => setPage(value)}
         sx={{ mt: 2 }}
       />
       <Typography variant="body2" sx={{ mt: 1 }}>
         {t('common.viewing', {
-          from: (page - 1) * 20 + 1,
-          to: Math.min(page * 20, total),
-          total
+          from: (page - 1) * pageSize + 1,
+          to: Math.min(page * pageSize, total),
+          total,
         })}
       </Typography>
     </Box>

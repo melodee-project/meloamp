@@ -30,23 +30,29 @@ jest.mock('@mui/system/useMediaQuery', () => {
   };
 });
 
-// Mock ResizeObserver for components that use it
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-}));
+// Real classes (not jest.fn mocks) so component code that does
+// `new ResizeObserver(cb).observe(node)` always receives a valid instance,
+// including code that reads `window.ResizeObserver` via MUI's `ownerWindow`.
+class ResizeObserverMock {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+}
 
-// Mock IntersectionObserver for virtualized lists
-global.IntersectionObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
-  root: null,
-  rootMargin: '',
-  thresholds: [],
-  takeRecords: jest.fn(),
-}));
+class IntersectionObserverMock {
+  root = null;
+  rootMargin = '';
+  thresholds: number[] = [];
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+  takeRecords = jest.fn(() => []);
+}
+
+Object.defineProperty(global, 'ResizeObserver', { writable: true, value: ResizeObserverMock });
+Object.defineProperty(window, 'ResizeObserver', { writable: true, value: ResizeObserverMock });
+Object.defineProperty(global, 'IntersectionObserver', { writable: true, value: IntersectionObserverMock });
+Object.defineProperty(window, 'IntersectionObserver', { writable: true, value: IntersectionObserverMock });
 
 // Clear localStorage before each test to ensure isolation
 beforeEach(() => {

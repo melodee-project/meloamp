@@ -191,3 +191,69 @@ describe('useQueueStore', () => {
     expect(useQueueStore.getState().shuffleEnabled).toBe(false);
   });
 });
+
+describe('useQueueStore persistence and bounds', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useQueueStore.setState({
+      queue: [],
+      current: 0,
+      repeatMode: RepeatMode.OFF,
+      shuffleEnabled: false,
+      originalOrder: null,
+      lastAction: null,
+    });
+  });
+
+  test('setQueue clears shuffle and persists playback settings', () => {
+    useQueueStore.getState().toggleShuffle();
+    useQueueStore.getState().setQueue([mockSong('s1')]);
+    expect(useQueueStore.getState().shuffleEnabled).toBe(false);
+    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+    expect(settings.shuffleEnabled).toBe(false);
+  });
+
+  test('setRepeatMode persists to userSettings without losing other keys', () => {
+    localStorage.setItem('userSettings', JSON.stringify({ equalizerGains: [1, 2, 3, 4, 5, 6] }));
+    useQueueStore.getState().setRepeatMode(RepeatMode.ONE);
+    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+    expect(settings.repeatMode).toBe(RepeatMode.ONE);
+    expect(settings.equalizerGains).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  test('reorderQueue ignores out-of-range indices', () => {
+    useQueueStore.getState().setQueue([mockSong('s1'), mockSong('s2')]);
+    useQueueStore.getState().reorderQueue(0, 5);
+    expect(useQueueStore.getState().queue.map(s => s.id)).toEqual(['s1', 's2']);
+  });
+
+  test('reorderQueue keeps the current index pointing at the same song', () => {
+    useQueueStore.getState().setQueue([mockSong('s1'), mockSong('s2'), mockSong('s3')]);
+    useQueueStore.getState().setCurrent(1);
+    useQueueStore.getState().reorderQueue(1, 2);
+    expect(useQueueStore.getState().current).toBe(2);
+    expect(useQueueStore.getState().queue[2].id).toBe('s2');
+  });
+
+  test('setCurrent clamps out-of-range indices', () => {
+    useQueueStore.getState().setQueue([mockSong('s1')]);
+    useQueueStore.getState().setCurrent(99);
+    expect(useQueueStore.getState().current).toBe(0);
+  });
+
+  test('removeFromQueue ignores a missing index', () => {
+    useQueueStore.getState().setQueue([mockSong('s1')]);
+    useQueueStore.getState().removeFromQueue(10);
+    expect(useQueueStore.getState().queue).toHaveLength(1);
+  });
+
+  test('queue persistence strips credentials from stream URLs', () => {
+    jest.useFakeTimers();
+    const song = { ...mockSong('s1'), url: 'https://api.test/stream/1?jwt=secret' };
+    useQueueStore.getState().addToQueue(song);
+    jest.advanceTimersByTime(1500);
+    const stored = JSON.parse(localStorage.getItem('queueState') || '{}');
+    expect(stored.queue[0].url).not.toContain('jwt');
+    jest.useRealTimers();
+  });
+});

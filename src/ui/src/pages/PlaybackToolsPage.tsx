@@ -1,4 +1,5 @@
 import React from 'react';
+import { getErrorMessage } from '../utils/errors';
 import {
   Alert,
   Box,
@@ -95,36 +96,38 @@ export default function PlaybackToolsPage() {
     setSuccess(null);
   }, []);
 
-  const loadCapabilities = React.useCallback(async () => {
+  const loadCapabilities = React.useCallback(async (signal?: AbortSignal) => {
     setLoadingAction('capabilities', true);
     try {
-      const response = await apiRequest<BackendCapabilities>(API_ROUTES.playback.backends);
+      const response = await apiRequest<BackendCapabilities>(API_ROUTES.playback.backends, { signal });
       const payload = unwrapApiResponse<BackendCapabilities>(response.data);
       setCapabilities(payload || null);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
-      setLoadingAction('capabilities', false);
+      if (!signal?.aborted) setLoadingAction('capabilities', false);
     }
   }, [setLoadingAction, t]);
 
-  const loadStatus = React.useCallback(async () => {
+  const loadStatus = React.useCallback(async (signal?: AbortSignal) => {
     setLoadingAction('status', true);
     try {
-      const response = await apiRequest<BackendStatus>(API_ROUTES.playback.status);
+      const response = await apiRequest<BackendStatus>(API_ROUTES.playback.status, { signal });
       const payload = unwrapApiResponse<BackendStatus>(response.data);
       setStatus(payload || null);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
-      setLoadingAction('status', false);
+      if (!signal?.aborted) setLoadingAction('status', false);
     }
   }, [setLoadingAction, t]);
 
-  const loadSettings = React.useCallback(async () => {
+  const loadSettings = React.useCallback(async (signal?: AbortSignal) => {
     setLoadingAction('settings', true);
     try {
-      const response = await apiRequest<PlaybackSettings>(API_ROUTES.playback.settings);
+      const response = await apiRequest<PlaybackSettings>(API_ROUTES.playback.settings, { signal });
       const payload = unwrapApiResponse<PlaybackSettings>(response.data);
       if (payload) {
         setSettings(payload);
@@ -137,32 +140,41 @@ export default function PlaybackToolsPage() {
           equalizerPreset: payload.equalizerPreset || '',
         });
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
-      setLoadingAction('settings', false);
+      if (!signal?.aborted) setLoadingAction('settings', false);
     }
   }, [setLoadingAction, t]);
 
-  const loadEndpoints = React.useCallback(async () => {
+  const loadEndpoints = React.useCallback(async (signal?: AbortSignal) => {
     setLoadingAction('endpointList', true);
     try {
-      const response = await apiRequest(API_ROUTES.playback.endpoints);
+      const response = await apiRequest(API_ROUTES.playback.endpoints, { signal });
       setEndpoints(endpointListFromResponse(response.data));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
-      setLoadingAction('endpointList', false);
+      if (!signal?.aborted) setLoadingAction('endpointList', false);
     }
   }, [setLoadingAction, t]);
 
-  const refreshAll = React.useCallback(async () => {
+  const refreshAll = React.useCallback(async (signal?: AbortSignal) => {
     clearMessages();
-    await Promise.all([loadCapabilities(), loadStatus(), loadSettings(), loadEndpoints()]);
+    await Promise.all([
+      loadCapabilities(signal),
+      loadStatus(signal),
+      loadSettings(signal),
+      loadEndpoints(signal),
+    ]);
   }, [clearMessages, loadCapabilities, loadEndpoints, loadSettings, loadStatus]);
 
   React.useEffect(() => {
-    refreshAll();
+    const controller = new AbortController();
+    refreshAll(controller.signal);
+    return () => controller.abort();
   }, [refreshAll]);
 
   const saveSettings = async () => {
@@ -175,8 +187,8 @@ export default function PlaybackToolsPage() {
       });
       await loadSettings();
       setSuccess(t('playbackTools.settingsSaved', 'Playback settings saved.'));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -189,8 +201,8 @@ export default function PlaybackToolsPage() {
       await apiRequest(API_ROUTES.playback.registerBackend, { method: 'POST' });
       await loadEndpoints();
       setSuccess(t('playbackTools.backendRegistered', 'Backend registered.'));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -203,8 +215,8 @@ export default function PlaybackToolsPage() {
       await apiRequest(API_ROUTES.playback.initializeBackend, { method: 'POST' });
       await Promise.all([loadStatus(), loadCapabilities()]);
       setSuccess(t('playbackTools.backendInitialized', 'Playback backend initialized.'));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -217,8 +229,8 @@ export default function PlaybackToolsPage() {
       await apiRequest(API_ROUTES.playback.shutdownBackend, { method: 'POST' });
       await Promise.all([loadStatus(), loadCapabilities()]);
       setSuccess(t('playbackTools.backendShutdown', 'Playback backend shutdown.'));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -239,8 +251,8 @@ export default function PlaybackToolsPage() {
       if (forSessionId.trim()) {
         setSuccess(t('playbackTools.sessionEndpointsLoaded', 'Session endpoints loaded.'));
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -258,16 +270,16 @@ export default function PlaybackToolsPage() {
       const route = buildEndpoint(API_ROUTES.playback.heartbeat, { sessionId: heartbeatSessionId });
       const response = await apiRequest(route, { method: 'POST' });
       const payload = response?.data;
-      const unwrapped = unwrapApiResponse(payload as any);
+      const unwrapped = unwrapApiResponse(payload as unknown);
       const result = typeof unwrapped === 'boolean'
         ? unwrapped
         : typeof payload === 'boolean'
           ? payload
           : !!payload;
       setHeartbeatResult(String(result));
-    } catch (err: any) {
-      setHeartbeatResult(err?.response?.data?.message || t('common.error', 'An error occurred'));
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setHeartbeatResult(getErrorMessage(err, t('common.error', 'An error occurred')));
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -287,8 +299,8 @@ export default function PlaybackToolsPage() {
       await apiRequest(route, { method: 'POST', data: payload });
       await loadEndpoints();
       setSuccess(t('playbackTools.endpointAttached', 'Endpoint attached.'));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -302,8 +314,8 @@ export default function PlaybackToolsPage() {
       await apiRequest(route, { method: 'POST' });
       await loadEndpoints();
       setSuccess(t('playbackTools.endpointDetached', 'Endpoint detached.'));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoadingAction('action', false);
     }
@@ -335,7 +347,7 @@ export default function PlaybackToolsPage() {
         <Button
           variant="outlined"
           startIcon={<Refresh />}
-          onClick={refreshAll}
+          onClick={() => refreshAll()}
           disabled={isBusy}
         >
           {t('playbackTools.refresh', 'Refresh')}

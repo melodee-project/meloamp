@@ -152,24 +152,38 @@ const MiniSongCard: React.FC<MiniSongCardProps> = ({ song, onClick }) => {
       </Box>
       <Stack direction="row" spacing={0} sx={{ ml: 1 }}>
         <Tooltip title={t('songCard.playNext')}>
-          <IconButton size="small" onClick={handlePlayNext}><SkipNext fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={handlePlayNext} aria-label={t('songCard.playNext')}>
+            <SkipNext fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Tooltip title={favorite ? t('songCard.unfavorite') : t('songCard.favorite')}>
-          <IconButton size="small" color={favorite ? 'primary' : 'default'} onClick={handleToggleFavorite}>
+          <IconButton
+            size="small"
+            color={favorite ? 'primary' : 'default'}
+            onClick={handleToggleFavorite}
+            aria-label={favorite ? t('songCard.unfavorite') : t('songCard.favorite')}
+          >
             {favorite ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
           </IconButton>
         </Tooltip>
         {/* Rating stars (0..5). Click to set rating */}
         <Box sx={{ display: 'flex', alignItems: 'center', px: 0.5 }} onClick={(e) => e.stopPropagation()}>
-          <Rating value={Math.min(5, rating)} size="small" onChange={handleRatingChange} />
+          <Rating value={Math.min(5, rating)} size="small" onChange={handleRatingChange} aria-label={t('common.rating', 'Rating')} />
         </Box>
         <Tooltip title={hated ? t('songCard.unhate') : t('songCard.hate')}>
-          <IconButton size="small" color={hated ? 'error' : 'default'} onClick={handleToggleHated}>
+          <IconButton
+            size="small"
+            color={hated ? 'error' : 'default'}
+            onClick={handleToggleHated}
+            aria-label={hated ? t('songCard.unhate') : t('songCard.hate')}
+          >
             {hated ? <ThumbDown fontSize="small" /> : <ThumbDownOffAlt fontSize="small" />}
           </IconButton>
         </Tooltip>
         <Tooltip title={t('songCard.addLast')}>
-          <IconButton size="small" onClick={handleAddLast}><QueueMusic fontSize="small" /></IconButton>
+          <IconButton size="small" onClick={handleAddLast} aria-label={t('songCard.addLast')}>
+            <QueueMusic fontSize="small" />
+          </IconButton>
         </Tooltip>
       </Stack>
     </Card>

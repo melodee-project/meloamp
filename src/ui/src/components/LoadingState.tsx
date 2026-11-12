@@ -30,7 +30,12 @@ export default function LoadingState({
 
   if (!fullPage) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}>
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1 }}
+        role="status"
+        aria-busy="true"
+        aria-label={displayMessage}
+      >
         <CircularProgress size={sizeMap[size]} />
         {displayMessage && (
           <Typography variant="body2" color="text.secondary">

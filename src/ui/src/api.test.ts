@@ -1,4 +1,4 @@
-import { setJwt, clearJwt, getJwt, setApiBaseUrl, unwrapApiResponse, buildEndpoint, apiRequest, authenticate, requestPasswordReset, confirmPasswordReset, logoutAllDevices, revokeSession, refreshSession } from './api';
+import { setJwt, clearJwt, getJwt, setApiBaseUrl, getApiBaseUrl, unwrapApiResponse, unwrapApiPage, buildEndpoint, apiRequest, apiGet, authenticate, requestPasswordReset, confirmPasswordReset, logoutAllDevices, revokeSession, refreshSession } from './api';
 import api from './api';
 import MockAdapter from 'axios-mock-adapter';
 
@@ -183,5 +183,42 @@ describe('auth helper functions', () => {
     mockApi.onPost('/auth/refresh').reply(200, {});
     await refreshSession();
     expect(mockApi.history.post.length).toBe(1);
+  });
+});
+
+describe('getApiBaseUrl', () => {
+  test('returns the configured base URL', () => {
+    setApiBaseUrl('http://example.test/api/v1');
+    expect(getApiBaseUrl()).toBe('http://example.test/api/v1');
+  });
+});
+
+describe('unwrapApiPage', () => {
+  test('handles bare arrays', () => {
+    expect(unwrapApiPage<string>(['a'])).toEqual({ items: ['a'], meta: undefined });
+  });
+
+  test('handles { data, meta } envelopes', () => {
+    const meta = { totalCount: 2 } as never;
+    const result = unwrapApiPage<number>({ data: [1, 2], meta });
+    expect(result.items).toEqual([1, 2]);
+    expect(result.meta).toBe(meta);
+  });
+
+  test('handles { items } envelopes', () => {
+    expect(unwrapApiPage<string>({ items: ['x'] }).items).toEqual(['x']);
+  });
+
+  test('falls back to an empty list for unknown shapes', () => {
+    expect(unwrapApiPage<string>(null).items).toEqual([]);
+    expect(unwrapApiPage<string>({ nope: true }).items).toEqual([]);
+  });
+});
+
+describe('apiGet', () => {
+  test('forwards params and returns the response', async () => {
+    mockApi.onGet('/thing').reply((config) => [200, { q: config.params.q }]);
+    const response = await apiGet('/thing', { params: { q: 'search' } });
+    expect(response.data).toEqual({ q: 'search' });
   });
 });

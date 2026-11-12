@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { getErrorMessage } from '../utils/errors';
 import {
   Box,
   Typography,
@@ -15,13 +17,14 @@ import {
   Tooltip,
 } from '@mui/material';
 import { Album, PlayArrow, AccessTime } from '@mui/icons-material';
-import { apiRequest } from '../api';
+import { apiRequest, unwrapApiPage } from '../api';
 import { HistoryResponse, HistoryItem } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
 import { toQueueSong } from '../components/toQueueSong';
 import { useQueueStore } from '../queueStore';
 
 export default function HistoryPage() {
+  const { t } = useTranslation();
   const [history, setHistory] = React.useState<HistoryResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -29,45 +32,24 @@ export default function HistoryPage() {
   const navigate = useNavigate();
   const addToQueue = useQueueStore((state) => state.addToQueue);
 
-  type HistoryPayload = HistoryResponse | { data: HistoryResponse } | { data: { data: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } } };
-
   const fetchHistory = React.useCallback(async (pageNum: number) => {
     try {
       setLoading(true);
-      const response = await apiRequest<HistoryPayload>(`/user/last-played?page=${pageNum}&pageSize=50`);
-      const responseData = response.data as
-        | HistoryResponse
-        | { data: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } }
-        | { data: { data: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } } };
-
-      if ((responseData as HistoryResponse).data && (responseData as HistoryResponse).meta) {
-        setHistory(responseData as HistoryResponse);
-        return;
-      }
-
-      if ((responseData as { data?: HistoryItem[]; meta?: { totalCount: number; pageSize: number; currentPage: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } }).data) {
-        const responseItems = (responseData as { data: HistoryItem[] }).data;
-        if (Array.isArray(responseItems)) {
-          setHistory({
-            data: responseItems,
-            meta: {
-              totalCount: responseItems.length,
-              pageSize: 50,
-              currentPage: pageNum,
-              totalPages: 1,
-              hasNext: false,
-              hasPrevious: false,
-            },
-          });
-        }
-      } else {
-        setHistory({
-          data: [],
-          meta: { totalCount: 0, pageSize: 50, currentPage: pageNum, totalPages: 1, hasNext: false, hasPrevious: false },
-        });
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load history');
+      const response = await apiRequest<unknown>(`/user/last-played?page=${pageNum}&pageSize=50`);
+      const { items, meta } = unwrapApiPage<HistoryItem>(response.data);
+      setHistory({
+        data: items,
+        meta: meta ?? {
+          totalCount: items.length,
+          pageSize: 50,
+          currentPage: pageNum,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+        },
+      });
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to load history'));
     } finally {
       setLoading(false);
     }
@@ -109,9 +91,7 @@ export default function HistoryPage() {
   if (loading && !history) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Play History
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.history')}</Typography>
         <List>
           {Array.from({ length: 10 }).map((_, i) => (
             <React.Fragment key={i}>
@@ -135,9 +115,7 @@ export default function HistoryPage() {
   if (error) {
     return (
       <Box>
-        <Typography variant="h4" gutterBottom>
-          Play History
-        </Typography>
+        <Typography variant="h4" gutterBottom>{t('nav.history')}</Typography>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -147,13 +125,11 @@ export default function HistoryPage() {
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <AccessTime color="primary" />
-        <Typography variant="h4">Play History</Typography>
+        <Typography variant="h4">{t('nav.history')}</Typography>
       </Box>
 
       {!history?.data || history.data.length === 0 ? (
-        <Typography color="text.secondary">
-          No play history yet. Start listening to build your history!
-        </Typography>
+        <Typography color="text.secondary">{t('history.empty')}</Typography>
       ) : (
         <>
           <List>
@@ -164,7 +140,7 @@ export default function HistoryPage() {
                   sx={{ cursor: 'pointer' }}
                   secondaryAction={
                     <Tooltip title="Play again">
-                      <IconButton edge="end" onClick={() => handlePlayAgain(item)}>
+                      <IconButton aria-label={t('history.playAgain')} edge="end" onClick={() => handlePlayAgain(item)}>
                         <PlayArrow />
                       </IconButton>
                     </Tooltip>

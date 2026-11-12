@@ -14,7 +14,8 @@ import {
   Collapse
 } from '@mui/material';
 import { Search, History, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
-import api from '../api';
+import api, { unwrapApiResponse } from '../api';
+import { getErrorMessage } from '../utils/errors';
 import { SearchResultData, Song, Artist, Album, Playlist } from '../apiModels';
 import ArtistCard from '../components/ArtistCard';
 import AlbumCard from '../components/AlbumCard';
@@ -130,8 +131,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
         .then((res) => {
           debugLog('SearchPage', 'Search response:', res.data);
           // The API wraps the response in a 'data' property
-          const searchResults = (res.data as any).data || res.data;
-          setResults(searchResults as SearchResultData);
+          setResults(unwrapApiResponse<SearchResultData>(res.data));
           setLoading(false);
           // Add to recent searches
           addRecentSearch(search);
@@ -146,15 +146,14 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
         })
         .catch((error) => {
           debugError('SearchPage', 'Search error:', error);
-          debugError('SearchPage', 'Error response:', error.response?.data);
-          setError(`Search failed: ${error.response?.data?.message || error.message}`);
+          setError(t('search.error', { error: getErrorMessage(error, '') }));
           setLoading(false);
         });
     }, 500);
     return () => {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
-  }, [search, artistPage, albumPage, songPage, location.pathname, navigate]);
+  }, [search, artistPage, albumPage, songPage, location.pathname, navigate, t]);
 
   // Reset pages when search changes
   useEffect(() => {
@@ -211,7 +210,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           slotProps={{ input: {
             startAdornment: (
               <InputAdornment position="start">
-                <IconButton disabled size="small">
+                <IconButton aria-label={t('search.search', 'Search')} disabled size="small">
                   <Search />
                 </IconButton>
               </InputAdornment>

@@ -1,28 +1,36 @@
 @echo off
-REM run-it-win.bat - Build and run MeloAmp Electron App locally (Windows)
+REM run-it-win.bat - Build and launch MeloAmp locally (Windows).
 REM Usage: scripts\run-it-win.bat
+setlocal
+set "SCRIPT_DIR=%~dp0"
+set "ROOT_DIR=%SCRIPT_DIR%.."
+set "UI_DIR=%ROOT_DIR%\src\ui"
+set "ELECTRON_DIR=%ROOT_DIR%\src\electron"
 
-REM Get the absolute path to the project root
-set SCRIPT_DIR=%~dp0
-set PROJECT_ROOT=%SCRIPT_DIR%..\
-
-REM 1. Build React UI
 echo.
-echo [1/3] Building React UI...
-cd /d %PROJECT_ROOT%src\ui
-call npm install --legacy-peer-deps
-if %errorlevel% neq 0 exit /b %errorlevel%
-call npm run build
-if %errorlevel% neq 0 exit /b %errorlevel%
+echo [1/4] Installing UI dependencies (Yarn 4)...
+pushd "%UI_DIR%" || exit /b 1
+call yarn install --immutable
+if errorlevel 1 exit /b %errorlevel%
 
-REM 2. Install Electron dependencies
 echo.
-echo [2/3] Installing Electron dependencies...
-cd /d %PROJECT_ROOT%src\electron
-call npm install
-if %errorlevel% neq 0 exit /b %errorlevel%
+echo [2/4] Building the React UI...
+set CI=true
+call yarn build
+if errorlevel 1 exit /b %errorlevel%
+popd
 
-REM 3. Run Electron app
 echo.
-echo [3/3] Launching MeloAmp Electron app...
-call npx electron .
+echo [3/4] Syncing UI build into the Electron shell...
+if exist "%ELECTRON_DIR%\build" rmdir /s /q "%ELECTRON_DIR%\build"
+xcopy /e /i /q "%UI_DIR%\build" "%ELECTRON_DIR%\build" >nul
+if errorlevel 1 exit /b %errorlevel%
+
+echo.
+echo [4/4] Installing Electron dependencies and launching...
+pushd "%ELECTRON_DIR%" || exit /b 1
+call yarn install --immutable
+if errorlevel 1 exit /b %errorlevel%
+call yarn start
+popd
+endlocal

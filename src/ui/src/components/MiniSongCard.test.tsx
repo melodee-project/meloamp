@@ -62,37 +62,27 @@ describe('MiniSongCard', () => {
   test('renders add to queue button', () => {
     const song = createMockSong();
     renderWithProviders(<MiniSongCard song={song} />);
-    const buttons = screen.getAllByRole('button');
-    const queueButton = buttons.find(b => b.innerHTML.includes('QueueMusicIcon') || b.innerHTML.includes('queue-music'));
-    expect(queueButton).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add as last in queue/i })).toBeInTheDocument();
   });
 
   test('handles onClick callback when provided', () => {
     const song = createMockSong();
     const onClick = jest.fn();
     renderWithProviders(<MiniSongCard song={song} onClick={onClick} />);
-    const card = screen.getByText('Test Song').closest('.MuiCard-root');
-    if (card) {
-      fireEvent.click(card);
-      expect(onClick).toHaveBeenCalledWith(song);
-    }
+    fireEvent.click(screen.getByText('Test Song'));
+    expect(onClick).toHaveBeenCalledWith(song);
   });
 
   test('renders skip next button', () => {
     const song = createMockSong();
     renderWithProviders(<MiniSongCard song={song} />);
-    const buttons = screen.getAllByRole('button');
-    const skipButton = buttons.find(b => b.innerHTML.includes('SkipNextIcon') || b.innerHTML.includes('skip-next'));
-    expect(skipButton).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /play next/i })).toBeInTheDocument();
   });
 
   test('handles card click navigation', () => {
     const song = createMockSong({ id: 'song-123' });
     renderWithProviders(<MiniSongCard song={song} />);
-    const card = screen.getByText('Test Song').closest('.MuiCard-root');
-    if (card) {
-      fireEvent.click(card);
-      expect(mockNavigate).toHaveBeenCalledWith('/songs/song-123');
-    }
+    fireEvent.click(screen.getByText('Test Song'));
+    expect(mockNavigate).toHaveBeenCalledWith('/songs/song-123');
   });
 });

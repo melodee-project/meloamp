@@ -1,14 +1,27 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import de from './locales/de.json';
 import en from './locales/en.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
-import de from './locales/de.json';
-import pt from './locales/pt.json';
 import it from './locales/it.json';
 import ja from './locales/ja.json';
-import zhCN from './locales/zh-CN.json';
+import pt from './locales/pt.json';
 import ru from './locales/ru.json';
+import zhCN from './locales/zh-CN.json';
+import { readUserSettings, updateUserSettings } from './settings';
+
+export const SUPPORTED_LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'pt', label: 'Português' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'ja', label: '日本語' },
+  { code: 'zh-CN', label: '简体中文' },
+  { code: 'ru', label: 'Русский' },
+] as const;
 
 const resources = {
   en: { translation: en },
@@ -20,36 +33,24 @@ const resources = {
   ja: { translation: ja },
   'zh-CN': { translation: zhCN },
   ru: { translation: ru },
-  // Add more languages here
 };
 
-function getStoredLanguage(): string {
-  try {
-    const stored = localStorage.getItem('userSettings');
-    if (!stored) return 'en';
-    const parsed = JSON.parse(stored);
-    return parsed?.language || 'en';
-  } catch {
-    return 'en';
-  }
-}
+const supported = new Set<string>(SUPPORTED_LANGUAGES.map((language) => language.code));
 
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: getStoredLanguage(),
+    lng: supported.has(readUserSettings().language) ? readUserSettings().language : 'en',
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
   });
 
-i18n.on('languageChanged', (lng) => {
-  try {
-    const settings = JSON.parse(localStorage.getItem('userSettings') || '{}');
-    settings.language = lng;
-    localStorage.setItem('userSettings', JSON.stringify(settings));
-  } catch {}
+i18n.on('languageChanged', (language) => {
+  if (supported.has(language)) {
+    updateUserSettings({ language });
+  }
 });
 
 export default i18n;

@@ -1,11 +1,12 @@
 import { debugLog, debugError } from '../debug';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Card, CardContent, CardMedia, IconButton, Tooltip, Rating, Stack } from '@mui/material';
 import { Favorite, FavoriteBorder, ThumbDown, ThumbDownOffAlt, PlayArrow, QueueMusic, SkipNext } from '@mui/icons-material';
-import { apiRequest } from '../api';
-import api from '../api';
+import api, { apiRequest, unwrapApiResponse } from '../api';
 import { Song } from '../apiModels';
+import { useApiEffect } from '../hooks/useApiEffect';
+import { getErrorMessage } from '../utils/errors';
 import { useTranslation } from 'react-i18next';
 import MiniArtistCard from '../components/MiniArtistCard';
 import { useQueueStore } from '../queueStore';
@@ -26,20 +27,24 @@ export default function SongDetailView() {
   const playNow = useQueueStore(state => state.playNow);
   const addToQueue = useQueueStore(state => state.addToQueue);
 
-  useEffect(() => {
+  useApiEffect(async (signal) => {
     setLoading(true);
     setError(null);
-    apiRequest(`/songs/${id}`)
-      .then(res => {
-        const songData = res.data as Song;
-        setSong(songData);
-        setFavorite(songData.userStarred ?? false);
-        setHated(songData.userRating === -1);
-        setRating(songData.userRating && songData.userRating > 0 ? songData.userRating : 0);
-      })
-      .catch(err => setError(err?.response?.data?.message || err?.message || 'Failed to load song.'))
-      .finally(() => setLoading(false));
-  }, [id]);
+    try {
+      const response = await apiRequest<Song>(`/songs/${id}`, { signal });
+      const songData = unwrapApiResponse<Song>(response.data);
+      if (signal.aborted || !songData) return;
+      setSong(songData);
+      setFavorite(songData.userStarred ?? false);
+      setHated(songData.userRating === -1);
+      setRating(songData.userRating && songData.userRating > 0 ? songData.userRating : 0);
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(getErrorMessage(err, t('songDetail.loadError', 'Failed to load song.')));
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, [id, t]);
 
   const handlePlayNow = () => {
     if (!song) return;
@@ -141,17 +146,17 @@ export default function SongDetailView() {
             {/* Play controls */}
             <Stack direction="row" spacing={1}>
               <Tooltip title={t('songCard.playNow', 'Play Now')}>
-                <IconButton onClick={handlePlayNow} color="success" size="large">
+                <IconButton aria-label={t('songCard.playNow', 'Play Now')} onClick={handlePlayNow} color="success" size="large">
                   <PlayArrow fontSize="large" />
                 </IconButton>
               </Tooltip>
               <Tooltip title={t('songCard.playNext', 'Play Next')}>
-                <IconButton onClick={handleAddToQueue} color="primary" size="large">
+                <IconButton aria-label={t('songCard.playNext', 'Play Next')} onClick={handleAddToQueue} color="primary" size="large">
                   <SkipNext fontSize="large" />
                 </IconButton>
               </Tooltip>
               <Tooltip title={t('songCard.addLast', 'Add to Queue')}>
-                <IconButton onClick={handleAddToQueue} color="primary" size="large">
+                <IconButton aria-label={t('songCard.addLast', 'Add to Queue')} onClick={handleAddToQueue} color="primary" size="large">
                   <QueueMusic fontSize="large" />
                 </IconButton>
               </Tooltip>
@@ -164,7 +169,7 @@ export default function SongDetailView() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
               <Tooltip title={favorite ? t('songCard.unfavorite') : t('songCard.favorite')}>
                 <span>
-                  <IconButton color={favorite ? 'primary' : 'default'} onClick={handleFavorite} disabled={favLoading} size="large">
+                  <IconButton aria-label={favorite ? t('songCard.unfavorite') : t('songCard.favorite')} color={favorite ? 'primary' : 'default'} onClick={handleFavorite} disabled={favLoading} size="large">
                     {favorite ? <Favorite /> : <FavoriteBorder />}
                   </IconButton>
                 </span>
@@ -176,7 +181,7 @@ export default function SongDetailView() {
               />
               <Tooltip title={hated ? t('songCard.unhate') : t('songCard.hate')}>
                 <span>
-                  <IconButton color={hated ? 'error' : 'default'} onClick={handleHated} disabled={favLoading} size="large">
+                  <IconButton aria-label={hated ? t('songCard.unhate') : t('songCard.hate')} color={hated ? 'error' : 'default'} onClick={handleHated} disabled={favLoading} size="large">
                     {hated ? <ThumbDown /> : <ThumbDownOffAlt />}
                   </IconButton>
                 </span>

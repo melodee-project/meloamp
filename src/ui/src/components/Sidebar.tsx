@@ -44,9 +44,13 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { clearJwt } from '../api';
+import { User } from '../apiModels';
+
+/** Only the profile fields the sidebar renders. */
+type SidebarUser = Partial<Pick<User, 'username' | 'email' | 'thumbnailUrl' | 'imageUrl' | 'isAdmin'>>;
 
 interface SidebarProps {
-  user: any;
+  user: SidebarUser | null;
   isOpen: boolean;
   onToggle: () => void;
   onThemeToggle: () => void;
@@ -248,14 +252,14 @@ export default function Sidebar({ user, isOpen, onToggle, onThemeToggle, themeMo
         </Avatar>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
-            {user?.username || 'User'}
+            {user?.username || t('sidebar.guest', 'User')}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>
             {user?.email}
           </Typography>
         </Box>
         {isMobile && (
-          <IconButton size="small" onClick={onToggle}>
+          <IconButton aria-label={t('nav.toggleSidebar')} size="small" onClick={onToggle}>
             <ChevronLeftIcon />
           </IconButton>
         )}

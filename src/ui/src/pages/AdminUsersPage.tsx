@@ -1,4 +1,5 @@
 import React from 'react';
+import { getErrorMessage } from '../utils/errors';
 import {
   Alert,
   Box,
@@ -40,8 +41,8 @@ export default function AdminUsersPage() {
       setError(null);
       const response = await apiRequest<AdminUser[]>(API_ROUTES.admin.users);
       setUsers(normalizeUsers(response.data));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('error.generic', 'Something went wrong'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('error.generic', 'Something went wrong')));
     } finally {
       setLoading(false);
     }

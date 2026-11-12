@@ -37,19 +37,14 @@ describe('BrowseArtists', () => {
     });
   });
 
-  test('renders loading state initially', () => {
+  test('renders loading state initially', async () => {
     renderWithProviders(<BrowseArtists />);
-    const progressBars = document.querySelectorAll('[role="progressbar"]');
-    if (progressBars.length > 0) {
-      expect(progressBars[0]).toBeInTheDocument();
-    }
+    // The list (or the loading state) must appear; assert the settled list.
+    expect(await screen.findByText('Artist One')).toBeInTheDocument();
   });
 
   test('renders artist list', async () => {
     renderWithProviders(<BrowseArtists />);
-    await testUtils.waitFor(() => {
-      const artistCards = document.querySelectorAll('.MuiCard-root');
-      expect(artistCards.length).toBeGreaterThan(0);
-    });
+    expect(await screen.findByText('Artist One')).toBeInTheDocument();
   });
 });

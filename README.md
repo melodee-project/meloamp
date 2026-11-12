@@ -4,7 +4,7 @@
 
 **MeloAmp** is a cross-platform desktop music client for the [Melodee](https://melodee.org) API. It uses:
 
-- React 19 + MUI 7 frontend
+- React 19 + MUI 9 frontend
 - Electron + Express shell
 - Zustand for UI state
 - React Router + i18n + Material theming
@@ -37,9 +37,9 @@ It targets Linux, Windows, and macOS.
 
 ```text
 src/
-  ui/       # React 19 + MUI + Zustand app
+  ui/       # React 19 + MUI 9 + Zustand app
   electron/  # Electron main process + preload + package/build config
-scripts/    # Convenience build scripts
+scripts/    # Build scripts and quality gates (check.py / do-prechecks.py)
 AGENTS.md  # Local development and architecture instructions
 ```
 
@@ -227,9 +227,26 @@ From `src/ui`:
 
 ```bash
 yarn test              # interactive/watch mode
-yarn test --watchAll=false --coverage
+yarn test:coverage     # single run + coverage thresholds
+yarn typecheck         # tsc --noEmit
+yarn lint              # eslint, zero warnings allowed
+```
 
-yarn test:coverage     # single run + coverage report
+From `src/electron`:
+
+```bash
+yarn test              # node --test helpers.test.js strings.test.js
+```
+
+### Pre-push checks
+
+Run the full gate sequence before pushing (whitespace, repo hygiene, i18n,
+Electron helpers, typecheck, lint, tests + coverage, production build):
+
+```bash
+python3 scripts/do-prechecks.py
+python3 scripts/do-prechecks.py --fast   # skip tests + build
+python3 scripts/check.py --list          # list individual gates
 ```
 
 Coverage output:
@@ -237,6 +254,10 @@ Coverage output:
 - `src/ui/coverage/lcov-report/index.html`
 - `src/ui/coverage/lcov.info`
 - `src/ui/coverage/coverage-summary.json`
+
+Coverage thresholds (global plus per-file floors for `api.ts`, `queueStore.ts`,
+`settings.ts`, `storage.ts`, `themes/registry.ts`, and `utils/`) are enforced by
+`yarn test:coverage`. They are a ratchet: raise them when adding tests.
 
 For CI parity use the immutable install command:
 
@@ -273,6 +294,10 @@ Use immutable installs for CI and fresh-checkout checks.
 ./scripts/build-linux.sh
 ```
 
+Artifact names include the OS and architecture
+(`MeloAmp-<version>-linux-x64.AppImage`, ...); Windows installer and portable
+builds have distinct names so releases never overwrite each other.
+
 Optional variants:
 
 - `CLEAN=1 ./scripts/build-linux.sh` to force a clean build
@@ -284,8 +309,14 @@ Artifacts are written to:
 
 Packages configured in Electron config:
 
-- AppImage
-- tar.gz
+- Linux: AppImage, tar.gz
+- Windows: nsis installer, portable, zip
+- macOS: dmg, zip (x64 + arm64) with hardened runtime
+
+Code signing/notarization is driven by the standard electron-builder
+environment variables (`CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_ID`,
+`APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`); unsigned local builds still
+work but trigger OS warnings.
 
 ### Build for other OSes
 
@@ -340,8 +371,9 @@ GitHub Actions is defined in `.github/workflows/build.yml` and does:
 
 ## Configuration notes
 
-- Theme, equalizer, and playback settings are managed in app UI and persisted in local storage.
-- Supported locales are configured under `src/ui/src/locales/`.
+- Theme, equalizer, and playback settings are managed in app UI and persisted in local storage through the single merge-based writer in `src/ui/src/settings.ts`.
+- Supported locales are configured under `src/ui/src/locales/`. `en.json` is complete and enforced by prechecks; other locales fall back to English until translated.
+- **Authentication:** the JWT lives in `localStorage` (browser-compatible) and is sent as a Bearer header; stream URLs receive it at playback time only. Never persist or log stream URLs with credentials. The packaged app adds a strict CSP, `no-referrer`, and a loopback-only server to reduce the XSS surface.
 - Use `localStorage` values with care when switching environments.
 
 ## Troubleshooting
@@ -350,6 +382,8 @@ GitHub Actions is defined in `.github/workflows/build.yml` and does:
 - **Port conflicts**: Electron static server tries fallback ports if `3001` is occupied.
 - **Linux packaging failures**: run `CLEAN=1` and confirm Linux build dependencies are installed.
 - **Yarn immutable install fails** with lockfile errors after dependency changes: run `yarn install` in that package to refresh the lockfile.
+- **Prechecks fail on a missing translation key**: add the key to `src/ui/src/locales/en.json`; other locales fall back to English.
+- **Prechecks fail on hardcoded UI text**: route the string through `t()` (`scripts/check.py i18n` detects plain JSX text).
 - **MPRIS not available on Linux**: requires D-Bus session bus (`DBUS_SESSION_BUS_ADDRESS` should be set by desktop session).
 - **Fedora AppImage issues**: use `--gtk-version=3` when needed.
 
@@ -359,7 +393,7 @@ GitHub Actions is defined in `.github/workflows/build.yml` and does:
 
 1. Fork and create a feature branch
 2. Keep changes scoped and aligned with existing architecture (`zustand`, i18n, Material-UI patterns)
-3. Run tests before opening a PR
+3. Run `python3 scripts/do-prechecks.py` before opening a PR
 4. Prefer small, reviewable commits
 
 ---

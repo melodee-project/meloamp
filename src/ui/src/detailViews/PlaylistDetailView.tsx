@@ -28,8 +28,10 @@ import {
 } from '@mui/material';
 import { Delete, DragIndicator, Edit, EditOff, PlayArrow, Download, ImageOutlined } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import api, { apiRequest } from '../api';
-import { Playlist, Song, User, Meta } from '../apiModels';
+import api, { apiRequest, unwrapApiPage, unwrapApiResponse } from '../api';
+import { Playlist, Song, User } from '../apiModels';
+import { useApiEffect } from '../hooks/useApiEffect';
+import { getErrorMessage } from '../utils/errors';
 import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from '../components/toQueueSong';
@@ -98,17 +100,20 @@ export default function PlaylistDetailView() {
   }, [playlist, currentUser]);
 
   // Fetch playlist details
-  useEffect(() => {
+  useApiEffect(async (signal) => {
     setLoading(true);
     setError(null);
-    apiRequest(`/playlists/${id}`)
-      .then(res => {
-        const responseData = res.data as { data?: Playlist } | Playlist;
-        const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
-        setPlaylist(playlistData as Playlist);
-      })
-      .catch(err => setError(err?.response?.data?.message || err?.message || t('playlistDetail.loadError')))
-      .finally(() => setLoading(false));
+    try {
+      const response = await apiRequest<Playlist>(`/playlists/${id}`, { signal });
+      const playlistData = unwrapApiResponse<Playlist>(response.data);
+      if (signal.aborted || !playlistData) return;
+      setPlaylist(playlistData);
+    } catch (err) {
+      if (signal.aborted) return;
+      setError(getErrorMessage(err, t('playlistDetail.loadError')));
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
   }, [id, t]);
 
   // Fetch playlist songs
@@ -116,13 +121,9 @@ export default function PlaylistDetailView() {
     if (!id) return;
     setSongsLoading(true);
     try {
-      const res = await apiRequest(`/playlists/${id}/songs?pageSize=200`);
-      // The API returns { meta: {...}, data: Song[] }
-      // apiRequest returns { data: { meta: {...}, data: Song[] } }
-      const responseData = res.data as { meta?: any; data?: Song[] };
-      const songsData = responseData?.data || [];
-      setSongs(Array.isArray(songsData) ? songsData : []);
-    } catch (err: any) {
+      const response = await apiRequest<unknown>(`/playlists/${id}/songs`, { params: { pageSize: 200 } });
+      setSongs(unwrapApiPage<Song>(response.data).items);
+    } catch (err) {
       console.error('Failed to load playlist songs', err);
     } finally {
       setSongsLoading(false);
@@ -168,12 +169,11 @@ export default function PlaylistDetailView() {
       setEditMode(false);
       setSnackbar({ open: true, message: t('playlistDetail.saveSuccess'), severity: 'success' });
       // Refresh playlist to get updated song count
-      const res = await apiRequest(`/playlists/${id}`);
-      const responseData = res.data as { data?: Playlist } | Playlist;
-      const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
-      setPlaylist(playlistData as Playlist);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || t('playlistDetail.saveError');
+      const response = await apiRequest<Playlist>(`/playlists/${id}`);
+      const refreshed = unwrapApiResponse<Playlist>(response.data);
+      if (refreshed) setPlaylist(refreshed);
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, t('playlistDetail.saveError'));
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     } finally {
       setIsSaving(false);
@@ -198,8 +198,8 @@ export default function PlaylistDetailView() {
       setSnackbar({ open: true, message: t('playlistDetail.deleteSuccess'), severity: 'success' });
       // Navigate back to playlists after a short delay
       setTimeout(() => navigate('/playlists'), 1500);
-    } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || err?.message || t('playlistDetail.deleteError');
+    } catch (err) {
+      const errorMessage = getErrorMessage(err, t('playlistDetail.deleteError'));
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
       setIsDeleting(false);
     }
@@ -215,16 +215,9 @@ export default function PlaylistDetailView() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await apiRequest(`/playlists/${id}/songs?pageSize=${PAGE_SIZE}&page=${currentPage}`);
-      const responseData = res.data as { meta?: Meta; data?: Song[] };
-      const pageSongs = responseData?.data || [];
-      
-      if (Array.isArray(pageSongs)) {
-        allSongs = [...allSongs, ...pageSongs];
-      }
-
-      // Check if there are more pages
-      const meta = responseData?.meta;
+      const response = await apiRequest<unknown>(`/playlists/${id}/songs?pageSize=${PAGE_SIZE}&page=${currentPage}`);
+      const { items: pageSongs, meta } = unwrapApiPage<Song>(response.data);
+      allSongs = [...allSongs, ...pageSongs];
       hasMore = meta?.hasNext ?? false;
       currentPage++;
 
@@ -252,7 +245,7 @@ export default function PlaylistDetailView() {
         // Update local state with all songs
         setSongs(allSongs);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load all playlist songs', err);
       setSnackbar({ open: true, message: t('playlistDetail.loadError'), severity: 'error' });
     } finally {
@@ -353,15 +346,14 @@ export default function PlaylistDetailView() {
       }
 
       // Refresh playlist data
-      const res = await apiRequest(`/playlists/${id}`);
-      const responseData = res.data as { data?: Playlist } | Playlist;
-      const playlistData = (responseData && 'data' in responseData && responseData.data) ? responseData.data : responseData;
-      setPlaylist(playlistData as Playlist);
+      const response = await apiRequest<Playlist>(`/playlists/${id}`);
+      const refreshed = unwrapApiResponse<Playlist>(response.data);
+      if (refreshed) setPlaylist(refreshed);
 
       setSnackbar({ open: true, message: t('playlistDetail.saveSuccess'), severity: 'success' });
       setEditMetadataOpen(false);
-    } catch (err: any) {
-      setSnackbar({ open: true, message: err?.response?.data?.message || t('playlistDetail.saveError'), severity: 'error' });
+    } catch (err) {
+      setSnackbar({ open: true, message: getErrorMessage(err, t('playlistDetail.saveError')), severity: 'error' });
     } finally {
       setIsSavingMetadata(false);
     }
@@ -514,7 +506,7 @@ export default function PlaylistDetailView() {
                         }}
                         secondaryAction={
                           <Tooltip title={t('playlistDetail.removeSong')}>
-                            <IconButton edge="end" onClick={() => handleRemoveSong(song.id)}>
+                            <IconButton aria-label={t('playlistDetail.removeSong')} edge="end" onClick={() => handleRemoveSong(song.id)}>
                               <Delete />
                             </IconButton>
                           </Tooltip>
@@ -642,7 +634,7 @@ export default function PlaylistDetailView() {
                   alt="Preview"
                   sx={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
                 />
-                <IconButton
+                <IconButton aria-label={t('playlistDetail.removeImage', 'Remove image')}
                   size="small"
                   onClick={() => { setEditImage(null); setEditImagePreview(null); }}
                   sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper', boxShadow: 1 }}

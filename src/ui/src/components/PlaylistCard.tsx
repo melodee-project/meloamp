@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, Card, CardMedia, CardContent } from '@mui/material';
 import { Playlist, Song } from '../apiModels';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import api, { unwrapApiPage } from '../api';
 import { useQueueStore } from '../queueStore';
 import { PlayArrow } from '@mui/icons-material';
 import { toQueueSong } from './toQueueSong';
@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function PlaylistCard({ playlist, compact }: { playlist: Playlist; compact?: boolean }) {
   const navigate = useNavigate();
-  const playNow = useQueueStore((state: any) => state.playNow);
+  const playNow = useQueueStore((state) => state.playNow);
   const [hovered, setHovered] = React.useState(false);
   const { t } = useTranslation();
 
@@ -23,7 +23,7 @@ export default function PlaylistCard({ playlist, compact }: { playlist: Playlist
     e.stopPropagation();
     try {
       const res = await api.get<{ data: Song[] }>(`/playlists/${playlist.id}/songs`);
-      const songs: Song[] = res.data.data;
+      const songs = unwrapApiPage<Song>(res.data).items;
       if (songs.length === 0) return;
       // Map songs to include url property for the player
       const queueSongs = songs.map(toQueueSong);

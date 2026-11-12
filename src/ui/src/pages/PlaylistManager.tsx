@@ -19,9 +19,10 @@ import {
 import { Add, Delete, ImageOutlined } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
-import { Playlist, PaginatedResponse } from '../apiModels';
+import api, { unwrapApiPage } from '../api';
+import { Playlist } from '../apiModels';
 import PlaylistCard from '../components/PlaylistCard';
+import { getErrorMessage } from '../utils/errors';
 
 export default function PlaylistManager() {
   const navigate = useNavigate();
@@ -57,9 +58,10 @@ export default function PlaylistManager() {
   const fetchPlaylists = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<PaginatedResponse<Playlist>>('/user/playlists', { params: { page, pageSize: 20 } });
-      setPlaylists(res.data.data);
-      setTotal(res.data.meta?.totalCount || 0);
+      const res = await api.get<unknown>('/user/playlists', { params: { page, pageSize: 20 } });
+      const result = unwrapApiPage<Playlist>(res.data);
+      setPlaylists(result.items);
+      setTotal(result.meta?.totalCount ?? result.items.length);
     } catch {
       setLoading(false);
     } finally {
@@ -133,8 +135,8 @@ export default function PlaylistManager() {
       } else {
         fetchPlaylists();
       }
-    } catch (err: any) {
-      setSnackbar({ open: true, message: err?.response?.data?.message || t('playlist.createError'), severity: 'error' });
+    } catch (err) {
+      setSnackbar({ open: true, message: getErrorMessage(err, t('playlist.createError')), severity: 'error' });
     } finally {
       setIsCreating(false);
     }
@@ -190,7 +192,7 @@ export default function PlaylistManager() {
       setImportDialogOpen(false);
       setImportFile(null);
       fetchPlaylists();
-    } catch (err: any) {
+    } catch (err) {
       setSnackbar({ open: true, message: t('playlist.importError'), severity: 'error' });
     } finally {
       setIsImporting(false);
@@ -304,7 +306,7 @@ export default function PlaylistManager() {
                   alt="Preview"
                   sx={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
                 />
-                <IconButton
+                <IconButton aria-label={t('playlist.removeImage', 'Remove image')}
                   size="small"
                   onClick={handleRemoveImage}
                   sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'background.paper', boxShadow: 1 }}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getErrorMessage } from '../utils/errors';
 import {
   Alert,
   Box,
@@ -85,8 +86,8 @@ export default function ArtistLookupPage() {
     try {
       const response = await apiRequest<ProviderInfo[]>(API_ROUTES.artistLookup.providers);
       setProviders(normalizeProviderList(response.data));
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoading((state) => ({ ...state, providers: false }));
     }
@@ -116,8 +117,8 @@ export default function ArtistLookupPage() {
       if (lookupResult.providers.length) {
         setProviders(lookupResult.providers);
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || t('common.error', 'An error occurred'));
+    } catch (err) {
+      setError(getErrorMessage(err, t('common.error', 'An error occurred')));
     } finally {
       setLoading((state) => ({ ...state, search: false }));
     }

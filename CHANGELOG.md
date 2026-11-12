@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-11
+
+### Fixed
+- **MPRIS/desktop integration restored** (`src/electron/main.js`)
+  - `formatArtUrl` was deleted while two call sites remained, so album-art
+    caching, MPRIS metadata, and track-change notifications always threw.
+    The helper now lives in `src/electron/helpers.js` and is unit-tested.
+  - MPRIS `seek`/`position` values were converted from microseconds twice,
+    making media-widget seeking a no-op. Main sends seconds; the renderer
+    consumes seconds.
+  - A D-Bus error no longer permanently detaches the playback IPC listeners
+    (`teardownMpris` only closes the player).
+- **Settings no longer clobber each other.** `theme`, `language`,
+  `repeatMode`/`shuffleEnabled`, and `equalizerGains` were written by four
+  independent `localStorage` writers; App's write dropped the other keys on
+  every launch. All writers now go through the merging `src/settings.ts` API,
+  backed by one validated `UserSettings` shape.
+- **Single theme registry.** `App.tsx` and `index.tsx` each declared a theme
+  map and a high-contrast theme, with different defaults. Both now use
+  `src/themes/registry.ts` (one default, one high-contrast implementation).
+- **Player layout.** The fixed player bar ignored the sidebar offset because
+  both the wrapper and the player were `position: fixed`. The player now owns
+  its positioning and respects the drawer width.
+- **Packaging artifacts no longer collide.** `artifactName` includes
+  `${os}`/`${arch}`, and Windows `nsis`/`portable` targets have distinct names
+  (previously both produced `meloamp-<version>.exe`, and macOS x64/arm64
+  overwrote each other).
+- **Windows builds work.** Inline POSIX env vars in package scripts were
+  replaced with `src/ui/scripts/run-cra.js`; `build-windows.ps1` no longer
+  rewrites `.gitignore` (which it never restored).
+- **Committed merge conflicts resolved** in `src/ui/package.json` and
+  `src/ui/yarn.lock`; the lockfile is Yarn-4 immutable-install clean again.
+
+### Security
+- Stream JWTs are injected at playback time and never persisted in queue
+  state (queue URLs previously kept stale tokens and localStorage held them).
+- Electron shell: strict CSP + `no-referrer` on the local server, loopback-only
+  binding, `sandbox: true`, navigation/window-open handlers, capped and
+  timed-out artwork downloads, accelerator allowlist, and preload callbacks
+  no longer receive raw IPC events.
+- Media-key accelerators supplied by the renderer are validated against an
+  allowlist (including blocking Alt+F4/Ctrl+Alt+Del).
+
+### Changed
+- API response handling is centralised (`unwrapApiResponse` /
+  `unwrapApiPage`); pages no longer guess between three envelope shapes.
+- List pages share `usePaginatedList`, and data effects use `useApiEffect`
+  so requests are aborted on unmount/dependency change.
+- Queue songs derive from the API `Song` type; shuffle restore tracks the
+  current song by identity, `toMinimal` keeps `userStarred`, and persistence
+  side effects moved out of Zustand updaters.
+- Removed the unused next-track preload element/hook (it re-downloaded every
+  track without providing gapless playback) and the duplicated theme JSON
+  files.
+- Electron native surfaces (tray, dialogs, notifications) now use
+  `src/electron/strings.js` with dictionaries for all nine supported locales,
+  and standard menu roles for OS-localised File/Edit/View menus.
+- Missing `en.json` keys added (131), hardcoded JSX/native strings routed
+  through `t()`; `scripts/check.py` now fails on missing keys, orphaned locale
+  keys, and hardcoded JSX text.
+
+### Added
+- `scripts/do-prechecks.py` + `scripts/check.py`: fail-fast pre-push gates for
+  whitespace, repository hygiene, i18n, Electron syntax/tests, typecheck,
+  lint, UI tests with coverage, and the production build.
+- Unit tests for settings, theme registry, error/stream helpers, paginated
+  data loading, Electron helpers/strings, and smoke tests for previously
+  untested pages. Coverage gates raised from ~25% to a 39% line ratchet.
+
+
 ## [1.3.0] - 2026-07-14
 
 ### Added

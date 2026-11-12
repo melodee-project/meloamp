@@ -13,16 +13,7 @@ import './App.css';
 import Badge from '@mui/material/Badge';
 import UserSettingsPage from './pages/UserSettings';
 import LoginPage from './pages/LoginPage';
-import { apiRequest } from './api';
-import classicTheme from './themes/classicTheme';
-import oceanTheme from './themes/oceanTheme';
-import sunsetTheme from './themes/sunsetTheme';
-import forestTheme from './themes/forestTheme';
-import darkTheme from './themes/darkTheme';
-import modernMinimalTheme from './themes/modernMinimalTheme';
-import rainbowTheme from './themes/rainbowTheme';
-import candyTheme from './themes/candyTheme';
-import bubblegumTheme from './themes/bubblegumTheme';
+import { apiRequest, unwrapApiResponse } from './api';
 import BrowseAlbums from './pages/BrowseAlbums';
 import PlaylistManager from './pages/PlaylistManager';
 import BrowseArtists from './pages/BrowseArtists';
@@ -30,8 +21,6 @@ import BrowseSongs from './pages/BrowseSongs';
 import SearchPage from './pages/SearchPage';
 import Player from './pages/Player';
 import QueueView from './pages/QueueView';
-import '../src/pages/QueueView.css';
-import { useQueueStore, Song } from './queueStore';
 import DashboardWrapper from './pages/Dashboard';
 import ArtistDetailView from './detailViews/ArtistDetailView';
 import AlbumDetailView from './detailViews/AlbumDetailView';
@@ -53,47 +42,20 @@ import PlaybackToolsPage from './pages/PlaybackToolsPage';
 import ArtistLookupPage from './pages/ArtistLookupPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import PublicSharePage from './pages/PublicSharePage';
-import getAuroraTheme from './themes/auroraTheme';
-import getMonoContrastTheme from './themes/monoContrastTheme';
-import getBerryTwilightTheme from './themes/berryTwilightTheme';
-import retroWaveTheme from './themes/retroWaveTheme';
-import spaceFunkTheme from './themes/spaceFunkTheme';
-import acidPopTheme from './themes/acidPopTheme';
-import fiestaTheme from './themes/fiestaTheme';
-import scarlettTheme from './themes/scarlettTheme';
-import winAmpTheme from './themes/winAmpTheme';
 import { useTranslation } from 'react-i18next';
-import { createTheme, Theme } from '@mui/material/styles';
 import CommandPalette, { useDefaultCommands } from './components/CommandPalette';
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import Sidebar, { DRAWER_WIDTH } from './components/Sidebar';
+import { KeyboardShortcut, useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useApiEffect } from './hooks/useApiEffect';
+import { useQueueStore } from './queueStore';
+import Sidebar from './components/Sidebar';
 import { User } from './apiModels';
 import ErrorBoundary from './components/ErrorBoundary';
 import { UserSettings } from './types/settings';
 import { readUser, writeUser } from './storage';
-
-type ThemeValue = Theme | ((mode: 'light' | 'dark') => Theme);
-
-const themeMap: Record<string, ThemeValue> = {
-  classic: classicTheme,
-  ocean: oceanTheme,
-  sunset: sunsetTheme,
-  forest: forestTheme,
-  dark: darkTheme,
-  modernMinimal: modernMinimalTheme,
-  rainbow: rainbowTheme,
-  candy: candyTheme,
-  bubblegum: bubblegumTheme,
-  aurora: (mode: 'light' | 'dark') => getAuroraTheme(mode),
-  monoContrast: (mode: 'light' | 'dark') => getMonoContrastTheme(mode),
-  berryTwilight: (mode: 'light' | 'dark') => getBerryTwilightTheme(mode),
-  retroWave: retroWaveTheme,
-  spaceFunk: spaceFunkTheme,
-  acidPop: acidPopTheme,
-  fiesta: fiestaTheme,
-  scarlett: scarlettTheme,
-  winAmp: winAmpTheme,
-};
+import { readUserSettings, subscribeToUserSettings, updateUserSettings } from './settings';
+import { getHighContrastTheme, resolveThemedTheme } from './themes/registry';
+import { getErrorStatus } from './utils/errors';
+import i18n from './i18n';
 
 function Albums() { return <BrowseAlbums />; }
 function Playlists() { return <PlaylistManager />; }
@@ -101,96 +63,34 @@ function Artists() { return <BrowseArtists />; }
 function Songs() { return <BrowseSongs />; }
 function Queue() { return <QueueView />; }
 
-function getInitialSettings(): UserSettings {
-  try {
-    const parsed = JSON.parse(localStorage.getItem('userSettings') || '');
-    if (parsed && typeof parsed === 'object') {
-      return {
-        theme: parsed.theme || 'classic',
-        language: parsed.language || 'en',
-        highContrast: parsed.highContrast || false,
-        fontScale: parsed.fontScale || 1,
-        caching: parsed.caching || false,
-        mode: parsed.mode || 'light',
-      };
-    }
-  } catch {}
-  return {
-    theme: 'classic',
-    language: 'en',
-    highContrast: false,
-    fontScale: 1,
-    caching: false,
-    mode: 'light',
-  };
-}
-
-function getHighContrastTheme(baseTheme: Theme): Theme {
-  return createTheme({
-    ...baseTheme,
-    palette: {
-      ...baseTheme.palette,
-      background: { default: '#000', paper: '#111' },
-      text: { primary: '#fff', secondary: '#ff0' },
-      primary: { main: '#fff', contrastText: '#000' },
-      secondary: { main: '#ff0', contrastText: '#000' },
-      divider: '#fff',
-      error: { main: '#ff1744' },
-      warning: { main: '#ffd600' },
-      info: { main: '#00eaff' },
-      success: { main: '#76ff03' },
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            color: '#000',
-            backgroundColor: '#fff',
-            border: '2px solid #ff0',
-            fontWeight: 700,
-          },
-        },
-      },
-    },
-  });
-}
-
 export default function App() {
-  const [settings, setSettings] = React.useState<UserSettings>(getInitialSettings);
-  const baseTheme = typeof themeMap[settings.theme] === 'function'
-    ? (themeMap[settings.theme] as (mode: 'light' | 'dark') => Theme)(settings.mode || 'light')
-    : (themeMap[settings.theme] || classicTheme) as Theme;
+  const [settings, setSettings] = React.useState<UserSettings>(readUserSettings);
 
-  const themedWithMode = React.useMemo(() => {
-    const mode = settings.mode || 'light';
-    if (typeof themeMap[settings.theme] === 'function') {
-      return baseTheme;
+  // Keep this component in sync with settings written by other subsystems
+  // (queue store, equalizer, i18n) without ever overwriting their keys.
+  React.useEffect(() => subscribeToUserSettings(setSettings), []);
+
+  React.useEffect(() => {
+    if (i18n.language !== settings.language) {
+      void i18n.changeLanguage(settings.language);
     }
-    return createTheme({
-      ...baseTheme,
-      palette: {
-        ...baseTheme.palette,
-        mode,
-        background: mode === 'dark'
-          ? { default: '#121212', paper: '#1e1e1e' }
-          : baseTheme.palette.background,
-        text: mode === 'dark'
-          ? { primary: '#ffffff', secondary: 'rgba(255,255,255,0.7)' }
-          : baseTheme.palette.text,
-      },
-    });
-  }, [baseTheme, settings.theme, settings.mode]);
+  }, [settings.language]);
 
-  const theme = React.useMemo(() => (
-    settings.highContrast ? getHighContrastTheme(themedWithMode) : themedWithMode
-  ), [settings.highContrast, themedWithMode]);
+  const applySettings = React.useCallback((next: UserSettings) => {
+    setSettings(updateUserSettings(next));
+  }, []);
+
+  const theme = React.useMemo(() => {
+    const base = resolveThemedTheme(settings.theme, settings.mode);
+    return settings.highContrast ? getHighContrastTheme(base) : base;
+  }, [settings.theme, settings.mode, settings.highContrast]);
 
   return (
     <ErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
-          <AppContent settings={settings} setSettings={setSettings} />
+          <AppContent settings={settings} onSettingsChange={applySettings} />
         </Router>
       </ThemeProvider>
     </ErrorBoundary>
@@ -199,17 +99,14 @@ export default function App() {
 
 interface AppContentProps {
   settings: UserSettings;
-  setSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
+  onSettingsChange: (settings: UserSettings) => void;
 }
 
-function AppContent({ settings, setSettings }: AppContentProps) {
+function AppContent({ settings, onSettingsChange }: AppContentProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = React.useState(() => !!localStorage.getItem('jwt'));
-  const [user, setUser] = React.useState<User | null>(() => {
-    const persisted = readUser() as User | null;
-    return persisted ?? null;
-  });
+  const [user, setUser] = React.useState<User | null>(() => (readUser() as User | null) ?? null);
   const [searchValue, setSearchValue] = React.useState('');
   const [searchLoading, setSearchLoading] = React.useState(false);
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
@@ -219,6 +116,13 @@ function AppContent({ settings, setSettings }: AppContentProps) {
 
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
   const [isPlaying, setIsPlaying] = React.useState(false);
+
+  // Subscribe to the slice of queue state the shell actually needs so that
+  // queue mutations do not re-render the whole application tree.
+  const queueLength = useQueueStore((state) => state.queue.length);
+  const unplayedCount = useQueueStore(
+    (state) => state.queue.reduce((count, song) => (song.played ? count : count + 1), 0),
+  );
 
   const { t } = useTranslation();
 
@@ -243,10 +147,10 @@ function AppContent({ settings, setSettings }: AppContentProps) {
   }, [navigate]);
 
   React.useEffect(() => {
-    const handlePlayerState = (e: Event) => {
-      const customEvent = e as CustomEvent<{ playing?: boolean }>;
-      if (customEvent.detail && typeof customEvent.detail.playing === 'boolean') {
-        setIsPlaying(customEvent.detail.playing);
+    const handlePlayerState = (event: Event) => {
+      const detail = (event as CustomEvent<{ playing?: boolean }>).detail;
+      if (detail && typeof detail.playing === 'boolean') {
+        setIsPlaying(detail.playing);
       }
     };
     window.addEventListener('meloamp-player-state', handlePlayerState);
@@ -262,7 +166,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
     isPlaying,
   });
 
-  useKeyboardShortcuts([
+  const shortcuts = React.useMemo<KeyboardShortcut[]>(() => [
     {
       key: 'ctrl+k',
       description: t('shortcuts.focusSearch', 'Focus search'),
@@ -312,7 +216,9 @@ function AppContent({ settings, setSettings }: AppContentProps) {
       enabled: commandPaletteOpen,
       category: 'general',
     },
-  ], { enabled: isAuthenticated });
+  ], [t, handleOpenSearch, handleTogglePlay, handleNextTrack, handlePrevTrack, handleOpenQueue, navigate, commandPaletteOpen]);
+
+  useKeyboardShortcuts(shortcuts, { enabled: isAuthenticated });
 
   React.useEffect(() => {
     if (location.pathname === '/search') {
@@ -324,81 +230,69 @@ function AppContent({ settings, setSettings }: AppContentProps) {
   }, [location.pathname, searchParams, searchValue]);
 
   React.useEffect(() => {
-    localStorage.setItem('userSettings', JSON.stringify(settings));
-  }, [settings]);
-
-  React.useEffect(() => {
     document.documentElement.style.setProperty('--meloamp-font-scale', String(settings.fontScale || 1));
   }, [settings.fontScale]);
 
   React.useEffect(() => {
     const checkAuth = () => {
-      if (!localStorage.getItem('jwt')) {
-        setIsAuthenticated(false);
-      }
+      if (!localStorage.getItem('jwt')) setIsAuthenticated(false);
     };
     window.addEventListener('storage', checkAuth);
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
-  React.useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const storedUser = readUser() as User | null;
-        const jwt = localStorage.getItem('jwt');
-        if (jwt) {
-          try {
-            const res = await apiRequest<User>('/user/me');
-            const userFromApi = res && res.data ? res.data : null;
-            if (userFromApi) {
-              writeUser(userFromApi);
-              setUser(userFromApi);
-              return;
-            }
-          } catch (e: unknown) {
-            const err = e as { response?: { status?: number } };
-            if (err?.response?.status !== 401 && storedUser) {
-              setUser(storedUser);
-              return;
-            }
-            console.error('Failed to fetch user profile', e);
-          }
-        }
+  React.useEffect(() => () => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+  }, []);
 
-        if (storedUser && !jwt) {
-          setUser(storedUser);
-          return;
-        }
+  useApiEffect(async (signal) => {
+    const storedUser = readUser() as User | null;
+    const jwt = localStorage.getItem('jwt');
 
-        setUser(null);
-      } catch {
-        setUser(null);
+    if (!jwt) {
+      setUser(storedUser);
+      return;
+    }
+
+    try {
+      const response = await apiRequest<User>('/user/me', { signal });
+      const userFromApi = unwrapApiResponse<User>(response.data);
+      if (userFromApi) {
+        writeUser(userFromApi);
+        setUser(userFromApi);
+        return;
       }
-    };
-    loadUser();
-    const storageHandler = () => { loadUser(); };
-    window.addEventListener('storage', storageHandler);
-    return () => window.removeEventListener('storage', storageHandler);
+    } catch (error) {
+      if (getErrorStatus(error) !== 401 && storedUser) {
+        setUser(storedUser);
+        return;
+      }
+      console.error('Failed to fetch user profile', error);
+    }
+
+    setUser(storedUser);
   }, [isAuthenticated]);
 
-  const queue = useQueueStore((state) => state.queue);
-  const current = useQueueStore((state) => state.current);
   const isPublicShareRoute = location.pathname.startsWith('/shares/public/');
 
   if (!isAuthenticated && !isPublicShareRoute) {
-    return <LoginPage onLogin={() => {
-      setIsAuthenticated(true);
-      const persisted = readUser() as User | null;
-      if (persisted) setUser(persisted);
-    }} />;
+    return (
+      <LoginPage
+        onLogin={() => {
+          setIsAuthenticated(true);
+          const persisted = readUser() as User | null;
+          if (persisted) setUser(persisted);
+        }}
+      />
+    );
   }
 
-  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
+  const handleSearchInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(event.target.value);
     setSearchLoading(true);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      const query = e.target.value.trim();
+      const query = event.target.value.trim();
       if (query) {
         navigate(`/search?q=${encodeURIComponent(query)}`);
       } else if (location.pathname === '/search') {
@@ -408,15 +302,11 @@ function AppContent({ settings, setSettings }: AppContentProps) {
     }, 200);
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
       const query = searchValue.trim();
-      if (query) {
-        navigate(`/search?q=${encodeURIComponent(query)}`);
-      } else {
-        navigate('/search');
-      }
+      navigate(query ? `/search?q=${encodeURIComponent(query)}` : '/search');
       setSearchLoading(false);
     }
   };
@@ -428,7 +318,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
           user={user}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
-          onThemeToggle={() => setSettings((s: UserSettings) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))}
+          onThemeToggle={() => onSettingsChange({ ...settings, mode: settings.mode === 'dark' ? 'light' : 'dark' })}
           themeMode={settings.mode}
         />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -436,7 +326,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
             position="static"
             color="default"
             elevation={1}
-            sx={{ backgroundColor: theme => theme.palette.background.paper, color: theme => theme.palette.text.primary }}
+            sx={{ backgroundColor: (theme) => theme.palette.background.paper, color: (theme) => theme.palette.text.primary }}
           >
             <Toolbar>
               <IconButton
@@ -444,6 +334,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 edge="start"
                 sx={{ mr: 2 }}
+                aria-label={t('nav.toggleSidebar', 'Toggle navigation')}
               >
                 <MenuIcon />
               </IconButton>
@@ -456,20 +347,20 @@ function AppContent({ settings, setSettings }: AppContentProps) {
                 <Box sx={{ position: 'relative' }}>
                   <InputBase
                     placeholder={t('search.placeholder')}
-                    inputProps={{ 'aria-label': 'search', sx: { '::placeholder': { color: 'text.secondary', opacity: 1 } } }}
+                    inputProps={{ 'aria-label': t('search.placeholder') }}
                     startAdornment={<Search sx={{ mr: 1 }} />}
                     sx={{
-                      color: theme => theme.palette.text.primary,
-                      background: theme => theme.palette.background.paper,
+                      color: (theme) => theme.palette.text.primary,
+                      background: (theme) => theme.palette.background.paper,
                       borderRadius: 1,
                       pl: 1,
                       pr: 1,
                       height: 36,
                       width: { xs: 180, sm: 280 },
-                      border: theme => `1.5px solid ${theme.palette.divider}`,
-                      boxShadow: theme => theme.palette.mode === 'dark' ? '0 0 0 1px #333' : '0 0 0 1px #ccc',
+                      border: (theme) => `1.5px solid ${theme.palette.divider}`,
+                      boxShadow: (theme) => (theme.palette.mode === 'dark' ? '0 0 0 1px #333' : '0 0 0 1px #ccc'),
                       'input::placeholder': {
-                        color: theme => theme.palette.text.secondary,
+                        color: (theme) => theme.palette.text.secondary,
                         opacity: 1,
                       },
                     }}
@@ -485,14 +376,18 @@ function AppContent({ settings, setSettings }: AppContentProps) {
                     />
                   )}
                 </Box>
-                <Tooltip title={`Switch to ${settings.mode === 'dark' ? 'light' : 'dark'} mode`}>
-                  <IconButton color="inherit" onClick={() => setSettings((s: UserSettings) => ({ ...s, mode: s.mode === 'dark' ? 'light' : 'dark' }))} aria-label="toggle mode">
+                <Tooltip title={t('settings.toggleMode', 'Toggle light/dark mode')}>
+                  <IconButton
+                    color="inherit"
+                    onClick={() => onSettingsChange({ ...settings, mode: settings.mode === 'dark' ? 'light' : 'dark' })}
+                    aria-label={t('settings.toggleMode', 'Toggle light/dark mode')}
+                  >
                     {settings.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('nav.queue')}>
-                  <Badge badgeContent={queue.filter((song: Song) => !song.played).length} color="primary">
-                    <IconButton color="inherit" component={Link} to="/queue" aria-label="queue">
+                  <Badge badgeContent={unplayedCount} color="primary">
+                    <IconButton color="inherit" component={Link} to="/queue" aria-label={t('nav.queue')}>
                       <QueueMusic />
                     </IconButton>
                   </Badge>
@@ -500,7 +395,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
               </Box>
             </Toolbar>
           </AppBar>
-          <Box sx={{ p: 3, pb: queue.length > 0 ? 10 : 3, flex: 1, overflow: 'auto' }}>
+          <Box sx={{ p: 3, pb: queueLength > 0 ? 12 : 3, flex: 1, overflow: 'auto' }}>
             <Routes>
               <Route path="/" element={<DashboardWrapper />} />
               <Route path="/dashboard" element={<DashboardWrapper />} />
@@ -509,7 +404,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
               <Route path="/playlists" element={<Playlists />} />
               <Route path="/songs" element={<Songs />} />
               <Route path="/search" element={<SearchPage query={searchValue} />} />
-              <Route path="/settings" element={<UserSettingsPage settings={settings} onChange={setSettings} />} />
+              <Route path="/settings" element={<UserSettingsPage settings={settings} onChange={onSettingsChange} />} />
               <Route path="/queue" element={<Queue />} />
               <Route path="/artists/:id" element={<ArtistDetailView />} />
               <Route path="/albums/:id" element={<AlbumDetailView />} />
@@ -518,7 +413,7 @@ function AppContent({ settings, setSettings }: AppContentProps) {
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/genres" element={<GenresPage />} />
               <Route path="/genres/:genreId" element={<GenresPage />} />
-                <Route path="/recommendations" element={<RecommendationsPage />} />
+              <Route path="/recommendations" element={<RecommendationsPage />} />
               <Route path="/charts" element={<ChartsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/smart-playlists" element={<SmartPlaylistsPage />} />
@@ -530,18 +425,14 @@ function AppContent({ settings, setSettings }: AppContentProps) {
               {user?.isAdmin && <Route path="/admin/users" element={<AdminUsersPage />} />}
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/equalizer" element={<EqualizerPage />} />
-              <Route path="/themes" element={<LocalThemeGallery settings={settings} onChange={setSettings} />} />
+              <Route path="/themes" element={<LocalThemeGallery settings={settings} onChange={onSettingsChange} />} />
               <Route path="/shares" element={<SharesPage />} />
               <Route path="/shares/public/:shareUniqueId" element={<PublicSharePage />} />
             </Routes>
           </Box>
         </Box>
       </Box>
-      {queue.length > 0 && (
-        <Box sx={{ position: 'fixed', left: sidebarOpen ? DRAWER_WIDTH : 0, right: 0, bottom: 0, zIndex: 1300 }}>
-          <Player src={queue[current]?.url || ''} />
-        </Box>
-      )}
+      {queueLength > 0 && <Player sidebarOpen={sidebarOpen} />}
       <CommandPalette
         open={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}

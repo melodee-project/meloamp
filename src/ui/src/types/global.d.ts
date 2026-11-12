@@ -29,14 +29,15 @@ export interface MeloampAPI {
   updateMediaKeys: (config: MediaKeyConfig) => void;
   getMediaKeys: () => Promise<MediaKeyConfig>;
   updateTray: (nowPlaying: TrayNowPlaying | null) => void;
-  openExternal: (url: string) => Promise<void>;
+  openExternal: (url: string) => Promise<boolean>;
 }
 
 export interface ElectronAPI {
   versions: NodeJS.ProcessVersions;
   ipcRenderer: {
-    on: (channel: string, callback: (_event: any, ...args: any[]) => void) => void;
-    removeListener: (channel: string, callback: (_event: any, ...args: any[]) => void) => void;
+    // IPC payloads are untyped at the process boundary; every consumer narrows them.
+    on: (channel: string, callback: (...args: any[]) => void) => void;
+    removeListener: (channel: string, callback: (...args: any[]) => void) => void;
   };
 }
 
