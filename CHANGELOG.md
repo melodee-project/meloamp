@@ -24,6 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   zustand 5.1, react-window 2.5, Electron 45.3, electron-builder 26.18,
   electron-updater 6.8, Express 5.3, Vite 8.3, Vitest 5.1).
 ### Fixed
+- **Theme changes now visibly restyle the app chrome.** The header and nav
+  drawer were painted with `background.paper` (white for nearly every light
+  theme), and dark mode replaced every theme's background with the same
+  `#121212/#1e1e1e`. Chrome now uses each theme's `background.default` plus a
+  primary-coloured accent/active item (`themes/chrome.ts`), and `applyMode`
+  preserves the theme's designed palette. The active theme is also exposed as
+  `document.documentElement.dataset.theme` for debugging/tests.
+- **Desktop app could not reach a local/remote Melodee server** because the
+  Electron shell loaded the UI from `http://127.0.0.1:<port>`, while Melodee's
+  CORS allowlist only permits `http://localhost:3000`, `:3001`, and `:8080`.
+  The shell now loads `http://localhost:<port>` (still bound to loopback) and
+  only tries CORS-allowed ports. The login screen also normalises
+  `https://host` → `https://host/api/v1` and reports CORS/network failures with
+  an actionable message.
 - **electron-builder config** moved `nsis`/`portable` options to the build root
   (they were under `build.win`, which electron-builder 26.18 rejects) and
   dropped the redundant `directories.app`. Verified with a real

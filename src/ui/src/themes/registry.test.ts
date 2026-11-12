@@ -37,17 +37,18 @@ describe('theme registry', () => {
     expect(resolveThemedTheme('aurora', 'light').palette.mode).toBe('light');
   });
 
-  test('fixed themes get the mode applied', () => {
+  test('fixed themes keep their palette when the mode changes', () => {
     const dark = resolveThemedTheme('ocean', 'dark');
     expect(dark.palette.mode).toBe('dark');
-    expect(dark.palette.background.default).toBe('#121212');
+    expect(dark.palette.background.default).toBe('#e0f7fa');
   });
 
-  test('applyMode preserves palette entries but swaps background', () => {
+  test('applyMode preserves the theme background and text', () => {
     const base = resolveTheme('classic', 'light');
     const applied = applyMode(base, 'dark');
     expect(applied.palette.mode).toBe('dark');
-    expect(applied.palette.background.paper).toBe('#1e1e1e');
+    expect(applied.palette.background.default).toBe(base.palette.background.default);
+    expect(applied.palette.background.paper).toBe(base.palette.background.paper);
   });
 
   test('high-contrast theme overrides key palette colours', () => {

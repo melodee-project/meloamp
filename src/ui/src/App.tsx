@@ -54,6 +54,7 @@ import { UserSettings } from './types/settings';
 import { readUser, writeUser } from './storage';
 import { readUserSettings, subscribeToUserSettings, updateUserSettings } from './settings';
 import { getHighContrastTheme, resolveThemedTheme } from './themes/registry';
+import { appBarSx } from './themes/chrome';
 import { getErrorStatus } from './utils/errors';
 import i18n from './i18n';
 
@@ -75,6 +76,14 @@ export default function App() {
       void i18n.changeLanguage(settings.language);
     }
   }, [settings.language]);
+
+  // Expose the active theme for debugging/tests and CSS hooks.
+  React.useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = settings.theme;
+    root.dataset.themeMode = settings.mode;
+    root.dataset.highContrast = String(settings.highContrast);
+  }, [settings.theme, settings.mode, settings.highContrast]);
 
   const applySettings = React.useCallback((next: UserSettings) => {
     setSettings(updateUserSettings(next));
@@ -324,7 +333,7 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
             position="static"
             color="default"
             elevation={1}
-            sx={{ backgroundColor: (theme) => theme.palette.background.paper, color: (theme) => theme.palette.text.primary }}
+            sx={(theme) => appBarSx(theme)}
           >
             <Toolbar>
               <IconButton

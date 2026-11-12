@@ -387,6 +387,7 @@ GitHub Actions is defined in `.github/workflows/build.yml` and does:
 - **Prechecks fail on a missing translation key**: add the key to `src/ui/src/locales/en.json`; other locales fall back to English.
 - **Prechecks fail on hardcoded UI text**: route the string through `t()` (`scripts/check.py i18n` detects plain JSX text).
 - **MPRIS not available on Linux**: requires D-Bus session bus (`DBUS_SESSION_BUS_ADDRESS` should be set by desktop session).
+- **Desktop app cannot connect to the server**: the Electron shell serves the UI from `http://localhost:3001` (fallbacks `:3000`, `:8080`). The Melodee server must allow those origins in CORS. As a quick check, run the browser UI at `http://localhost:3000`; if that works, it is a CORS/origin issue. The login screen normalises `https://host` to `https://host/api/v1` automatically.
 - **Fedora AppImage issues**: use `--gtk-version=3` when needed.
 
 ---

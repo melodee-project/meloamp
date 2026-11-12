@@ -334,7 +334,8 @@
     "error": "Login failed. Please check your credentials.",
     "serverUrl": "Server URL",
     "serverUrlHelper": "Enter the URL of your MeloAmp server",
-    "unsupportedServer": "Unsupported server version"
+    "unsupportedServer": "Unsupported server version",
+    "connectionFailed": "Could not reach the server. Check the URL and TLS certificate, and make sure the server allows this app origin (http://localhost:3000, :3001, or :8080) via CORS."
   },
   "statistic": {
     "songsPlayed": "Songs Played",

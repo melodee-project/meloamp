@@ -9,6 +9,19 @@
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
+/**
+ * The desktop shell must be served from `localhost`, not `127.0.0.1`:
+ * Melodee's CORS allowlist includes `http://localhost:<allowed port>` origins.
+ * Keep these ports in sync with the server's CORS configuration.
+ */
+const SHELL_HOST = 'localhost';
+const SHELL_PORT_CANDIDATES = Object.freeze([3001, 3000, 8080]);
+
+/** Build the loopback URL the BrowserWindow loads (and API calls originate from). */
+function shellUrl(port) {
+  return `http://${SHELL_HOST}:${port}`;
+}
+
 /** Convert a D-Bus / MPRIS microsecond value to seconds. */
 function microsecondsToSeconds(value) {
   const numeric = Number(value);
@@ -109,6 +122,9 @@ function artCachePath(cacheDir, url, hash) {
 
 module.exports = {
   ALLOWED_ACCELERATOR_KEYS,
+  SHELL_HOST,
+  SHELL_PORT_CANDIDATES,
+  shellUrl,
   ALLOWED_ACCELERATOR_MODIFIERS,
   artCachePath,
   formatArtUrl,

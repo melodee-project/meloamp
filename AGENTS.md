@@ -86,7 +86,8 @@ corepack prepare yarn@4.14.1 --activate
 - DevTools are disabled in packaged builds. Re-enable with `MELOAMP_DEBUG_CONSOLE=1`.
 - Auto-updater only runs in packaged builds (`app.isPackaged`).
 - Express 5 is used in `main.js`; route wildcards use `{*splat}` syntax, not `*`.
-- The static server binds `127.0.0.1` and sends a strict CSP; keep new network origins in mind if you add APIs.
+- The static server binds `127.0.0.1` but the window loads `http://localhost:<port>` (Melodee CORS allows `localhost:3000/3001/8080`; keep `SHELL_PORT_CANDIDATES` in `helpers.js` in sync). It sends a strict CSP; keep new network origins in mind if you add APIs.
+- API base URLs are normalised to `.../api/v1` via `utils/serverUrl.ts` in both `api.ts` and the login screen.
 - macOS builds use hardened runtime + `resources/entitlements.mac.plist`; signing/notarization needs `CSC_*`/`APPLE_*` env vars in CI.
 - Fedora AppImage may need `--gtk-version=3` flag.
 

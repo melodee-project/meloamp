@@ -80,19 +80,20 @@ export function resolveTheme(id: string | undefined | null, mode: ThemeMode = 'd
   return typeof value === 'function' ? value(mode) : value;
 }
 
-/** Apply a light/dark mode on top of a fixed (non-factory) theme. */
+/**
+ * Apply a light/dark mode on top of a fixed (non-factory) theme.
+ *
+ * The theme's own background/text palette is preserved: overwriting it with a
+ * generic grey erased each theme's identity (and made the header/nav look the
+ * same for every theme in dark mode). Mode-aware themes are factories and
+ * handle their own palettes.
+ */
 export function applyMode(baseTheme: Theme, mode: ThemeMode): Theme {
   return createTheme({
     ...baseTheme,
     palette: {
       ...baseTheme.palette,
       mode,
-      background: mode === 'dark'
-        ? { default: '#121212', paper: '#1e1e1e' }
-        : baseTheme.palette.background,
-      text: mode === 'dark'
-        ? { primary: '#ffffff', secondary: 'rgba(255,255,255,0.7)' }
-        : baseTheme.palette.text,
     },
   });
 }

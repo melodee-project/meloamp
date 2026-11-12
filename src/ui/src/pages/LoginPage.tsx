@@ -6,20 +6,10 @@ import { writeUser } from '../storage';
 import logo from '../logo.svg';
 import { useTranslation } from 'react-i18next';
 import { getErrorMessage } from '../utils/errors';
+import { normalizeServerUrl } from '../utils/serverUrl';
 
 const MIN_SERVER_MAJOR = 1;
 const MIN_SERVER_MINOR = 1;
-
-const ensureApiUrl = (url: string) => {
-  let u = url.trim();
-  // Remove any trailing slashes for consistency
-  u = u.replace(/\/+$/, '');
-  // Only append /api/v1 if not already present at the end
-  if (!u.match(/\/api\/v1$/)) {
-    u += '/api/v1';
-  }
-  return u;
-};
 
 async function checkServerVersion(apiUrl: string): Promise<{ supported: boolean; info?: Record<string, unknown>; error?: string }> {
   try {
@@ -40,7 +30,13 @@ async function checkServerVersion(apiUrl: string): Promise<{ supported: boolean;
     }
     return { supported: true, info };
   } catch (e) {
-    return { supported: false, error: getErrorMessage(e, 'login.unsupportedServer') };
+    const message = getErrorMessage(e, '');
+    const looksLikeNetworkFailure = e instanceof TypeError
+      || /failed to fetch|networkerror|load failed|cors/i.test(message);
+    return {
+      supported: false,
+      error: looksLikeNetworkFailure ? 'login.connectionFailed' : getErrorMessage(e, 'login.unsupportedServer'),
+    };
   }
 }
 
@@ -61,7 +57,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
 
   useEffect(() => {
     if (!serverUrl) return;
-    const apiUrl = ensureApiUrl(serverUrl);
+    const apiUrl = normalizeServerUrl(serverUrl);
     checkServerVersion(apiUrl).then(result => {
       setServerCheck({ checked: true, supported: result.supported, error: result.error });
     });
@@ -73,7 +69,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
     setError('');
     setDebugInfo(null);
     try {
-      const apiUrl = ensureApiUrl(serverUrl);
+      const apiUrl = normalizeServerUrl(serverUrl);
       // Check server version before login
       const versionCheck = await checkServerVersion(apiUrl);
       if (!versionCheck.supported) {

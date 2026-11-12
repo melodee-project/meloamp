@@ -15,6 +15,8 @@ const {
   generateTrackId,
   isAllowedExternalUrl,
   sanitizeAccelerator,
+  SHELL_PORT_CANDIDATES,
+  shellUrl,
 } = require('./helpers');
 const { translate } = require('./strings');
 
@@ -104,13 +106,14 @@ function startStaticServer() {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 
-  const PORT_CANDIDATES = [3001, 3002, 3003, 0];
+  // Must stay on origins allowed by Melodee's CORS policy (localhost:3000/3001/8080).
+  const PORT_CANDIDATES = [...SHELL_PORT_CANDIDATES];
   let attempt = 0;
 
   return new Promise((resolve, reject) => {
     const tryNext = () => {
       if (attempt >= PORT_CANDIDATES.length) {
-        reject(new Error('Failed to bind static server on any available port'));
+        reject(new Error(`Failed to bind static server on ports ${PORT_CANDIDATES.join(', ')}`));
         return;
       }
 
@@ -133,7 +136,7 @@ function startStaticServer() {
         server.removeListener('error', onError);
         SERVER_PORT = typeof nextPort === 'number' && nextPort === 0 ? server.address().port : nextPort;
         staticServer = server;
-        console.log(`Static server running on http://${LOOPBACK_HOST}:${SERVER_PORT}`);
+        console.log(`Static server running on ${shellUrl(SERVER_PORT)}`);
         resolve(SERVER_PORT);
       });
     };
@@ -227,7 +230,7 @@ function createWindow() {
   });
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const target = new URL(url);
-    if (target.host !== LOOPBACK_HOST && target.hostname !== 'localhost') {
+    if (target.hostname !== 'localhost' && target.hostname !== LOOPBACK_HOST) {
       event.preventDefault();
       if (isAllowedExternalUrl(url)) shell.openExternal(url).catch(() => undefined);
     }
@@ -237,7 +240,8 @@ function createWindow() {
   mainWindow.on('hide', () => updateTrayMenu(lastNowPlaying));
 
   // Load the React build output via HTTP server
-  mainWindow.loadURL(`http://${LOOPBACK_HOST}:${SERVER_PORT}`);
+  // Use `localhost` (not 127.0.0.1): Melodee CORS allows localhost origins.
+  mainWindow.loadURL(shellUrl(SERVER_PORT));
 
   if (debugConsoleEnabled) {
     mainWindow.webContents.on('did-finish-load', () => {

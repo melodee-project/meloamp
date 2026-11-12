@@ -6,6 +6,8 @@ const path = require('node:path');
 
 const {
   artCachePath,
+  SHELL_PORT_CANDIDATES,
+  shellUrl,
   formatArtUrl,
   generateTrackId,
   isAllowedExternalUrl,
@@ -65,4 +67,12 @@ test('artCachePath keeps output inside the cache directory', () => {
 
   const traversal = artCachePath(cacheDir, 'https://example.com/../../etc/passwd', 'abc123');
   assert.equal(path.dirname(traversal), cacheDir);
+});
+
+test('shell URL uses localhost so the server CORS allowlist matches', () => {
+  assert.equal(shellUrl(3001), 'http://localhost:3001');
+  assert.deepEqual([...SHELL_PORT_CANDIDATES], [3001, 3000, 8080]);
+  for (const port of SHELL_PORT_CANDIDATES) {
+    assert.ok(shellUrl(port).startsWith('http://localhost:'), shellUrl(port));
+  }
 });

@@ -3,10 +3,11 @@
  * Tests authentication flow, navigation, and basic app rendering
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { setupApiMock, cleanupApiMock, getMockApi } from './test/apiMock';
 import { setupAuthenticatedUser, clearAuthentication } from './test/testUtils';
 import App from './App';
+import { updateUserSettings } from './settings';
 
 // Setup and teardown for each test
 beforeEach(() => {
@@ -88,6 +89,26 @@ describe('App Navigation', () => {
 
     expect(await screen.findByAltText(/meloamp logo/i)).toBeInTheDocument();
     expect(screen.getByText('MeloAmp')).toBeInTheDocument();
+  });
+
+  test('propagates theme changes to the document and app chrome', async () => {
+    localStorage.setItem('userSettings', JSON.stringify({ theme: 'classic', mode: 'light' }));
+    render(<App />);
+
+    expect(await screen.findByRole('banner')).toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBe('classic');
+
+    act(() => {
+      updateUserSettings({ theme: 'retroWave', mode: 'dark' });
+    });
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.theme).toBe('retroWave');
+    });
+    expect(document.documentElement.dataset.themeMode).toBe('dark');
+
+    const header = screen.getByRole('banner');
+    expect(getComputedStyle(header).backgroundColor).toBe('rgb(45, 0, 54)');
   });
 
   test('renders main navigation links', async () => {

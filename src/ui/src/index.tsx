@@ -18,6 +18,9 @@ function bootstrapTheme() {
     void i18n.changeLanguage(settings.language);
   }
   document.documentElement.style.setProperty('--meloamp-font-scale', String(settings.fontScale || 1));
+  document.documentElement.dataset.theme = settings.theme;
+  document.documentElement.dataset.themeMode = settings.mode;
+  document.documentElement.dataset.highContrast = String(settings.highContrast);
   const base = resolveThemedTheme(settings.theme, settings.mode);
   return settings.highContrast ? getHighContrastTheme(base) : base;
 }

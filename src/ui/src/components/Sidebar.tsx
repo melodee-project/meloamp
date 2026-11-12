@@ -45,6 +45,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { clearJwt } from '../api';
 import { User } from '../apiModels';
+import { activeNavItemSx, drawerPaperSx } from '../themes/chrome';
 
 /** Only the profile fields the sidebar renders. */
 type SidebarUser = Partial<Pick<User, 'username' | 'email' | 'thumbnailUrl' | 'imageUrl' | 'isAdmin'>>;
@@ -178,15 +179,10 @@ export default function Sidebar({ user, isOpen, onToggle }: SidebarProps) {
           sx={{
             borderRadius: 1,
             mx: 1,
-            '&.Mui-selected': {
-              backgroundColor: 'action.selected',
-              '&:hover': {
-                backgroundColor: 'action.selected',
-              },
-            },
+            ...(isActive ? activeNavItemSx(theme) : {}),
           }}
         >
-          <ListItemIcon sx={{ minWidth: 36, color: isActive ? 'primary.main' : 'inherit' }}>
+          <ListItemIcon sx={{ minWidth: 36, color: isActive ? theme.palette.primary.contrastText : 'inherit' }}>
             {item.icon}
           </ListItemIcon>
           <ListItemText 
@@ -307,6 +303,7 @@ export default function Sidebar({ user, isOpen, onToggle }: SidebarProps) {
         ModalProps={{ keepMounted: true }}
         sx={{
           '& .MuiDrawer-paper': {
+            ...drawerPaperSx(theme),
             boxSizing: 'border-box',
             width: DRAWER_WIDTH,
           },
@@ -325,10 +322,9 @@ export default function Sidebar({ user, isOpen, onToggle }: SidebarProps) {
         width: isOpen ? DRAWER_WIDTH : 0,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
+          ...drawerPaperSx(theme),
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
-          borderRight: '1px solid',
-          borderColor: 'divider',
           transition: theme.transitions.create(['width'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
