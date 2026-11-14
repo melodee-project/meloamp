@@ -8,6 +8,11 @@ const envApiUrl = import.meta.env.VITE_API_URL ?? import.meta.env.REACT_APP_API_
 let API_BASE = normalizeServerUrl(localStorage.getItem('serverUrl') || envApiUrl || 'http://localhost:4000/api/v1');
 
 let jwt: string | null = localStorage.getItem('jwt');
+export const AUTH_CHANGED_EVENT = 'meloamp:auth-changed';
+
+function notifyAuthChanged() {
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+}
 
 export interface ApiPayload<T> {
   data?: T;
@@ -31,12 +36,14 @@ const MAX_ENVELOPE_DEPTH = 3;
 export function setJwt(token: string) {
   jwt = token;
   localStorage.setItem('jwt', token);
+  notifyAuthChanged();
 }
 
 export function clearJwt() {
   jwt = null;
   localStorage.removeItem('jwt');
   clearUser();
+  notifyAuthChanged();
 }
 
 export function getJwt(): string | null {
@@ -104,9 +111,6 @@ api.interceptors.response.use(
 
     if (status === 401) {
       clearJwt();
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-        window.location.href = '/';
-      }
     }
     return Promise.reject(error);
   }

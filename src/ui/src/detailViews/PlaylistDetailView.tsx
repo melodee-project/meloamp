@@ -36,6 +36,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '../queueStore';
 import { toQueueSong } from '../components/toQueueSong';
 import SongCard from '../components/SongCard';
+import { serializeM3u } from '../utils/m3u';
 
 export default function PlaylistDetailView() {
   const { id } = useParams<{ id: string }>();
@@ -268,17 +269,7 @@ export default function PlaylistDetailView() {
       }
     }
 
-    // Generate M3U content
-    const lines = ['#EXTM3U', `#PLAYLIST:${playlist.name}`];
-    allSongs.forEach(song => {
-      const durationSec = Math.round((song.durationMs || 0) / 1000);
-      const artist = song.artist?.name || 'Unknown Artist';
-      const title = song.title || 'Unknown Title';
-      lines.push(`#EXTINF:${durationSec},${artist} - ${title}`);
-      lines.push(song.streamUrl || `# Song ID: ${song.id}`);
-    });
-
-    const content = lines.join('\n');
+    const content = serializeM3u(playlist.name, allSongs);
     const blob = new Blob([content], { type: 'audio/x-mpegurl' });
     const url = URL.createObjectURL(blob);
     

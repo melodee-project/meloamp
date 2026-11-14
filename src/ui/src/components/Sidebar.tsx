@@ -83,7 +83,6 @@ export default function Sidebar({ user, isOpen, onToggle }: SidebarProps) {
 
   const handleLogout = () => {
     clearJwt();
-    window.location.href = '/';
   };
 
   const toggleSection = (sectionId: string) => {

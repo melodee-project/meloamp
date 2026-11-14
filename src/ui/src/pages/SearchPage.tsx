@@ -16,6 +16,7 @@ import {
 import { Search, History, Clear, ExpandMore, ExpandLess } from '@mui/icons-material';
 import api, { unwrapApiResponse } from '../api';
 import { getErrorMessage } from '../utils/errors';
+import { useApiEffect } from '../hooks/useApiEffect';
 import { SearchResultData, Song, Artist, Album, Playlist } from '../apiModels';
 import ArtistCard from '../components/ArtistCard';
 import AlbumCard from '../components/AlbumCard';
@@ -56,11 +57,12 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const paramQ = searchParams.get('q') || undefined;
+  const urlQueryRef = React.useRef(paramQ);
+  urlQueryRef.current = paramQ;
   const [search, setSearch] = useState(() => query ?? paramQ ?? '');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResultData | null>(null);
   const [error, setError] = useState('');
-  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
   // Filter and sort state
   const [activeFilters, setActiveFilters] = useState<FilterType[]>(['artists', 'albums', 'songs', 'playlists']);
@@ -79,81 +81,47 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
   const { t } = useTranslation();
   const location = useLocation();
 
-  // Track previous prop and URL param so we don't clobber user edits.
-  const prevPropRef = React.useRef<string | undefined>(query);
-  const prevParamRef = React.useRef<string | undefined>(paramQ);
-
-  // Effect: when prop changes, decide whether to apply it (don't overwrite user's edits)
+  // URL navigation (including back/forward) updates the draft. Local edits
+  // remain local until the debounced search finishes.
   useEffect(() => {
-    const prev = prevPropRef.current;
-    if (query === prev) return;
-    const incoming = query ?? '';
-    // Apply only if user hasn't edited since last prop (search equals previous prop or is empty)
-    if (search === prev || search === '') {
-      setSearch(incoming);
-    }
-    prevPropRef.current = query;
-  }, [query, search]);
+    setSearch(query ?? paramQ ?? '');
+  }, [query, paramQ]);
 
-  // Effect: when URL param changes (back/forward or external), decide whether to apply it
-  useEffect(() => {
-    const prev = prevParamRef.current;
-    if (paramQ === prev) return;
-    const incoming = paramQ ?? '';
-    if (search === prev || search === '') {
-      setSearch(incoming);
-    }
-    prevParamRef.current = paramQ;
-  }, [paramQ, search]);
-
-  // Debounced search effect
-  useEffect(() => {
-    debugLog('SearchPage', 'Search effect triggered, search:', search);
-  if (!search) {
-      debugLog('SearchPage', 'Search is empty, clearing results');
+  useApiEffect((signal) => {
+    setError('');
+    if (!search.trim()) {
       setResults(null);
+      setLoading(false);
       return;
     }
-    debugLog('SearchPage', 'Search has value, starting API call process');
     setLoading(true);
-    setError('');
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      const searchRequest = {
-        query: search,
-        pageSize,
-        artistPage,
-        albumPage,
-        songPage,
-      };
-      debugLog('SearchPage', 'Sending search request:', searchRequest);
-      api.post<{ data: SearchResultData }>('/search', searchRequest)
-        .then((res) => {
-          debugLog('SearchPage', 'Search response:', res.data);
-          // The API wraps the response in a 'data' property
-          setResults(unwrapApiResponse<SearchResultData>(res.data));
-          setLoading(false);
-          // Add to recent searches
-          addRecentSearch(search);
-          setRecentSearches(getRecentSearches());
-          // Update URL to reflect current search (replace to avoid history spam)
-          try {
-            const target = search ? `${location.pathname}?q=${encodeURIComponent(search)}` : location.pathname;
-            navigate(target, { replace: true });
-          } catch {
-            // ignore navigation errors
-          }
-        })
-        .catch((error) => {
-          debugError('SearchPage', 'Search error:', error);
-          setError(t('search.error', { error: getErrorMessage(error, '') }));
-          setLoading(false);
-        });
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await api.post('/search', {
+          query: search,
+          pageSize,
+          artistPage,
+          albumPage,
+          songPage,
+          playlistPage,
+        }, { signal });
+        if (signal.aborted) return;
+        setResults(unwrapApiResponse<SearchResultData>(res.data));
+        addRecentSearch(search);
+        setRecentSearches(getRecentSearches());
+        if (urlQueryRef.current !== search) {
+          navigate(`${location.pathname}?q=${encodeURIComponent(search)}`, { replace: true });
+        }
+      } catch (error) {
+        if (signal.aborted) return;
+        debugError('SearchPage', 'Search error:', error);
+        setError(t('search.error', { error: getErrorMessage(error, '') }));
+      } finally {
+        if (!signal.aborted) setLoading(false);
+      }
     }, 500);
-    return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    };
-  }, [search, artistPage, albumPage, songPage, location.pathname, navigate, t]);
+    signal.addEventListener('abort', () => clearTimeout(timeout), { once: true });
+  }, [search, artistPage, albumPage, songPage, playlistPage, location.pathname, navigate, t]);
 
   // Reset pages when search changes
   useEffect(() => {
@@ -200,6 +168,7 @@ export default function SearchPage({ query, onClose }: { query?: string, onClose
           onChange={e => {
             debugLog('SearchPage', 'Search input changed:', e.target.value);
             setSearch(e.target.value);
+            if (!e.target.value) navigate(location.pathname, { replace: true });
           }}
           onKeyDown={e => {
             if (e.key === 'Enter' && search.trim()) {

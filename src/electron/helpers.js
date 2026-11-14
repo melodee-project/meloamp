@@ -7,6 +7,7 @@
 'use strict';
 
 const path = require('node:path');
+const http = require('node:http');
 const { pathToFileURL } = require('node:url');
 
 /**
@@ -20,6 +21,27 @@ const SHELL_PORT_CANDIDATES = Object.freeze([3001, 3000, 8080]);
 /** Build the loopback URL the BrowserWindow loads (and API calls originate from). */
 function shellUrl(port) {
   return `http://${SHELL_HOST}:${port}`;
+}
+
+/** Return a listening HTTP server, trying the next port only on EADDRINUSE. */
+async function listenOnAvailablePort(handler, ports = SHELL_PORT_CANDIDATES, host = '127.0.0.1') {
+  for (const port of ports) {
+    const server = http.createServer(handler);
+    try {
+      await new Promise((resolve, reject) => {
+        server.once('error', reject);
+        server.listen(port, host, () => {
+          server.removeListener('error', reject);
+          resolve();
+        });
+      });
+      return server;
+    } catch (error) {
+      server.close();
+      if (error.code !== 'EADDRINUSE') throw error;
+    }
+  }
+  throw new Error(`Failed to bind static server on ports ${ports.join(', ')}`);
 }
 
 /** Convert a D-Bus / MPRIS microsecond value to seconds. */
@@ -130,6 +152,7 @@ module.exports = {
   formatArtUrl,
   generateTrackId,
   isAllowedExternalUrl,
+  listenOnAvailablePort,
   microsecondsToSeconds,
   sanitizeAccelerator,
   secondsToMicroseconds,

@@ -11,10 +11,32 @@ const {
   formatArtUrl,
   generateTrackId,
   isAllowedExternalUrl,
+  listenOnAvailablePort,
   microsecondsToSeconds,
   sanitizeAccelerator,
   secondsToMicroseconds,
 } = require('./helpers');
+
+test('static server skips occupied ports and serves its own handler', async (t) => {
+  const occupied = await listenOnAvailablePort((_req, res) => res.end('other service'), [0]);
+  t.after(() => occupied.close());
+  const port = occupied.address().port;
+  const server = await listenOnAvailablePort((_req, res) => res.end('MeloAmp'), [port, 0]);
+  t.after(() => server.close());
+  assert.notEqual(server.address().port, port);
+  const response = await fetch(`http://127.0.0.1:${server.address().port}`);
+  assert.equal(await response.text(), 'MeloAmp');
+});
+
+test('static server rejects when every candidate is occupied', async (t) => {
+  const occupied = await listenOnAvailablePort((_req, res) => res.end(), [0]);
+  t.after(() => occupied.close());
+  await assert.rejects(listenOnAvailablePort(() => {}, [occupied.address().port]), /Failed to bind/);
+});
+
+test('static server propagates errors other than port conflicts', async () => {
+  await assert.rejects(listenOnAvailablePort(() => {}, [-1, 0]), { code: 'ERR_SOCKET_BAD_PORT' });
+});
 
 test('microsecondsToSeconds converts and tolerates junk', () => {
   assert.equal(microsecondsToSeconds(1_500_000), 1.5);

@@ -13,7 +13,7 @@ import './App.css';
 import Badge from '@mui/material/Badge';
 import UserSettingsPage from './pages/UserSettings';
 import LoginPage from './pages/LoginPage';
-import { apiRequest, unwrapApiResponse } from './api';
+import { AUTH_CHANGED_EVENT, apiRequest, unwrapApiResponse } from './api';
 import BrowseAlbums from './pages/BrowseAlbums';
 import PlaylistManager from './pages/PlaylistManager';
 import BrowseArtists from './pages/BrowseArtists';
@@ -232,11 +232,9 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
   React.useEffect(() => {
     if (location.pathname === '/search') {
       const urlQuery = searchParams.get('q') || '';
-      if (urlQuery !== searchValue) {
-        setSearchValue(urlQuery);
-      }
+      setSearchValue(urlQuery);
     }
-  }, [location.pathname, searchParams, searchValue]);
+  }, [location.pathname, searchParams]);
 
   React.useEffect(() => {
     document.documentElement.style.setProperty('--meloamp-font-scale', String(settings.fontScale || 1));
@@ -244,10 +242,16 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
 
   React.useEffect(() => {
     const checkAuth = () => {
-      if (!localStorage.getItem('jwt')) setIsAuthenticated(false);
+      const authenticated = !!localStorage.getItem('jwt');
+      setIsAuthenticated(authenticated);
+      if (!authenticated) setUser(null);
     };
     window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
+    window.addEventListener(AUTH_CHANGED_EVENT, checkAuth);
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener(AUTH_CHANGED_EVENT, checkAuth);
+    };
   }, []);
 
   React.useEffect(() => () => {
@@ -265,6 +269,7 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
 
     try {
       const response = await apiRequest<User>('/user/me', { signal });
+      if (signal.aborted) return;
       const userFromApi = unwrapApiResponse<User>(response.data);
       if (userFromApi) {
         writeUser(userFromApi);
@@ -272,7 +277,12 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
         return;
       }
     } catch (error) {
-      if (getErrorStatus(error) !== 401 && storedUser) {
+      if (signal.aborted) return;
+      if (getErrorStatus(error) === 401) {
+        setUser(null);
+        return;
+      }
+      if (storedUser) {
         setUser(storedUser);
         return;
       }
@@ -297,11 +307,12 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
   }
 
   const handleSearchInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(event.target.value);
+    const value = event.target.value;
+    setSearchValue(value);
     setSearchLoading(true);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      const query = event.target.value.trim();
+      const query = value.trim();
       if (query) {
         navigate(`/search?q=${encodeURIComponent(query)}`);
       } else if (location.pathname === '/search') {
@@ -410,7 +421,7 @@ function AppContent({ settings, onSettingsChange }: AppContentProps) {
               <Route path="/albums" element={<Albums />} />
               <Route path="/playlists" element={<Playlists />} />
               <Route path="/songs" element={<Songs />} />
-              <Route path="/search" element={<SearchPage query={searchValue} />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/settings" element={<UserSettingsPage settings={settings} onChange={onSettingsChange} />} />
               <Route path="/queue" element={<Queue />} />
               <Route path="/artists/:id" element={<ArtistDetailView />} />

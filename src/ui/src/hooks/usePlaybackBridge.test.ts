@@ -1,30 +1,41 @@
 import { act, renderHook } from '@testing-library/react';
 import { MutableRefObject } from 'react';
+import { EventEmitter } from 'node:events';
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import { resolve } from 'node:path';
 
 import { usePlaybackBridge } from './usePlaybackBridge';
 
-type Handler = (_event: unknown, command: string, ...args: unknown[]) => void;
+const preloadSource = readFileSync(resolve('../electron/preload.js'), 'utf8');
 
 describe('usePlaybackBridge', () => {
-  const handlers = new Map<string, Handler>();
-  const removed: string[] = [];
+  let rawIpc: EventEmitter;
+  const emit = (channel: string, ...payload: unknown[]) => {
+    // Exercise the real preload boundary, including removal of Electron's event.
+    rawIpc.emit(channel, { sender: 'main' }, ...payload);
+  };
 
   const audioRef = { current: null } as MutableRefObject<HTMLAudioElement | null>;
 
   beforeEach(() => {
-    handlers.clear();
-    removed.length = 0;
-    (window as unknown as { electron: unknown }).electron = {
-      versions: {},
-      ipcRenderer: {
-        on: (channel: string, handler: Handler) => handlers.set(channel, handler),
-        removeListener: (channel: string) => removed.push(channel),
-      },
-    };
+    rawIpc = new EventEmitter();
+    runInNewContext(preloadSource, {
+      process: { versions: {} },
+      require: () => ({
+        ipcRenderer: rawIpc,
+        contextBridge: {
+          exposeInMainWorld: (name: string, value: unknown) => {
+            (window as unknown as Record<string, unknown>)[name] = value;
+          },
+        },
+      }),
+    });
   });
 
   afterEach(() => {
     delete (window as unknown as { electron?: unknown }).electron;
+    delete (window as unknown as { meloampAPI?: unknown }).meloampAPI;
   });
 
   const setup = () => {
@@ -50,43 +61,43 @@ describe('usePlaybackBridge', () => {
 
   test('registers only the allowlisted IPC channels and cleans up', () => {
     const { view } = setup();
-    expect([...handlers.keys()].sort()).toEqual(['meloamp-media-key', 'meloamp-mpris-control']);
+    expect(rawIpc.eventNames().sort()).toEqual(['meloamp-media-key', 'meloamp-mpris-control']);
 
     view.unmount();
-    expect(removed.sort()).toEqual(['meloamp-media-key', 'meloamp-mpris-control']);
+    expect(rawIpc.eventNames()).toEqual([]);
   });
 
   test('treats MPRIS seek/position payloads as seconds (no double conversion)', () => {
     const { onSeekBy, onSeekTo } = setup();
 
-    act(() => handlers.get('meloamp-mpris-control')?.(null, 'seek', 5));
+    act(() => emit('meloamp-mpris-control', 'seek', 5));
     expect(onSeekBy).toHaveBeenCalledWith(5);
 
-    act(() => handlers.get('meloamp-mpris-control')?.(null, 'position', 12.5));
+    act(() => emit('meloamp-mpris-control', 'position', 12.5));
     expect(onSeekTo).toHaveBeenCalledWith(12.5);
   });
 
   test('ignores non-numeric seek payloads and unknown commands', () => {
     const { onSeekBy, onSeekTo, onNext } = setup();
 
-    act(() => handlers.get('meloamp-mpris-control')?.(null, 'seek', 'nope'));
-    act(() => handlers.get('meloamp-mpris-control')?.(null, 'position', undefined));
-    act(() => handlers.get('meloamp-mpris-control')?.(null, 'unknown-command'));
+    act(() => emit('meloamp-mpris-control', 'seek', 'nope'));
+    act(() => emit('meloamp-mpris-control', 'position', undefined));
+    act(() => emit('meloamp-mpris-control', 'unknown-command'));
     expect(onSeekBy).not.toHaveBeenCalled();
     expect(onSeekTo).not.toHaveBeenCalled();
 
-    act(() => handlers.get('meloamp-mpris-control')?.(null, 'next'));
+    act(() => emit('meloamp-mpris-control', 'next'));
     expect(onNext).toHaveBeenCalled();
   });
 
   test('maps media keys to playback actions', () => {
     const { onTogglePlay, onNext, onPrevious, onStop } = setup();
 
-    act(() => handlers.get('meloamp-media-key')?.(null, 'playPause'));
-    act(() => handlers.get('meloamp-media-key')?.(null, 'next'));
-    act(() => handlers.get('meloamp-media-key')?.(null, 'previous'));
-    act(() => handlers.get('meloamp-media-key')?.(null, 'stop'));
-    act(() => handlers.get('meloamp-media-key')?.(null, 'bogus'));
+    act(() => emit('meloamp-media-key', 'playPause'));
+    act(() => emit('meloamp-media-key', 'next'));
+    act(() => emit('meloamp-media-key', 'previous'));
+    act(() => emit('meloamp-media-key', 'stop'));
+    act(() => emit('meloamp-media-key', 'bogus'));
 
     expect(onTogglePlay).toHaveBeenCalledTimes(1);
     expect(onNext).toHaveBeenCalledTimes(1);
@@ -97,6 +108,6 @@ describe('usePlaybackBridge', () => {
   test('does nothing when the Electron bridge is unavailable', () => {
     delete (window as unknown as { electron?: unknown }).electron;
     expect(() => setup()).not.toThrow();
-    expect(handlers.size).toBe(0);
+    expect(rawIpc.eventNames()).toEqual([]);
   });
 });

@@ -257,3 +257,103 @@ describe('useQueueStore persistence and bounds', () => {
     vi.useRealTimers();
   });
 });
+
+describe('queue edits and undo during shuffle', () => {
+  beforeEach(() => {
+    useQueueStore.getState().setQueue([]);
+  });
+
+  test('keeps additions and removals when restoring the original order', () => {
+    const get = useQueueStore.getState;
+    get().setQueue([mockSong('A'), mockSong('B'), mockSong('C')]);
+    get().toggleShuffle();
+    get().addToQueue(mockSong('D'));
+    get().removeFromQueue(get().queue.findIndex(song => song.id === 'B'));
+    get().toggleShuffle();
+    expect(get().queue.map(song => song.id)).toEqual(['A', 'C', 'D']);
+    expect(get().queue[get().current].id).toBe('A');
+  });
+
+  test('preserves play-next placement, metadata, and played flags', () => {
+    const get = useQueueStore.getState;
+    get().setQueue([mockSong('A'), mockSong('B'), mockSong('C')]);
+    get().setCurrent(1);
+    get().toggleShuffle();
+    get().addToQueueNext(mockSong('D'));
+    get().updateSong(0, { userStarred: true, userRating: 5 });
+    get().setCurrent(1);
+    get().toggleShuffle();
+    expect(get().queue.map(song => song.id)).toEqual(['A', 'B', 'D', 'C']);
+    expect(get().queue[1]).toMatchObject({ userStarred: true, userRating: 5, played: true });
+    expect(get().queue[get().current].id).toBe('D');
+  });
+
+  test('treats repeated instances of the same song as separate queue entries', () => {
+    const get = useQueueStore.getState;
+    const repeated = mockSong('A');
+    get().setQueue([repeated, repeated]);
+    get().setCurrent(1);
+    get().toggleShuffle();
+    get().updateSong(0, { title: 'Second occurrence' });
+    get().removeFromQueue(1);
+    get().toggleShuffle();
+    expect(get().queue).toHaveLength(1);
+    expect(get().queue[0].title).toBe('Second occurrence');
+    expect(get().current).toBe(0);
+  });
+
+  test('undo restores the sole removed song at a valid index', () => {
+    const get = useQueueStore.getState;
+    get().setQueue([mockSong('A')]);
+    get().removeFromQueue(0);
+    expect(get().undo()).toBe(true);
+    expect(get().current).toBe(0);
+    expect(get().queue[get().current].id).toBe('A');
+  });
+
+  test('undo removal retains the current song and the original shuffle position', () => {
+    const get = useQueueStore.getState;
+    get().setQueue([mockSong('A'), mockSong('B'), mockSong('C')]);
+    get().toggleShuffle();
+    get().removeFromQueue(get().queue.findIndex(song => song.id === 'B'));
+    get().undo();
+    get().toggleShuffle();
+    expect(get().queue.map(song => song.id)).toEqual(['A', 'B', 'C']);
+    expect(get().queue[get().current].id).toBe('A');
+  });
+
+  test('undo clear retains the original order for subsequent unshuffle', () => {
+    const get = useQueueStore.getState;
+    get().setQueue([mockSong('A'), mockSong('B'), mockSong('C')]);
+    get().setCurrent(1);
+    get().toggleShuffle();
+    get().clearQueue();
+    get().undo();
+    get().toggleShuffle();
+    expect(get().queue.map(song => song.id)).toEqual(['A', 'B', 'C']);
+    expect(get().queue[get().current].id).toBe('B');
+  });
+
+  test('clearing a shuffled queue cannot resurrect old tracks after adding new ones', () => {
+    const get = useQueueStore.getState;
+    get().setQueue([mockSong('A')]);
+    get().toggleShuffle();
+    get().clearQueue();
+    get().addToQueueNext(mockSong('B'));
+    get().toggleShuffle();
+    expect(get().queue.map(song => song.id)).toEqual(['B']);
+  });
+
+  test.each([[1, 2, 1], [0, 2, 1], [2, 0, 1], [2, 0, 2]])(
+    'undo move from %s to %s retains current entry %s', (from, to, current) => {
+      const get = useQueueStore.getState;
+      get().setQueue([mockSong('A'), mockSong('B'), mockSong('C')]);
+      get().setCurrent(current);
+      const currentId = get().queue[current].id;
+      get().reorderQueue(from, to);
+      get().undo();
+      expect(get().queue.map(song => song.id)).toEqual(['A', 'B', 'C']);
+      expect(get().queue[get().current].id).toBe(currentId);
+    },
+  );
+});

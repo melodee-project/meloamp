@@ -609,7 +609,11 @@ export default function Player({ sidebarOpen = true }: PlayerProps) {
             }
           }}
           onLoadedMetadata={(event) => setDuration((event.target as HTMLAudioElement).duration)}
-          onPlaying={() => handlePlaybackSuccess()}
+          onPlaying={() => {
+            setPlaying(true);
+            handlePlaybackSuccess();
+          }}
+          onPause={() => setPlaying(false)}
           onError={() => handlePlaybackError()}
           onEnded={() => {
             if (repeatMode === RepeatMode.ONE) {

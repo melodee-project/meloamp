@@ -95,10 +95,10 @@ export function usePlaybackBridge({
     };
 
     const ipc = window.electron!.ipcRenderer;
-    const mprisHandler = (_event: unknown, command: RemoteCommand, ...args: unknown[]) => {
+    const mprisHandler = (command: RemoteCommand, ...args: unknown[]) => {
       handleMprisCommand(command, args);
     };
-    const mediaKeyHandler = (_event: unknown, command: string) => handleMediaKeyCommand(command);
+    const mediaKeyHandler = (command: string) => handleMediaKeyCommand(command);
 
     ipc.on('meloamp-mpris-control', mprisHandler);
     ipc.on('meloamp-media-key', mediaKeyHandler);

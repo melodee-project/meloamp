@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Desktop startup tries another allowed port when the preferred port is occupied.
+- Media keys, tray controls, and MPRIS use the preload bridge's payload-only callbacks.
+- Search inputs stay editable on the search page; canceled requests cannot restore stale results or queries.
+- Expired sessions and logout display the login form immediately, including on the dashboard.
+- Queue additions, removals, ratings, and played flags survive disabling shuffle. Undo keeps a valid current track and preserves shuffle order.
+- M3U imports resolve library IDs or artist/title/album metadata, preserve repeated entries, and report unmatched tracks. Empty matches no longer create empty playlists; exports include song IDs for reliable round trips.
+
 ## [1.5.0] - 2026-11-11
 
 ### Changed

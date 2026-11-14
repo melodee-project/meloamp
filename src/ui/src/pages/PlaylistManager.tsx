@@ -23,6 +23,9 @@ import api, { unwrapApiPage } from '../api';
 import { Playlist } from '../apiModels';
 import PlaylistCard from '../components/PlaylistCard';
 import { getErrorMessage } from '../utils/errors';
+import { M3uEntry, parseM3u } from '../utils/m3u';
+import { stripStreamAuth } from '../utils/streamUrl';
+import { matchPlaylistEntries } from '../playlistImport';
 
 export default function PlaylistManager() {
   const navigate = useNavigate();
@@ -46,10 +49,11 @@ export default function PlaylistManager() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState<{ total: number; matched: number; unmatched: M3uEntry[]; created: boolean } | null>(null);
   const importFileInputRef = useRef<HTMLInputElement>(null);
 
   // Snackbar
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({
     open: false,
     message: '',
     severity: 'success'
@@ -155,7 +159,9 @@ export default function PlaylistManager() {
   const handleImportFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!file.name.endsWith('.m3u') && !file.name.endsWith('.m3u8')) {
+      setImportSummary(null);
+      setImportFile(null);
+      if (!/\.m3u8?$/i.test(file.name)) {
         setSnackbar({ open: true, message: t('playlist.invalidM3UFile'), severity: 'error' });
         return;
       }
@@ -167,33 +173,32 @@ export default function PlaylistManager() {
     if (!importFile) return;
 
     setIsImporting(true);
+    setImportSummary(null);
     try {
       const content = await importFile.text();
-      const lines = content.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-      
-      // Extract song info from M3U (this is a simple implementation)
-      // In practice, you'd need to match songs by title/artist/album
+      const entries = parseM3u(content);
+      if (!entries.length) throw new Error(t('playlist.invalidM3UFile'));
+      const { songIds, unmatched } = await matchPlaylistEntries(entries);
+      if (!songIds.length) {
+        setImportSummary({ total: entries.length, matched: 0, unmatched, created: false });
+        return;
+      }
       const playlistName = importFile.name.replace(/\.m3u8?$/i, '');
-      
-      // Create playlist with name from file
       await api.post('/playlists', {
         name: playlistName,
-        comment: `Imported from ${importFile.name}`,
+        comment: t('playlist.importedFrom', { name: importFile.name }),
         isPublic: false,
-        songIds: []
+        songIds,
       });
-
+      setImportSummary({ total: entries.length, matched: songIds.length, unmatched, created: true });
       setSnackbar({ 
         open: true, 
-        message: t('playlist.importSuccess', { matched: 0, total: lines.length }), 
-        severity: 'success' 
+        message: t('playlist.importSuccess', { matched: songIds.length, total: entries.length }),
+        severity: unmatched.length ? 'warning' : 'success',
       });
-      
-      setImportDialogOpen(false);
-      setImportFile(null);
-      fetchPlaylists();
-    } catch {
-      setSnackbar({ open: true, message: t('playlist.importError'), severity: 'error' });
+      await fetchPlaylists();
+    } catch (error) {
+      setSnackbar({ open: true, message: getErrorMessage(error, t('playlist.importError')), severity: 'error' });
     } finally {
       setIsImporting(false);
     }
@@ -207,7 +212,11 @@ export default function PlaylistManager() {
           <Button 
             variant="outlined" 
             startIcon={<Add />}
-            onClick={() => setImportDialogOpen(true)}
+            onClick={() => {
+              setImportFile(null);
+              setImportSummary(null);
+              setImportDialogOpen(true);
+            }}
           >
             {t('playlist.importM3U')}
           </Button>
@@ -340,7 +349,9 @@ export default function PlaylistManager() {
           </Typography>
           <input
             type="file"
+            aria-label={t('playlist.selectFile')}
             accept=".m3u,.m3u8"
+            disabled={isImporting}
             onChange={handleImportFileSelect}
             ref={importFileInputRef}
             style={{ display: 'none' }}
@@ -351,10 +362,23 @@ export default function PlaylistManager() {
               {importFile ? importFile.name : t('playlist.selectFile', 'Select M3U File')}
             </Button>
           </label>
+          {importSummary && (
+            <Alert severity={importSummary.unmatched.length ? 'warning' : 'success'} sx={{ mt: 2 }}>
+              {t('playlist.importSummary', { matched: importSummary.matched, total: importSummary.total, unmatched: importSummary.unmatched.length })}
+              {!importSummary.created && <Typography>{t('playlist.importNoMatches')}</Typography>}
+              {importSummary.unmatched.length > 0 && (
+                <Box component="ul" sx={{ pl: 2, maxHeight: 200, overflow: 'auto' }}>
+                  {importSummary.unmatched.map((entry, index) => (
+                    <li key={index}>{entry.title ? [entry.artist, entry.title].filter(Boolean).join(' - ') : stripStreamAuth(entry.reference)}</li>
+                  ))}
+                </Box>
+              )}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setImportDialogOpen(false)} disabled={isImporting}>{t('common.cancel')}</Button>
-          <Button onClick={handleImportPlaylist} variant="contained" disabled={isImporting || !importFile}>
+          <Button onClick={handleImportPlaylist} variant="contained" disabled={isImporting || !importFile || !!importSummary?.created}>
             {isImporting ? <CircularProgress size={20} /> : t('playlist.import', 'Import')}
           </Button>
         </DialogActions>

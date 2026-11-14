@@ -3,16 +3,18 @@
  * Tests authentication flow, navigation, and basic app rendering
  */
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { setupApiMock, cleanupApiMock, getMockApi } from './test/apiMock';
-import { setupAuthenticatedUser, clearAuthentication } from './test/testUtils';
+import { setupAuthenticatedUser, clearAuthentication, createMockUser } from './test/testUtils';
 import App from './App';
 import { updateUserSettings } from './settings';
+import { clearJwt, setJwt } from './api';
 
 // Setup and teardown for each test
 beforeEach(() => {
   setupApiMock();
   clearAuthentication();
+  window.history.replaceState({}, '', '/');
 });
 
 afterEach(() => {
@@ -68,14 +70,33 @@ describe('App Authentication', () => {
     
     render(<App />);
     
-    // Since the 401 interceptor clears JWT and redirects, we should see login form
-    // Note: The interceptor uses window.location.href which JSDOM doesn't handle,
-    // so we check for JWT being cleared instead
-    await waitFor(() => {
-      // The axios interceptor should clear JWT on 401
-      // After that, the app should show login form
-      expect(localStorage.getItem('jwt')).toBeNull();
-    });
+    expect(await screen.findByRole('button', { name: /^login$/i })).toBeInTheDocument();
+    expect(localStorage.getItem('jwt')).toBeNull();
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+  });
+
+  test('returns to login on session expiration at a nested route without reloading', async () => {
+    setupAuthenticatedUser();
+    window.history.replaceState({}, '', '/albums');
+    render(<App />);
+    expect(await screen.findByRole('banner')).toBeInTheDocument();
+    act(() => clearJwt());
+    expect(await screen.findByRole('button', { name: /^login$/i })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/albums');
+  });
+
+  test('keeps the app authenticated when an expired JWT is refreshed', async () => {
+    setupAuthenticatedUser();
+    setJwt('expired');
+    const mock = getMockApi();
+    mock.onGet('/user/me').reply(config => config.headers?.Authorization === 'Bearer refreshed'
+      ? [200, createMockUser()]
+      : [401]);
+    mock.onPost('/auth/refresh').reply(200, { token: 'refreshed' });
+    render(<App />);
+    await waitFor(() => expect(localStorage.getItem('jwt')).toBe('refreshed'));
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^login$/i })).not.toBeInTheDocument();
   });
 });
 
@@ -131,6 +152,23 @@ describe('App Navigation', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
     });
+  });
+
+  test('edits and clears the top search while on the search page', async () => {
+    window.history.replaceState({}, '', '/search?q=old');
+    render(<App />);
+    const header = await screen.findByRole('banner');
+    const input = within(header).getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'new' } });
+    expect(input).toHaveValue('new');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(window.location.search).toBe('?q=new'));
+    const pageInput = screen.getAllByPlaceholderText(/search artists/i).find(element => element !== input)!;
+    await waitFor(() => expect(pageInput).toHaveValue('new'));
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(window.location.search).toBe(''));
+    expect(pageInput).toHaveValue('');
   });
 
   test('renders theme toggle button', async () => {

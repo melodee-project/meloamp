@@ -31,8 +31,8 @@ export type Song = Pick<
 };
 
 export type QueueAction =
-  | { type: 'remove'; index: number; song: Song }
-  | { type: 'clear'; queue: Song[]; current: number }
+  | { type: 'remove'; index: number; song: Song; originalIndex?: number }
+  | { type: 'clear'; queue: Song[]; current: number; originalOrder: Song[] | null }
   | { type: 'reorder'; from: number; to: number };
 
 export interface QueueState {
@@ -79,6 +79,20 @@ const clampCurrentIndex = (current: number, queueLength: number): number => {
   if (queueLength <= 0) return 0;
   return Math.max(0, Math.min(current, queueLength - 1));
 };
+
+const currentAfterMove = (current: number, from: number, to: number): number => {
+  if (current === from) return to;
+  if (from < current && to >= current) return current - 1;
+  if (from > current && to <= current) return current + 1;
+  return current;
+};
+
+// Each queue occurrence owns a distinct object, even when the same song is
+// enqueued twice. The shuffled and original orders share those identities.
+const queueEntry = (song: Song): Song => ({ ...song, url: stripStreamAuth(song.url) });
+
+const replaceOriginalEntry = (order: Song[] | null, before: Song, after: Song): Song[] | null =>
+  order?.map(song => song === before ? after : song) ?? null;
 
 const toMinimal = (queue: Song[]): MinimalSong[] => queue.map((song) => ({
   id: song.id,
@@ -163,36 +177,41 @@ export const useQueueStore = create<QueueState>((set, get) => {
     lastAction: null,
 
     addToQueue: (song: Song) => {
-      const { queue, current } = get();
-      const newQueue = [...queue, song];
-      set({ queue: newQueue });
+      const { queue, current, originalOrder } = get();
+      const entry = queueEntry(song);
+      const newQueue = [...queue, entry];
+      set({ queue: newQueue, originalOrder: originalOrder ? [...originalOrder, entry] : null });
       debouncedPersist(newQueue, current);
     },
 
     addToQueueNext: (song: Song) => {
-      const { queue, current } = get();
+      const { queue, current, originalOrder } = get();
+      const entry = queueEntry(song);
       const insertIndex = clampCurrentIndex(current + 1, queue.length + 1);
       const newQueue = [...queue];
-      newQueue.splice(insertIndex, 0, song);
-      set({ queue: newQueue });
+      newQueue.splice(insertIndex, 0, entry);
+      const newOriginal = originalOrder ? [...originalOrder] : null;
+      if (newOriginal) newOriginal.splice(newOriginal.indexOf(queue[current]) + 1, 0, entry);
+      set({ queue: newQueue, originalOrder: newOriginal, lastAction: null });
       debouncedPersist(newQueue, current);
       debugLog('QueueStore', 'addToQueueNext: inserted at index', insertIndex);
     },
 
     setQueue: (songs: Song[]) => {
+      const entries = songs.map(queueEntry);
       set({
-        queue: songs,
+        queue: entries,
         current: 0,
         originalOrder: null,
         shuffleEnabled: false,
         lastAction: null,
       });
-      immediatePersist(songs, 0);
+      immediatePersist(entries, 0);
       persistPlaybackSettings(get().repeatMode, false);
     },
 
     removeFromQueue: (index: number) => {
-      const { queue, current } = get();
+      const { queue, current, originalOrder } = get();
       const removedSong = queue[index];
       if (!removedSong) return;
 
@@ -203,8 +222,9 @@ export const useQueueStore = create<QueueState>((set, get) => {
 
       set({
         queue: newQueue,
+        originalOrder: originalOrder?.filter(song => song !== removedSong) ?? null,
         current: Math.max(0, newCurrent),
-        lastAction: { type: 'remove', index, song: removedSong },
+        lastAction: { type: 'remove', index, song: removedSong, originalIndex: originalOrder?.indexOf(removedSong) },
       });
       debouncedPersist(newQueue, Math.max(0, newCurrent));
     },
@@ -217,48 +237,49 @@ export const useQueueStore = create<QueueState>((set, get) => {
       const [item] = newQueue.splice(from, 1);
       newQueue.splice(to, 0, item);
 
-      let newCurrent = current;
-      if (current === from) newCurrent = to;
-      else if (from < current && to >= current) newCurrent = current - 1;
-      else if (from > current && to <= current) newCurrent = current + 1;
+      const newCurrent = currentAfterMove(current, from, to);
 
       set({ queue: newQueue, current: newCurrent, lastAction: { type: 'reorder', from, to } });
       debouncedPersist(newQueue, newCurrent);
     },
 
     clearQueue: () => {
-      const { queue, current } = get();
+      const { queue, current, originalOrder, shuffleEnabled } = get();
       set({
         queue: [],
         current: 0,
-        originalOrder: null,
-        lastAction: { type: 'clear', queue: [...queue], current },
+        originalOrder: shuffleEnabled ? [] : null,
+        lastAction: { type: 'clear', queue: [...queue], current, originalOrder },
       });
       immediatePersist([], 0);
     },
 
     updateSong: (index: number, patch: Partial<Song>) => {
-      const { queue, current } = get();
+      const { queue, current, originalOrder } = get();
       if (!queue[index]) return;
       const newQueue = [...queue];
-      newQueue[index] = { ...newQueue[index], ...patch };
-      set({ queue: newQueue });
+      newQueue[index] = queueEntry({ ...newQueue[index], ...patch });
+      set({ queue: newQueue, originalOrder: replaceOriginalEntry(originalOrder, queue[index], newQueue[index]) });
       debouncedPersist(newQueue, current);
     },
 
     setCurrent: (index: number) => {
-      const { queue, current } = get();
+      const { queue, current, originalOrder } = get();
       const safeIndex = clampCurrentIndex(index, queue.length);
       const newQueue = [...queue];
       if (safeIndex > current && newQueue[current]) {
         newQueue[current] = { ...newQueue[current], played: true };
       }
-      set({ queue: newQueue, current: safeIndex });
+      set({
+        queue: newQueue,
+        current: safeIndex,
+        originalOrder: queue[current] ? replaceOriginalEntry(originalOrder, queue[current], newQueue[current]) : originalOrder,
+      });
       debouncedPersist(newQueue, safeIndex);
     },
 
     playNow: (songs: Song | Song[]) => {
-      const newQueue = Array.isArray(songs) ? songs : [songs];
+      const newQueue = (Array.isArray(songs) ? songs : [songs]).map(queueEntry);
       set({
         queue: newQueue,
         current: 0,
@@ -298,6 +319,7 @@ export const useQueueStore = create<QueueState>((set, get) => {
           current: 0,
           shuffleEnabled: true,
           originalOrder: original,
+          lastAction: null,
         });
         persistPlaybackSettings(get().repeatMode, true);
         debouncedPersist(newQueue, 0);
@@ -305,7 +327,7 @@ export const useQueueStore = create<QueueState>((set, get) => {
         return;
       }
 
-      const restored = originalOrder && originalOrder.length > 0 ? originalOrder : queue;
+      const restored = originalOrder ?? queue;
       const currentSong = queue[current];
       // Track the current song by object identity first (unique), then by id.
       const restoredIndex = currentSong
@@ -319,6 +341,7 @@ export const useQueueStore = create<QueueState>((set, get) => {
         current: Math.max(0, newCurrent),
         shuffleEnabled: false,
         originalOrder: null,
+        lastAction: null,
       });
       persistPlaybackSettings(get().repeatMode, false);
       debouncedPersist(restored, Math.max(0, newCurrent));
@@ -337,13 +360,16 @@ export const useQueueStore = create<QueueState>((set, get) => {
         case 'remove': {
           const newQueue = [...state.queue];
           newQueue.splice(lastAction.index, 0, lastAction.song);
-          const newCurrent = lastAction.index <= state.current ? state.current + 1 : state.current;
-          set({ queue: newQueue, current: newCurrent, lastAction: null });
+          const currentSong = state.queue[state.current];
+          const newCurrent = clampCurrentIndex(currentSong ? newQueue.indexOf(currentSong) : lastAction.index, newQueue.length);
+          const originalOrder = state.originalOrder ? [...state.originalOrder] : null;
+          originalOrder?.splice(lastAction.originalIndex ?? originalOrder.length, 0, lastAction.song);
+          set({ queue: newQueue, current: newCurrent, originalOrder, lastAction: null });
           debouncedPersist(newQueue, newCurrent);
           return true;
         }
         case 'clear': {
-          set({ queue: lastAction.queue, current: lastAction.current, lastAction: null });
+          set({ queue: lastAction.queue, current: lastAction.current, originalOrder: lastAction.originalOrder, lastAction: null });
           debouncedPersist(lastAction.queue, lastAction.current);
           return true;
         }
@@ -351,8 +377,9 @@ export const useQueueStore = create<QueueState>((set, get) => {
           const newQueue = [...state.queue];
           const [item] = newQueue.splice(lastAction.to, 1);
           newQueue.splice(lastAction.from, 0, item);
-          set({ queue: newQueue, lastAction: null });
-          debouncedPersist(newQueue, state.current);
+          const newCurrent = currentAfterMove(state.current, lastAction.to, lastAction.from);
+          set({ queue: newQueue, current: newCurrent, lastAction: null });
+          debouncedPersist(newQueue, newCurrent);
           return true;
         }
         default:

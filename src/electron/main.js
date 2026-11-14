@@ -14,6 +14,7 @@ const {
   formatArtUrl,
   generateTrackId,
   isAllowedExternalUrl,
+  listenOnAvailablePort,
   sanitizeAccelerator,
   SHELL_PORT_CANDIDATES,
   shellUrl,
@@ -50,8 +51,8 @@ let mediaKeyConfig = {
 autoUpdater.autoDownload = false; // Don't auto-download, let user choose
 autoUpdater.autoInstallOnAppQuit = true;
 
-function startStaticServer() {
-  if (staticServer) return Promise.resolve(SERVER_PORT);
+async function startStaticServer() {
+  if (staticServer) return SERVER_PORT;
   const server = express();
   // Use the correct path for production (packaged) and development
   const isPackaged = app.isPackaged;
@@ -106,43 +107,12 @@ function startStaticServer() {
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 
-  // Must stay on origins allowed by Melodee's CORS policy (localhost:3000/3001/8080).
-  const PORT_CANDIDATES = [...SHELL_PORT_CANDIDATES];
-  let attempt = 0;
-
-  return new Promise((resolve, reject) => {
-    const tryNext = () => {
-      if (attempt >= PORT_CANDIDATES.length) {
-        reject(new Error(`Failed to bind static server on ports ${PORT_CANDIDATES.join(', ')}`));
-        return;
-      }
-
-      const nextPort = PORT_CANDIDATES[attempt];
-      attempt += 1;
-
-      const onError = (error) => {
-        server.removeListener('error', onError);
-        if (error?.code === 'EADDRINUSE') {
-          console.warn(`Static server port ${nextPort} is in use. Trying a fallback port.`);
-          tryNext();
-          return;
-        }
-        reject(error);
-      };
-
-      server.once('error', onError);
-      // Bind to loopback only: the app shell must not be reachable from the LAN.
-      server.listen(nextPort, LOOPBACK_HOST, () => {
-        server.removeListener('error', onError);
-        SERVER_PORT = typeof nextPort === 'number' && nextPort === 0 ? server.address().port : nextPort;
-        staticServer = server;
-        console.log(`Static server running on ${shellUrl(SERVER_PORT)}`);
-        resolve(SERVER_PORT);
-      });
-    };
-
-    tryNext();
-  });
+  // Wait for an actual HTTP listener before loading the shell. Keep fallback
+  // ports on origins allowed by Melodee's CORS policy.
+  staticServer = await listenOnAvailablePort(server, SHELL_PORT_CANDIDATES, LOOPBACK_HOST);
+  SERVER_PORT = staticServer.address().port;
+  console.log(`Static server running on ${shellUrl(SERVER_PORT)}`);
+  return SERVER_PORT;
 }
 
 function isDbusSessionAvailable() {
