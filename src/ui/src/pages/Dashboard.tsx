@@ -11,7 +11,7 @@ import { ArrowBackIos, ArrowForwardIos, Refresh } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import ErrorState from '../components/ErrorState';
 import { readUserSettings } from '../settings';
-import { getErrorMessage } from '../utils/errors';
+import { getErrorMessage, getErrorStatus } from '../utils/errors';
 
 // Playlist Card
 // ...moved to components/PlaylistCard.tsx...
@@ -30,15 +30,23 @@ function Dashboard({ recentLimit }: { recentLimit?: number }) {
     setLoading(true);
     setError(null);
     try {
+      // `/system/stats` is administrator-only (the API answers `403 FORBIDDEN`
+      // for listener accounts), so its absence must not hide the rest of the
+      // dashboard. Any other failure still surfaces as a load error.
+      const statsRequest = apiRequest('/system/stats', { signal }).catch((err: unknown) => {
+        if (getErrorStatus(err) === 403) return null;
+        throw err;
+      });
+
       const [statsRes, artistsRes, albumsRes, playlistsRes] = await Promise.all([
-        apiRequest('/system/stats', { signal }),
+        statsRequest,
         apiRequest(`/artists/recent?limit=${recentLimit}`, { signal }),
         apiRequest(`/albums/recent?limit=${recentLimit}`, { signal }),
         apiRequest('/user/playlists', { signal }),
       ]);
       if (signal.aborted) return;
 
-      setStats(unwrapApiResponse<Statistic[]>(statsRes.data) ?? []);
+      setStats(statsRes ? unwrapApiResponse<Statistic[]>(statsRes.data) ?? [] : []);
       setRecentArtists(unwrapApiPage<Artist>(artistsRes.data).items);
       setRecentAlbums(unwrapApiPage<Album>(albumsRes.data).items);
       setPlaylists(unwrapApiPage<Playlist>(playlistsRes.data).items);
